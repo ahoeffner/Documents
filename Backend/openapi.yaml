@@ -1,0 +1,606 @@
+openapi: 3.0.3
+info:
+  title: RAG Document Handler
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+
+tags:
+  - name: ai
+  - name: ocr
+  - name: search
+  - name: folders
+  - name: content
+  - name: documents
+  - name: languages
+
+paths:
+
+  /api/categories:
+    get:
+      tags: [folders]
+      summary: List all folders
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  categories:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Folder"
+
+    post:
+      tags: [folders]
+      summary: Create a folder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                pid:
+                  type: integer
+                  format: int64
+                  nullable: true
+                  description: Parent folder ID — omit or null for top-level
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  id:
+                    type: integer
+                    format: int64
+
+  /api/categories/{id}:
+    delete:
+      tags: [folders]
+      summary: Delete a folder by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /api/categories/{id}/documents:
+    get:
+      tags: [folders]
+      summary: List documents in a folder
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  documents:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Document"
+        "404":
+          description: Folder not found
+
+  /api/store:
+    post:
+      tags: [documents]
+      summary: Store a document
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [date, catid, title, language]
+              properties:
+                date:
+                  type: string
+                  format: date
+                catid:
+                  type: string
+                  description: Folder ID
+                title:
+                  type: string
+                text:
+                  type: string
+                  description: Plain-text description (optional if file supplied)
+                language:
+                  type: string
+                  example: en
+                file:
+                  type: string
+                  format: binary
+                url:
+                  type: string
+                  description: External URL to associate instead of uploading a file
+      responses:
+        "200":
+          description: Stored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateResponse"
+        "500":
+          description: Processing failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateResponse"
+
+  /api/content/{id}/text:
+    get:
+      tags: [content]
+      summary: Get document description as plain text
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+        "404":
+          description: Not found
+
+  /api/content/{id}/file:
+    get:
+      tags: [content]
+      summary: Redirect to the document file (inline)
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+      responses:
+        "302":
+          description: Redirect to file URL or to /api/content/{id}/file/{filename}
+        "404":
+          description: Not found
+
+  /api/content/{id}/file/{filename}:
+    get:
+      tags: [content]
+      summary: Serve the document file inline
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: File content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Not found
+
+  /api/content/{id}/download:
+    get:
+      tags: [content]
+      summary: Redirect to the document file (download)
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+      responses:
+        "302":
+          description: Redirect to file URL or to /api/content/{id}/download/{filename}
+        "404":
+          description: Not found
+
+  /api/content/{id}/download/{filename}:
+    get:
+      tags: [content]
+      summary: Download the document file as an attachment
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: File download
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Not found
+
+  /api/search:
+    post:
+      tags: [search]
+      summary: Lexical document search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, category]
+              properties:
+                id:
+                  type: string
+                  description: Session or request ID (optional)
+                query:
+                  type: string
+                category:
+                  type: integer
+                  format: int64
+                  description: Folder ID to restrict search (0 for all)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  documents:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Document"
+
+  /api/ai:
+    post:
+      tags: [ai]
+      summary: Chat with the AI assistant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, query, category, match]
+              properties:
+                id:
+                  type: string
+                  description: Conversation session ID
+                query:
+                  type: string
+                category:
+                  type: integer
+                  format: int64
+                  description: Folder ID to scope the conversation (0 for all)
+                match:
+                  type: number
+                  format: double
+                  description: Similarity threshold for vector search (0.0–1.0)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+        "500":
+          description: Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  response:
+                    type: string
+
+  /api/ocr:
+    post:
+      tags: [ocr]
+      summary: Extract text from an image via OCR
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Extracted text
+          content:
+            text/plain:
+              schema:
+                type: string
+        "500":
+          description: OCR failed
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /api/documents:
+    get:
+      tags: [documents]
+      summary: List documents (with optional filters)
+      parameters:
+        - name: catid
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+            description: Folder ID — omit or 0 for all folders
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Optional title substring filter
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 200
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  documents:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Document"
+
+  /api/documents/{id}:
+    get:
+      tags: [documents]
+      summary: Get full document details (for editing)
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  document:
+                    $ref: "#/components/schemas/DocumentDetail"
+        "404":
+          description: Not found
+
+    put:
+      tags: [documents]
+      summary: Update an existing document
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                date:
+                  type: string
+                  format: date
+                catid:
+                  type: string
+                  description: Folder ID
+                title:
+                  type: string
+                text:
+                  type: string
+                language:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+                  description: Optional — replaces the existing file when provided
+                url:
+                  type: string
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateResponse"
+        "404":
+          description: Not found
+
+    delete:
+      tags: [documents]
+      summary: Delete a document
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        "404":
+          description: Not found
+
+  /api/languages:
+    get:
+      tags: [languages]
+      summary: List supported languages
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  languages:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Language"
+
+components:
+
+  parameters:
+    DocumentId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+  schemas:
+
+    Folder:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        pid:
+          type: integer
+          format: int64
+          nullable: true
+        name:
+          type: string
+
+    Document:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        date:
+          type: string
+          format: date
+        title:
+          type: string
+        filename:
+          type: string
+        description:
+          type: string
+        hasFile:
+          type: boolean
+        catid:
+          type: integer
+          format: int64
+          nullable: true
+          description: Folder ID
+
+    DocumentDetail:
+      type: object
+      description: Full document record returned for editing
+      properties:
+        id:
+          type: integer
+          format: int64
+        date:
+          type: string
+          format: date
+        title:
+          type: string
+        text:
+          type: string
+          description: Plain-text body / description
+        catid:
+          type: integer
+          format: int64
+          nullable: true
+        filename:
+          type: string
+          nullable: true
+        hasFile:
+          type: boolean
+        url:
+          type: string
+          nullable: true
+
+    ChatResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        response:
+          type: string
+        documents:
+          type: array
+          items:
+            $ref: "#/components/schemas/Document"
+        refresh:
+          type: boolean
+          description: True when the AI has mutated data and the client should reload
+
+    CreateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+          nullable: true
+
+    Language:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string

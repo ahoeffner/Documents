@@ -1,0 +1,25 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://home:5432/private
+    username: alex
+    password: Manager1
+    hikari:
+      minimum-idle: 1
+      maximum-pool-size: 3
+
+app:
+  ai-services: http://home:9000
+  chunker:
+    max-tokens: 4096
+    overlap-size: 64
+  vector-search:
+    boundary:
+      - 0.1
+      - 0.6
+
+logging:
+  level:
+    rag.dochandler: INFO
