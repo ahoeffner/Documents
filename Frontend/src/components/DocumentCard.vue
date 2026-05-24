@@ -76,19 +76,19 @@ function formatDate(d: string): string {
   justify-content: center;
   width: 44px;
   height: 22px;
-  border: 1px solid var(--accent);
+  border: 1px solid var(--text-muted);
   border-radius: 3px;
   background: transparent;
-  color: var(--accent);
+  color: var(--text-muted);
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.1s, color 0.1s;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
 }
-.doc-btn:hover { background: var(--accent); color: #fff; }
+.doc-btn:hover { background: var(--bg-muted); color: var(--text); border-color: var(--text); }
 .doc-btn-off {
-  border-color: var(--border-input);
+  border-color: var(--border);
   color: var(--text-faint);
   cursor: default;
   pointer-events: none;

@@ -250,7 +250,7 @@ a { color: inherit; text-decoration: none; }
   position: absolute;
   inset: 0 -4px;
 }
-.resize-handle:hover { background: var(--accent); }
+.resize-handle:hover { background: var(--text-muted); }
 
 /* ════════════════════════════════════════════════════════════════
    Empty state

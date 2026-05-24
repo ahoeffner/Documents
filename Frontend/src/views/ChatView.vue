@@ -329,19 +329,19 @@ function toggleMic() {
   justify-content: center;
   width: 36px;
   height: 18px;
-  border: 1px solid var(--accent);
+  border: 1px solid var(--text-muted);
   border-radius: 3px;
   background: transparent;
-  color: var(--accent);
+  color: var(--text-muted);
   font-size: 10px;
   font-weight: 500;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.1s, color 0.1s;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
 }
-.src-btn:hover { background: var(--accent); color: #fff; }
+.src-btn:hover { background: var(--bg-muted); color: var(--text); border-color: var(--text); }
 .src-btn-off {
-  border-color: var(--border-input);
+  border-color: var(--border);
   color: var(--text-faint);
   cursor: default;
   pointer-events: none;
