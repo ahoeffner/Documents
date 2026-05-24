@@ -1,0 +1,17 @@
+# --- Frontend (Vue.js) ---
+**/node_modules/
+**/dist/
+**/.env.local
+**/.env.*.local
+
+# --- Backend (Spring Boot) ---
+**/target/
+**/.gradle/
+**/build/
+**/.idea/
+**/*.iml
+**/*.log
+
+# --- OS clutter ---
+.DS_Store
+Thumbs.db
