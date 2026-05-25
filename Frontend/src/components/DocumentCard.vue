@@ -52,7 +52,7 @@ function formatDate(d: string): string {
 .doc-row:hover { background: var(--bg-subtle); }
 
 .doc-date {
-  color: var(--text-faint);
+  color: var(--text-muted);
   width: 88px;
   flex-shrink: 0;
 }
@@ -64,7 +64,7 @@ function formatDate(d: string): string {
   white-space: nowrap;
 }
 .doc-title { color: var(--text); }
-.doc-desc  { color: var(--text-faint); }
+.doc-desc  { color: var(--text-muted); }
 .doc-actions {
   display: flex;
   align-items: center;
@@ -77,18 +77,19 @@ function formatDate(d: string): string {
   justify-content: center;
   width: 44px;
   height: 22px;
-  border: 1px solid var(--text-muted);
+  border: 1px solid var(--tab-border);
   border-radius: 3px;
-  background: transparent;
-  color: var(--text-muted);
+  background: var(--tab-bg);
+  color: var(--text);
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.1s, color 0.1s, border-color 0.1s;
+  transition: background 0.1s;
 }
-.doc-btn:hover { background: var(--bg-muted); color: var(--text); border-color: var(--text); }
+.doc-btn:hover { background: var(--tab-hover-bg); }
 .doc-btn-off {
+  background: var(--bg-muted);
   border-color: var(--border);
   color: var(--text-faint);
   cursor: default;

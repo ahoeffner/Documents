@@ -14,7 +14,7 @@ export const useCategoriesStore = defineStore('categories', {
       this.error = null
       try {
         const res = await listCategories()
-        this.categories = (res.data.categories || []) as Category[]
+        this.categories = (res.data.folders || []) as Category[]
       } catch {
         this.error = 'Failed to load categories'
       } finally {

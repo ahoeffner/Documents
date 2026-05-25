@@ -17,7 +17,7 @@ tags:
 
 paths:
 
-  /api/categories:
+  /api/folders:
     get:
       tags: [folders]
       summary: List all folders
@@ -31,7 +31,7 @@ paths:
                 properties:
                   success:
                     type: boolean
-                  categories:
+                  folders:
                     type: array
                     items:
                       $ref: "#/components/schemas/Folder"
@@ -68,7 +68,7 @@ paths:
                     type: integer
                     format: int64
 
-  /api/categories/{id}:
+  /api/folders/{id}:
     delete:
       tags: [folders]
       summary: Delete a folder by ID
@@ -90,7 +90,7 @@ paths:
                   success:
                     type: boolean
 
-  /api/categories/{id}/documents:
+  /api/folders/{id}/documents:
     get:
       tags: [folders]
       summary: List documents in a folder
@@ -128,12 +128,12 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              required: [date, catid, title, language]
+              required: [date, fldid, title, language]
               properties:
                 date:
                   type: string
                   format: date
-                catid:
+                fldid:
                   type: string
                   description: Folder ID
                 title:
@@ -258,14 +258,14 @@ paths:
           application/json:
             schema:
               type: object
-              required: [query, category]
+              required: [query, folder]
               properties:
                 id:
                   type: string
                   description: Session or request ID (optional)
                 query:
                   type: string
-                category:
+                folder:
                   type: integer
                   format: int64
                   description: Folder ID to restrict search (0 for all)
@@ -294,14 +294,14 @@ paths:
           application/json:
             schema:
               type: object
-              required: [id, query, category, match]
+              required: [id, query, folder, match]
               properties:
                 id:
                   type: string
                   description: Conversation session ID
                 query:
                   type: string
-                category:
+                folder:
                   type: integer
                   format: int64
                   description: Folder ID to scope the conversation (0 for all)
@@ -363,7 +363,7 @@ paths:
       tags: [documents]
       summary: List documents (with optional filters)
       parameters:
-        - name: catid
+        - name: fldid
           in: query
           required: false
           schema:
@@ -433,7 +433,7 @@ paths:
                 date:
                   type: string
                   format: date
-                catid:
+                fldid:
                   type: string
                   description: Folder ID
                 title:
@@ -538,7 +538,7 @@ components:
           type: string
         hasFile:
           type: boolean
-        catid:
+        fldid:
           type: integer
           format: int64
           nullable: true
@@ -559,7 +559,7 @@ components:
         text:
           type: string
           description: Plain-text body / description
-        catid:
+        fldid:
           type: integer
           format: int64
           nullable: true

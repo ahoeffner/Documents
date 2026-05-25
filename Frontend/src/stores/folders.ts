@@ -28,7 +28,7 @@ export const useFoldersStore = defineStore('folders', {
       this.error = null
       try {
         const res = await listFolders()
-        const flat = (res.data.categories || []) as Omit<Folder, 'children'>[]
+        const flat = (res.data.folders || []) as Omit<Folder, 'children'>[]
         this.tree = buildTree(flat)
       } catch {
         this.error = 'Failed to load folders'

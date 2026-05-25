@@ -38,7 +38,7 @@ export interface DocumentDetail {
   date: string
   title: string
   text?: string
-  catid?: number | null
+  fldid?: number | null
   filename?: string | null
   hasFile: boolean
   url?: string | null
@@ -46,12 +46,12 @@ export interface DocumentDetail {
 
 export interface SearchPayload {
   query: string
-  category: number
+  folder: number
 }
 
 export interface ChatPayload {
   id: string
   query: string
-  category: number
+  folder: number
   match: number
 }

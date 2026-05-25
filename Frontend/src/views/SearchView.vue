@@ -74,7 +74,7 @@ async function doSearch() {
   error.value = null
   lastQuery.value = query.value
   try {
-    const res = await search({ query: query.value, category: selectedCategory.value })
+    const res = await search({ query: query.value, folder: selectedCategory.value })
     documents.value = (res.data.documents || []) as DocumentResult[]
     searched.value = true
   } catch {

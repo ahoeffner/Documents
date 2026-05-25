@@ -154,7 +154,7 @@ async function sendMessage() {
   loading.value = true
   scrollBottom()
   try {
-    const res = await chat({ id: chatStore.sessionId, query: q, category: selectedCategory.value, match: matchValue.value })
+    const res = await chat({ id: chatStore.sessionId, query: q, folder: selectedCategory.value, match: matchValue.value })
     const data = res.data as { success: boolean; response?: string; documents?: DocumentResult[]; refresh?: boolean }
     if (data.success) {
       chatStore.addMessage('ai', data.response ?? '', data.documents ?? null)
@@ -329,18 +329,19 @@ function toggleMic() {
   justify-content: center;
   width: 36px;
   height: 18px;
-  border: 1px solid var(--text-muted);
+  border: 1px solid var(--tab-border);
   border-radius: 3px;
-  background: transparent;
-  color: var(--text-muted);
+  background: var(--tab-bg);
+  color: var(--text);
   font-size: 10px;
   font-weight: 500;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.1s, color 0.1s, border-color 0.1s;
+  transition: background 0.1s;
 }
-.src-btn:hover { background: var(--bg-muted); color: var(--text); border-color: var(--text); }
+.src-btn:hover { background: var(--tab-hover-bg); }
 .src-btn-off {
+  background: var(--bg-muted);
   border-color: var(--border);
   color: var(--text-faint);
   cursor: default;

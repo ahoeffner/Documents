@@ -207,7 +207,7 @@ async function submit() {
 
   const fd = new FormData()
   fd.append('date', date.value)
-  fd.append('catid', String(catid.value || 0))
+  fd.append('fldid', String(catid.value || 0))
   fd.append('title', title.value)
   fd.append('language', language.value)
   if (text.value) fd.append('text', text.value)

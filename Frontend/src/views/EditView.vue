@@ -294,7 +294,7 @@ async function selectDoc(id: number) {
     date.value = d.date ?? ''
     title.value = d.title ?? ''
     text.value = d.text ?? ''
-    catid.value = d.catid ?? null
+    catid.value = d.fldid ?? null
     url.value = d.url ?? ''
     currentFilename.value = d.filename ?? null
   } catch {
@@ -394,7 +394,7 @@ async function submit() {
   if (hasFile && hasUrl) { validationError.value = 'Provide a file or a URL, not both.'; return }
 
   const fd = new FormData()
-  fd.append('date', date.value); fd.append('catid', String(catid.value ?? 0))
+  fd.append('date', date.value); fd.append('fldid', String(catid.value ?? 0))
   fd.append('title', title.value); fd.append('language', language.value)
   if (text.value) fd.append('text', text.value)
   if (selectedFile.value) fd.append('file', selectedFile.value)
