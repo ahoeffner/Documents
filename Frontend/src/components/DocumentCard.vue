@@ -1,7 +1,9 @@
 <template>
   <div class="doc-row">
     <span class="doc-date">{{ formatDate(doc.date) }}</span>
-    <span class="doc-title">{{ doc.title || 'Untitled' }}</span>
+    <div class="doc-main">
+      <span class="doc-title">{{ doc.title || 'Untitled' }}</span><span v-if="doc.description" class="doc-desc"> — {{ doc.description }}</span>
+    </div>
     <div class="doc-actions">
       <button v-if="doc.description" type="button" class="doc-btn" @click="showText = true">Text</button>
       <span v-else class="doc-btn doc-btn-off">Text</span>
@@ -50,20 +52,19 @@ function formatDate(d: string): string {
 .doc-row:hover { background: var(--bg-subtle); }
 
 .doc-date {
-  font-size: 11px;
   color: var(--text-faint);
-  font-family: 'SFMono-Regular', Consolas, monospace;
   width: 88px;
   flex-shrink: 0;
 }
-.doc-title {
+.doc-main {
   flex: 1;
   min-width: 0;
-  color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.doc-title { color: var(--text); }
+.doc-desc  { color: var(--text-faint); }
 .doc-actions {
   display: flex;
   align-items: center;
