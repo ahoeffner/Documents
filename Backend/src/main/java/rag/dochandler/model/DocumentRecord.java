@@ -12,7 +12,7 @@ import dev.langchain4j.data.segment.TextSegment;
 public class DocumentRecord
 {
     private long id;
-    private long catid;
+    private long fldid;
     private Date date;
     private String lang;
     private String file;
@@ -37,22 +37,22 @@ public class DocumentRecord
     }
 
 
-    public long getCatid()
+    public long getFldid()
     {
-        return(catid);
+        return(fldid);
     }
 
 
-    public DocumentRecord setCatid(long catid)
+    public DocumentRecord setFldid(long fldid)
     {
-        this.catid = catid;
+        this.fldid = fldid;
         return(this);
     }
 
 
-    public DocumentRecord setCatid(String catid)
+    public DocumentRecord setFldid(String fldid)
     {
-        this.catid = Long.parseLong(catid);
+        this.fldid = Long.parseLong(fldid);
         return(this);
     }
 
@@ -191,7 +191,7 @@ public class DocumentRecord
     @Override
     public String toString()
     {
-        return("catid=" + catid + ", date=" + date + ", title=" + title +
+        return("fldid=" + fldid + ", date=" + date + ", title=" + title +
                ", file=" + file + ", chunks=" + chunks.size() +
                ", content=" + (content == null ? 0 : content.length));
     }

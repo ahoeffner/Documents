@@ -2,24 +2,24 @@ package rag.dochandler.controllers;
 
 import java.util.Map;
 import java.util.List;
-import rag.dochandler.entities.Category;
+import rag.dochandler.entities.Folder;
 import rag.dochandler.entities.Document;
 import rag.dochandler.model.DocumentRecord;
-import rag.dochandler.services.CategoryService;
+import rag.dochandler.services.FolderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import rag.dochandler.repository.DocumentRepository;
 
 
 @RestController
-@RequestMapping("/api/categories")
-public class CategoryController
+@RequestMapping("/api/folders")
+public class FolderController
 {
-    private final CategoryService service;
+    private final FolderService service;
     private final DocumentRepository documentRepo;
 
 
-    public CategoryController(CategoryService service, DocumentRepository documentRepo)
+    public FolderController(FolderService service, DocumentRepository documentRepo)
     {
         this.service = service;
         this.documentRepo = documentRepo;
@@ -29,8 +29,8 @@ public class CategoryController
     @GetMapping
     public ResponseEntity<Map<String, Object>> list()
     {
-        List<Category> categories = service.list();
-        return(ResponseEntity.ok(Map.of("success", true, "categories", categories)));
+        List<Folder> folders = service.list();
+        return(ResponseEntity.ok(Map.of("success", true, "folders", folders)));
     }
 
 
@@ -56,7 +56,7 @@ public class CategoryController
                 d.getFile(),
                 d.getText(),
                 d.getContent() != null,
-                d.getCatid()
+                d.getFldid()
             ))
             .toList();
         return(ResponseEntity.ok(Map.of("success", true, "documents", documents)));

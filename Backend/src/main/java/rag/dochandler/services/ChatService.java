@@ -3,7 +3,7 @@ package rag.dochandler.services;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
-import rag.dochandler.model.Category;
+import rag.dochandler.model.Folder;
 import rag.dochandler.entities.Document;
 import rag.dochandler.entities.ChatRequest;
 import rag.dochandler.model.DocumentRecord;
@@ -11,7 +11,7 @@ import rag.dochandler.entities.ChatResponse;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import rag.dochandler.repository.CategoryRepository;
+import rag.dochandler.repository.FolderRepository;
 import rag.dochandler.repository.DocumentRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,16 +27,16 @@ public class ChatService
     private double boundaryHigh;
 
     private final GeminiService geminiService;
-    private final CategoryRepository categoryRepo;
+    private final FolderRepository folderRepo;
     private final DocumentRepository documentRepo;
     private final ObjectMapper mapper;
 
 
-    public ChatService(GeminiService geminiService, CategoryRepository categoryRepo,
+    public ChatService(GeminiService geminiService, FolderRepository folderRepo,
                        DocumentRepository documentRepo, ObjectMapper mapper)
     {
         this.geminiService = geminiService;
-        this.categoryRepo = categoryRepo;
+        this.folderRepo = folderRepo;
         this.documentRepo = documentRepo;
         this.mapper = mapper;
     }
@@ -62,7 +62,7 @@ public class ChatService
         double match = req.match() / 100.0;
         double threshold = boundaryLow + (1.0 - match) * (boundaryHigh - boundaryLow);
 
-        List<DocumentRecord> docs = documentRepo.hybridSearch(semantic, lexical, req.category(), threshold, geminiService);
+        List<DocumentRecord> docs = documentRepo.hybridSearch(semantic, lexical, req.folder(), threshold, geminiService);
 
         StringBuilder context = new StringBuilder();
         List<Document> documents = new ArrayList<>();
@@ -87,20 +87,20 @@ public class ChatService
     {
         return(switch (func)
         {
-            case "createCategory" -> createCategoryAction(id, args);
-            case "deleteCategory" -> deleteCategoryAction(id, args);
-            case "listFiles"      -> listFilesAction(id, args);
-            case "deleteFile"     -> deleteFileAction(id, args);
+            case "createFolder" -> createFolderAction(id, args);
+            case "deleteFolder" -> deleteFolderAction(id, args);
+            case "listFiles"    -> listFilesAction(id, args);
+            case "deleteFile"   -> deleteFileAction(id, args);
             default -> throw new IllegalArgumentException("Unknown agentic function: " + func);
         });
     }
 
 
-    private ChatResponse createCategoryAction(String id, Map<String, Object> args) throws Exception
+    private ChatResponse createFolderAction(String id, Map<String, Object> args) throws Exception
     {
         String name = (String) args.get("name");
-        categoryRepo.create(name, null);
-        JsonNode rag = geminiService.ragQuery(id, "What was the outcome of createCategory()", "Category was created successfully");
+        folderRepo.create(name, null);
+        JsonNode rag = geminiService.ragQuery(id, "What was the outcome of createFolder()", "Folder was created successfully");
         ChatResponse r = new ChatResponse();
         r.setSuccess(true);
         r.setResponse(rag.get("response").asText());
@@ -109,12 +109,12 @@ public class ChatService
     }
 
 
-    private ChatResponse deleteCategoryAction(String id, Map<String, Object> args) throws Exception
+    private ChatResponse deleteFolderAction(String id, Map<String, Object> args) throws Exception
     {
         String name = (String) args.get("name");
-        boolean success = categoryRepo.deleteByName(name);
-        String outcome = success ? "Category was deleted successfully" : "Deletion of category failed";
-        JsonNode rag = geminiService.ragQuery(id, "What was the outcome of deleteCategory()", outcome);
+        boolean success = folderRepo.deleteByName(name);
+        String outcome = success ? "Folder was deleted successfully" : "Deletion of folder failed";
+        JsonNode rag = geminiService.ragQuery(id, "What was the outcome of deleteFolder()", outcome);
         ChatResponse r = new ChatResponse();
         r.setSuccess(true);
         r.setResponse(rag.get("response").asText());
@@ -125,10 +125,10 @@ public class ChatService
 
     private ChatResponse listFilesAction(String id, Map<String, Object> args) throws Exception
     {
-        String catName = (String) args.get("category");
-        Category cat = categoryRepo.findByName(catName);
-        Long catid = cat != null ? cat.getId() : null;
-        List<DocumentRecord> docs = documentRepo.findAll(catid);
+        String folderName = (String) args.get("folder");
+        Folder folder = folderRepo.findByName(folderName);
+        Long fldid = folder != null ? folder.getId() : null;
+        List<DocumentRecord> docs = documentRepo.findAll(fldid);
         List<Document> documents = docs.stream().map(this::toDocument).toList();
         JsonNode rag = geminiService.ragQuery(id, "What was the outcome of listFiles()", "List files returned success");
         ChatResponse r = new ChatResponse();
@@ -161,7 +161,7 @@ public class ChatService
             d.getFile(),
             d.getText(),
             d.getContent() != null,
-            d.getCatid()
+            d.getFldid()
         ));
     }
 }

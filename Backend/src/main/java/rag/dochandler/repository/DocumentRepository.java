@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Arrays;
 import org.slf4j.Logger;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.sql.SQLException;
 import org.slf4j.LoggerFactory;
@@ -42,14 +41,16 @@ public class DocumentRepository
 
     public long create(DocumentRecord record, GeminiService geminiService)
     {
+        record.createEmbeddings(geminiService);
+
         KeyHolder holder = new GeneratedKeyHolder();
         jdbc.update(con ->
         {
             PreparedStatement ps = con.prepareStatement(
                 "INSERT INTO documents (fldid, date, title, text, extref, content) VALUES (?, ?, ?, ?, ?, ?)",
-                Statement.RETURN_GENERATED_KEYS
+                new String[]{"id"}
             );
-            ps.setLong(1, record.getCatid());
+            ps.setLong(1, record.getFldid());
             ps.setDate(2, record.getDate());
             ps.setString(3, record.getTitle());
             ps.setString(4, record.getText());
@@ -57,9 +58,10 @@ public class DocumentRepository
             ps.setBytes(6, record.getContent());
             return(ps);
         }, holder);
+
+        @SuppressWarnings("null")
         long docid = holder.getKey().longValue();
 
-        record.createEmbeddings(geminiService);
         insertChunks(docid, record);
         log.info("Created document id={} with {} chunks", docid, record.getTextChunks().size());
         return(docid);
@@ -84,97 +86,110 @@ public class DocumentRepository
     }
 
 
-    public List<DocumentRecord> findAll(Long catid)
+    public List<DocumentRecord> findAll(Long fldid)
     {
         String sql = "SELECT id, fldid, date, title, text, extref, (content IS NOT NULL) AS has_content FROM documents";
-        if (catid != null && catid > 0) return(jdbc.query(sql + " WHERE fldid = ?", (rs, i) -> mapRow(rs), catid));
+        if (fldid != null && fldid > 0) return(jdbc.query(sql + " WHERE fldid = ?", (rs, i) -> mapRow(rs), fldid));
         return(jdbc.query(sql, (rs, i) -> mapRow(rs)));
     }
 
 
-    public List<DocumentRecord> findAll(Long catid, String q, int limit)
+    @SuppressWarnings("null")
+    public List<DocumentRecord> findAll(Long fldid, String q, int limit)
     {
-        StringBuilder sql = new StringBuilder(
+        StringBuilder sql = new StringBuilder
+        (
             "SELECT id, fldid, date, title, text, extref, (content IS NOT NULL) AS has_content FROM documents"
         );
+
         ArrayList<Object> params = new ArrayList<>();
         ArrayList<String> conditions = new ArrayList<>();
-        if (catid != null && catid > 0)
+
+        if (fldid != null && fldid > 0)
         {
             conditions.add("fldid = ?");
-            params.add(catid);
+            params.add(fldid);
         }
+
         if (q != null && !q.isBlank())
         {
             conditions.add("title ILIKE ?");
             params.add("%" + q + "%");
         }
+
         if (!conditions.isEmpty())
             sql.append(" WHERE ").append(String.join(" AND ", conditions));
+
         sql.append(" ORDER BY date DESC, title LIMIT ?");
         params.add(limit);
+
         return(jdbc.query(sql.toString(), (rs, i) -> mapRow(rs), params.toArray()));
     }
 
 
     public byte[] getContent(long id)
     {
-        List<byte[]> results = jdbc.query(
+        List<byte[]> results = jdbc.query
+        (
             "SELECT content FROM documents WHERE id = ?",
-            (rs, i) -> rs.getBytes("content"),
-            id
+            (rs, i) -> rs.getBytes("content"),id
         );
+
         return(results.isEmpty() ? null : results.get(0));
     }
 
 
     public String getFilename(long id)
     {
-        List<String> results = jdbc.query(
+        List<String> results = jdbc.query
+        (
             "SELECT extref FROM documents WHERE id = ?",
-            (rs, i) -> rs.getString("extref"),
-            id
+            (rs, i) -> rs.getString("extref"),id
         );
+
         return(results.isEmpty() ? null : results.get(0));
     }
 
 
     public String getDescription(long id)
     {
-        List<String> results = jdbc.query(
+        List<String> results = jdbc.query
+        (
             "SELECT text FROM documents WHERE id = ?",
-            (rs, i) -> rs.getString("text"),
-            id
+            (rs, i) -> rs.getString("text"),id
         );
+
         return(results.isEmpty() ? null : results.get(0));
     }
 
 
     public String getAllText(long id)
     {
-        List<String> rows = jdbc.query(
+        List<String> rows = jdbc.query
+        (
             "SELECT text FROM textchunks WHERE docid = ? ORDER BY line",
-            (rs, i) -> rs.getString("text"),
-            id
+            (rs, i) -> rs.getString("text"),id
         );
+
         return(String.join("\n", rows));
     }
 
 
-    public List<DocumentRecord> lexicalSearch(String[] words, long catid)
+    public List<DocumentRecord> lexicalSearch(String[] words, long fldid)
     {
         String wordlist = String.join(" ", words);
-        List<Long> docids = jdbc.query(
+
+        List<Long> docids = jdbc.query
+        (
             "SELECT DISTINCT(docid) FROM textchunks WHERE lexvector @@ plainto_tsquery(lang::regconfig, ?)",
-            (rs, i) -> rs.getLong("docid"),
-            wordlist
+            (rs, i) -> rs.getLong("docid"), wordlist
         );
-        return(fetchByIds(docids, catid));
+
+        return(fetchByIds(docids, fldid));
     }
 
 
-    public List<DocumentRecord> hybridSearch(String semantic, String[] lexical, long catid,
-                                              double threshold, GeminiService geminiService)
+    public List<DocumentRecord> hybridSearch(String semantic, String[] lexical, long fldid, double threshold, GeminiService geminiService)
     {
         Float[] embedding = geminiService.computeEmbedding(semantic, true);
         String vecStr = toVectorLiteral(embedding);
@@ -185,7 +200,7 @@ public class DocumentRepository
         String sql =
             "SELECT DISTINCT(docid) FROM textchunks WHERE (embedding <=> ?::vector) < ? " +
             "UNION " +
-            "SELECT DISTINCT(docid) FROM textchunks WHERE lexvector @@ plainto_tsquery(lang::regconfig, ?)";
+            "SELECT DISTINCT(docid) FROM textchunks WHERE lexvector @@ plainto_tsquery(lang::regconfig,?)";
 
         List<Long> docids = jdbc.query(sql,
             ps ->
@@ -197,17 +212,20 @@ public class DocumentRepository
             (rs, i) -> rs.getLong("docid")
         );
 
-        return(fetchByIds(docids, catid));
+        return(fetchByIds(docids, fldid));
     }
 
 
     public boolean update(long id, DocumentRecord record, GeminiService geminiService)
     {
-        StringBuilder sql = new StringBuilder(
+        StringBuilder sql = new StringBuilder
+        (
             "UPDATE documents SET fldid=?, date=?, title=?, text=?"
         );
+
         if (record.getFile() != null) sql.append(", extref=?");
         if (record.getContent() != null) sql.append(", content=?");
+
         sql.append(" WHERE id=?");
         String finalSql = sql.toString();
 
@@ -215,7 +233,7 @@ public class DocumentRepository
         {
             PreparedStatement ps = con.prepareStatement(finalSql);
             int p = 1;
-            ps.setLong(p++, record.getCatid());
+            ps.setLong(p++, record.getFldid());
             ps.setDate(p++, record.getDate());
             ps.setString(p++, record.getTitle());
             ps.setString(p++, record.getText());
@@ -226,37 +244,42 @@ public class DocumentRepository
         });
 
         if (rows == 0) return(false);
+
         if (!record.getTextChunks().isEmpty())
         {
             jdbc.update("DELETE FROM textchunks WHERE docid = ?", id);
             record.createEmbeddings(geminiService);
             insertChunks(id, record);
         }
+
         return(true);
     }
 
 
-    private DocumentRecord findByIdFiltered(long id, long catid)
+    private DocumentRecord findByIdFiltered(long id, long fldid)
     {
+        List<DocumentRecord> results;
+
         String sql = "SELECT id, fldid, date, title, text, extref, (content IS NOT NULL) AS has_content " +
                      "FROM documents WHERE id = ?";
-        List<DocumentRecord> results;
-        if (catid > 0)
-            results = jdbc.query(sql + " AND fldid = ?", (rs, i) -> mapRow(rs), id, catid);
-        else
-            results = jdbc.query(sql, (rs, i) -> mapRow(rs), id);
+
+        if (fldid > 0) results = jdbc.query(sql + " AND fldid = ?", (rs, i) -> mapRow(rs), id, fldid);
+        else results = jdbc.query(sql, (rs, i) -> mapRow(rs), id);
+
         return(results.isEmpty() ? null : results.get(0));
     }
 
 
-    private List<DocumentRecord> fetchByIds(List<Long> docids, long catid)
+    private List<DocumentRecord> fetchByIds(List<Long> docids, long fldid)
     {
         List<DocumentRecord> results = new ArrayList<>();
+
         for (Long docid : docids)
         {
-            DocumentRecord doc = findByIdFiltered(docid, catid);
+            DocumentRecord doc = findByIdFiltered(docid, fldid);
             if (doc != null) results.add(doc);
         }
+
         return(results);
     }
 
@@ -268,37 +291,45 @@ public class DocumentRepository
             "(d.content IS NOT NULL) AS has_content, t.lang " +
             "FROM documents d LEFT JOIN textchunks t ON t.docid = d.id " +
             "WHERE d.id = ? LIMIT 1";
+
         List<DocumentRecord> results = jdbc.query(sql, (rs, i) ->
         {
             DocumentRecord doc = mapRow(rs);
             doc.setLang(rs.getString("lang"));
             return(doc);
         }, id);
+
         return(results.isEmpty() ? null : results.get(0));
     }
 
 
     private void insertChunks(long docid, DocumentRecord record)
     {
+        String lang = record.getLang();
+
         ArrayList<String> chunks = record.getTextChunks();
         ArrayList<Float[]> embeddings = record.getEmbeddings();
-        String lang = record.getLang();
+
         for (int i = 0; i < chunks.size(); i++)
         {
-            final int line = i + 1;
-            final String chunk = chunks.get(i);
-            final String vecStr = toVectorLiteral(embeddings.get(i));
-            final String fLang = lang;
+            int line = i + 1;
+            String chunk = chunks.get(i);
+            String vecStr = toVectorLiteral(embeddings.get(i));
+            String fLang = lang;
+
             jdbc.update(con ->
             {
-                PreparedStatement ps = con.prepareStatement(
+                PreparedStatement ps = con.prepareStatement
+                (
                     "INSERT INTO textchunks (docid, line, lang, text, embedding) VALUES (?, ?, ?, ?, ?::vector)"
                 );
+
                 ps.setLong(1, docid);
                 ps.setInt(2, line);
                 ps.setString(3, fLang);
                 ps.setString(4, chunk);
                 ps.setObject(5, vecStr, Types.OTHER);
+
                 return(ps);
             });
         }
@@ -308,13 +339,15 @@ public class DocumentRepository
     private DocumentRecord mapRow(ResultSet rs) throws SQLException
     {
         DocumentRecord doc = new DocumentRecord();
+
         doc.setId(rs.getLong("id"));
-        doc.setCatid(rs.getLong("fldid"));
+        doc.setFldid(rs.getLong("fldid"));
         doc.setDate(rs.getDate("date"));
         doc.setText(rs.getString("text"));
         doc.setTitle(rs.getString("title"));
         doc.setFile(rs.getString("extref"));
         if (rs.getBoolean("has_content")) doc.setContent(new byte[0]);
+
         return(doc);
     }
 
@@ -322,8 +355,12 @@ public class DocumentRepository
     private String toVectorLiteral(Float[] vector)
     {
         if (vector == null || vector.length == 0) return("[]");
-        return("[" + Arrays.stream(vector)
+        
+        return
+        (
+            "[" + Arrays.stream(vector)
             .map(String::valueOf)
-            .collect(Collectors.joining(",")) + "]");
+            .collect(Collectors.joining(",")) + "]"
+        );
     }
 }

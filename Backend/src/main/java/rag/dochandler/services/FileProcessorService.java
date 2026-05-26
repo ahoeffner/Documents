@@ -22,12 +22,12 @@ public class FileProcessorService
     }
 
 
-    public DocumentRecord process(String date, String catidStr, String title, String text,
+    public DocumentRecord process(String date, String fldidStr, String title, String text,
                                   String language, MultipartFile file, String url) throws Exception
     {
         DocumentRecord doc = new DocumentRecord();
         doc.setDate(date);
-        doc.setCatid(catidStr);
+        doc.setFldid(fldidStr);
         doc.setLang(language);
 
         if (title != null && !title.isBlank())

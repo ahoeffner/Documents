@@ -2,9 +2,8 @@ package rag.dochandler.repository;
 
 import java.util.List;
 import java.sql.Types;
-import java.sql.Statement;
 import java.sql.PreparedStatement;
-import rag.dochandler.model.Category;
+import rag.dochandler.model.Folder;
 import org.springframework.stereotype.Repository;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -12,22 +11,22 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 
 
 @Repository
-public class CategoryRepository
+public class FolderRepository
 {
     private final JdbcTemplate jdbc;
 
 
-    public CategoryRepository(JdbcTemplate jdbc)
+    public FolderRepository(JdbcTemplate jdbc)
     {
         this.jdbc = jdbc;
     }
 
 
-    public List<Category> findAll()
+    public List<Folder> findAll()
     {
         return(jdbc.query(
             "SELECT id, pid, name FROM folders ORDER BY name",
-            (rs, i) -> new Category(rs.getLong("id"), (Long) rs.getObject("pid"), rs.getString("name"))
+            (rs, i) -> new Folder(rs.getLong("id"), (Long) rs.getObject("pid"), rs.getString("name"))
         ));
     }
 
@@ -39,7 +38,7 @@ public class CategoryRepository
         {
             PreparedStatement ps = con.prepareStatement(
                 "INSERT INTO folders (pid, name) VALUES (?, ?)",
-                Statement.RETURN_GENERATED_KEYS
+                new String[]{"id"}
             );
             if (pid != null) ps.setLong(1, pid);
             else ps.setNull(1, Types.BIGINT);
@@ -69,12 +68,12 @@ public class CategoryRepository
     }
 
 
-    public Category findByName(String name)
+    public Folder findByName(String name)
     {
         if (name == null) return(null);
-        List<Category> results = jdbc.query(
+        List<Folder> results = jdbc.query(
             "SELECT id, pid, name FROM folders WHERE upper(name) LIKE upper(?)",
-            (rs, i) -> new Category(rs.getLong("id"), (Long) rs.getObject("pid"), rs.getString("name")),
+            (rs, i) -> new Folder(rs.getLong("id"), (Long) rs.getObject("pid"), rs.getString("name")),
             name
         );
         return(results.isEmpty() ? null : results.get(0));

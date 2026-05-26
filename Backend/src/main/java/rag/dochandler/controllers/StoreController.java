@@ -1,5 +1,7 @@
 package rag.dochandler.controllers;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rag.dochandler.model.DocumentRecord;
 import rag.dochandler.services.GeminiService;
 import rag.dochandler.entities.CreateResponse;
@@ -14,6 +16,8 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/store")
 public class StoreController
 {
+    private static final Logger log = LoggerFactory.getLogger(StoreController.class);
+
     private final FileProcessorService processor;
     private final DocumentRepository documentRepo;
     private final GeminiService geminiService;
@@ -31,7 +35,7 @@ public class StoreController
     @PostMapping
     public ResponseEntity<CreateResponse> store(
             @RequestParam String date,
-            @RequestParam String catid,
+            @RequestParam String fldid,
             @RequestParam String title,
             @RequestParam(required = false) String text,
             @RequestParam String language,
@@ -40,12 +44,13 @@ public class StoreController
     {
         try
         {
-            DocumentRecord record = processor.process(date, catid, title, text, language, file, url);
+            DocumentRecord record = processor.process(date, fldid, title, text, language, file, url);
             long id = documentRepo.create(record, geminiService);
             return(ResponseEntity.ok(new CreateResponse(true, id)));
         }
         catch (Exception e)
         {
+            log.error("Failed to store document", e);
             return(ResponseEntity.internalServerError().body(new CreateResponse(false, null)));
         }
     }

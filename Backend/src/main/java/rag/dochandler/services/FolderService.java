@@ -1,27 +1,27 @@
 package rag.dochandler.services;
 
 import java.util.List;
-import rag.dochandler.entities.Category;
+import rag.dochandler.entities.Folder;
 import org.springframework.stereotype.Service;
-import rag.dochandler.repository.CategoryRepository;
+import rag.dochandler.repository.FolderRepository;
 
 
 @Service
-public class CategoryService
+public class FolderService
 {
-    private final CategoryRepository repo;
+    private final FolderRepository repo;
 
 
-    public CategoryService(CategoryRepository repo)
+    public FolderService(FolderRepository repo)
     {
         this.repo = repo;
     }
 
 
-    public List<Category> list()
+    public List<Folder> list()
     {
         return(repo.findAll().stream()
-            .map(c -> new Category(c.getId(), c.getPid(), c.getName()))
+            .map(f -> new Folder(f.getId(), f.getPid(), f.getName()))
             .toList());
     }
 

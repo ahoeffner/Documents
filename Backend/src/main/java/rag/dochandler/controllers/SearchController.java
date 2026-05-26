@@ -29,7 +29,7 @@ public class SearchController
         String query = req.query() != null ? req.query() : "";
         String[] words = query.toLowerCase().split("\\s+");
 
-        List<DocumentRecord> docs = documentRepo.lexicalSearch(words, req.category());
+        List<DocumentRecord> docs = documentRepo.lexicalSearch(words, req.folder());
 
         List<Document> documents = docs.stream()
             .map(d -> new Document(
@@ -39,7 +39,7 @@ public class SearchController
                 d.getFile(),
                 d.getText(),
                 d.getContent() != null,
-                d.getCatid()
+                d.getFldid()
             ))
             .toList();
 

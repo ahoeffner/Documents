@@ -4,6 +4,7 @@ import java.io.IOException;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaTypeFactory;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.*;
 import rag.dochandler.repository.DocumentRepository;
@@ -52,7 +53,11 @@ public class ContentController
     {
         byte[] content = documentRepo.getContent(id);
         if (content == null) return(ResponseEntity.notFound().build());
+        String contentType = MediaTypeFactory.getMediaType(filename)
+            .map(MediaType::toString)
+            .orElse(MediaType.APPLICATION_OCTET_STREAM_VALUE);
         return(ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_TYPE, contentType)
             .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
             .body(content));
     }
@@ -79,7 +84,11 @@ public class ContentController
     {
         byte[] content = documentRepo.getContent(id);
         if (content == null) return(ResponseEntity.notFound().build());
+        String contentType = MediaTypeFactory.getMediaType(filename)
+            .map(MediaType::toString)
+            .orElse(MediaType.APPLICATION_OCTET_STREAM_VALUE);
         return(ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_TYPE, contentType)
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
             .body(content));
     }

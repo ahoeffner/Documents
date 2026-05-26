@@ -1,13 +1,13 @@
 package rag.dochandler.model;
 
-public class Category
+public class Folder
 {
     private long id;
     private Long pid;
     private String name;
 
 
-    public Category(long id, Long pid, String name)
+    public Folder(long id, Long pid, String name)
     {
         this.id = id;
         this.pid = pid;

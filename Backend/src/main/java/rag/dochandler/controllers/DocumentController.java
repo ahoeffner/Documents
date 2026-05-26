@@ -34,11 +34,11 @@ public class DocumentController
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> list(
-            @RequestParam(required = false) Long catid,
+            @RequestParam(required = false) Long fldid,
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "200") int limit)
     {
-        List<Document> documents = documentRepo.findAll(catid, q, limit).stream()
+        List<Document> documents = documentRepo.findAll(fldid, q, limit).stream()
             .map(this::toDocument)
             .toList();
         return(ResponseEntity.ok(Map.of("success", true, "documents", documents)));
@@ -58,7 +58,7 @@ public class DocumentController
     public ResponseEntity<CreateResponse> update(
             @PathVariable long id,
             @RequestParam(required = false) String date,
-            @RequestParam(required = false) String catid,
+            @RequestParam(required = false) String fldid,
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String text,
             @RequestParam(required = false) String language,
@@ -72,7 +72,7 @@ public class DocumentController
 
             String effectiveDate = date != null ? date
                 : (existing.getDate() != null ? existing.getDate().toString() : null);
-            String effectiveCatid = catid != null ? catid : String.valueOf(existing.getCatid());
+            String effectiveFldid = fldid != null ? fldid : String.valueOf(existing.getFldid());
             String effectiveTitle = title != null ? title : existing.getTitle();
             String effectiveLang = language != null ? language : existing.getLang();
 
@@ -84,14 +84,14 @@ public class DocumentController
             if (reprocess)
             {
                 String effectiveText = text != null ? text : existing.getText();
-                record = processor.process(effectiveDate, effectiveCatid, effectiveTitle,
+                record = processor.process(effectiveDate, effectiveFldid, effectiveTitle,
                                            effectiveText, effectiveLang, file, url);
             }
             else
             {
                 record = new DocumentRecord();
                 record.setDate(effectiveDate);
-                record.setCatid(effectiveCatid);
+                record.setFldid(effectiveFldid);
                 record.setTitle(effectiveTitle);
                 record.setText(existing.getText());
                 record.setLang(effectiveLang);
@@ -126,7 +126,7 @@ public class DocumentController
             d.getFile(),
             d.getText(),
             d.getContent() != null,
-            d.getCatid()
+            d.getFldid()
         ));
     }
 
@@ -140,7 +140,7 @@ public class DocumentController
             d.getDate() != null ? d.getDate().toString() : "",
             d.getTitle(),
             d.getText(),
-            d.getCatid(),
+            d.getFldid(),
             isUrl ? null : extref,
             d.getContent() != null,
             isUrl ? extref : null
