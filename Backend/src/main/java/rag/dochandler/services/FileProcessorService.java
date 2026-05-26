@@ -16,50 +16,50 @@ public class FileProcessorService
 
     public FileProcessorService(ChunkerService chunker, OcrService ocr, DocumentLoaderService loader)
     {
-        this.chunker = chunker;
         this.ocr = ocr;
         this.loader = loader;
+        this.chunker = chunker;
     }
 
 
-    public DocumentRecord process(String date, String fldidStr, String title, String text,
-                                  String language, MultipartFile file, String url) throws Exception
+    public DocumentRecord process(String date, String fldidStr, String title, String text, String language, MultipartFile file, String url) throws Exception
     {
         DocumentRecord doc = new DocumentRecord();
+
         doc.setDate(date);
-        doc.setFldid(fldidStr);
         doc.setLang(language);
+        doc.setFldid(fldidStr);
 
         if (title != null && !title.isBlank())
         {
             doc.setTitle(title);
-            doc.addTextChunk("Title: " + title);
+            doc.addTextChunk("Title", "Title: " + title);
         }
 
         if (text != null && !text.isBlank())
         {
-            doc.addTextChunks(chunker.split(text));
+            doc.addTextChunks("Text", chunker.split(text));
             doc.setText(text);
         }
 
         if (file != null && !file.isEmpty())
         {
             byte[] bytes = file.getBytes();
-            doc.addTextChunk("Filename: " + file.getOriginalFilename());
+            doc.addTextChunk("File", "Filename: " + file.getOriginalFilename());
 
             if (isImage(bytes))
             {
                 if (doc.getText() == null)
                 {
                     String ocrText = ocr.scan(bytes);
-                    doc.addTextChunks(chunker.split(ocrText));
+                    doc.addTextChunks("Content", chunker.split(ocrText));
                     doc.setText(ocrText);
                 }
             }
             else
             {
                 Document parsed = loader.load(bytes);
-                doc.addTextChunks(chunker.split(parsed));
+                doc.addTextChunks("Content", chunker.split(parsed));
             }
             doc.setFile(file.getOriginalFilename());
             doc.setContent(bytes);
@@ -68,7 +68,7 @@ public class FileProcessorService
         if (url != null && !url.isBlank())
         {
             DocumentLoaderService.URLDocumentResult result = loader.loadURL(url);
-            doc.addTextChunks(chunker.split(result.document));
+            doc.addTextChunks("Content", chunker.split(result.document));
             doc.setFile(url);
             doc.setContent(result.content);
         }

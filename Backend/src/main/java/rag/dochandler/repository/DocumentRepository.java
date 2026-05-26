@@ -307,12 +307,14 @@ public class DocumentRepository
     {
         String lang = record.getLang();
 
+        ArrayList<String> sections = record.getSections();
         ArrayList<String> chunks = record.getTextChunks();
         ArrayList<Float[]> embeddings = record.getEmbeddings();
 
         for (int i = 0; i < chunks.size(); i++)
         {
             int line = i + 1;
+            String section = sections.get(i);
             String chunk = chunks.get(i);
             String vecStr = toVectorLiteral(embeddings.get(i));
             String fLang = lang;
@@ -321,14 +323,15 @@ public class DocumentRepository
             {
                 PreparedStatement ps = con.prepareStatement
                 (
-                    "INSERT INTO textchunks (docid, line, lang, text, embedding) VALUES (?, ?, ?, ?, ?::vector)"
+                    "INSERT INTO textchunks (docid, line, section, lang, text, embedding) VALUES (?, ?, ?, ?, ?, ?::vector)"
                 );
 
                 ps.setLong(1, docid);
                 ps.setInt(2, line);
-                ps.setString(3, fLang);
-                ps.setString(4, chunk);
-                ps.setObject(5, vecStr, Types.OTHER);
+                ps.setString(3, section);
+                ps.setString(4, fLang);
+                ps.setString(5, chunk);
+                ps.setObject(6, vecStr, Types.OTHER);
 
                 return(ps);
             });

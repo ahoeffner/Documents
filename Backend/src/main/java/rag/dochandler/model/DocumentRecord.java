@@ -12,8 +12,8 @@ import dev.langchain4j.data.segment.TextSegment;
 public class DocumentRecord
 {
     private long id;
-    private long fldid;
     private Date date;
+    private long fldid;
     private String lang;
     private String file;
     private String text;
@@ -21,6 +21,7 @@ public class DocumentRecord
     private byte[] content;
 
     private final ArrayList<String> chunks = new ArrayList<>();
+    private final ArrayList<String> sections = new ArrayList<>();
     private final ArrayList<Float[]> embeddings = new ArrayList<>();
 
 
@@ -144,23 +145,24 @@ public class DocumentRecord
     }
 
 
-    public DocumentRecord addTextChunk(String chunk)
+    public DocumentRecord addTextChunk(String section, String chunk)
     {
+        this.sections.add(0, section);
         this.chunks.add(0, chunk);
         return(this);
     }
 
 
-    public DocumentRecord addTextChunks(ArrayList<String> list)
+    public DocumentRecord addTextChunks(String section, ArrayList<String> list)
     {
-        this.chunks.addAll(list);
+        list.forEach(c -> { this.sections.add(section); this.chunks.add(c); });
         return(this);
     }
 
 
-    public DocumentRecord addTextChunks(List<TextSegment> list)
+    public DocumentRecord addTextChunks(String section, List<TextSegment> list)
     {
-        list.forEach(ts -> this.chunks.add(ts.text()));
+        list.forEach(ts -> { this.sections.add(section); this.chunks.add(ts.text()); });
         return(this);
     }
 
@@ -179,6 +181,12 @@ public class DocumentRecord
     public ArrayList<String> getTextChunks()
     {
         return(chunks);
+    }
+
+
+    public ArrayList<String> getSections()
+    {
+        return(sections);
     }
 
 
