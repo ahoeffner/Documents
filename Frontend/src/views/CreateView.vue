@@ -106,16 +106,19 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useCategoriesStore } from '../stores/categories'
-import { listLanguages } from '../api/languages'
+import type { Language } from '../types'
 import { scanOcr } from '../api/ocr'
 import { storeDocument } from '../api/store'
-import type { Language } from '../types'
+import { listLanguages } from '../api/languages'
+import { useCategoriesStore } from '../stores/categories'
+
 
 const props = withDefaults(defineProps<{ initialFldid?: number | null }>(), { initialFldid: null })
 const emit = defineEmits<{ saved: [] }>()
 
+
 const categoriesStore = useCategoriesStore()
+
 
 const date = ref(todayIso())
 const catid = ref<number | ''>(props.initialFldid ?? '')
@@ -135,68 +138,109 @@ const validationError = ref<string | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const pasteArea = ref<HTMLElement | null>(null)
 
-const ocrEnabled = computed(() => {
+
+const ocrEnabled = computed(() =>
+{
   const f = selectedFile.value || pastedFile.value
-  return !!f && (f.type.startsWith('image/') || f.type === 'application/pdf')
+  return(!!f && (f.type.startsWith('image/') || f.type === 'application/pdf'))
 })
 
-function todayIso(): string { return new Date().toISOString().split('T')[0] }
 
-onMounted(async () => {
+function todayIso(): string
+{
+  return(new Date().toISOString().split('T')[0])
+}
+
+
+onMounted(async () =>
+{
   await categoriesStore.load()
-  try {
+  try
+  {
     const res = await listLanguages()
     languages.value = (res.data.languages || []) as Language[]
     const danish = languages.value.find(l => l.id === 'DA')
     if (danish) language.value = danish.name
-  } catch {
+  }
+  catch
+  {
     languages.value = [{ id: 'DA', name: 'danish' }, { id: 'EN', name: 'english' }]
   }
 })
 
-function onFileChange(event: Event) {
+
+function onFileChange(event: Event)
+{
   const input = event.target as HTMLInputElement
   selectedFile.value = input.files?.[0] ?? null
   pastedFile.value = null
 }
 
-function onPaste(event: ClipboardEvent) {
+
+function onPaste(event: ClipboardEvent)
+{
   const items = event.clipboardData?.items ?? []
-  for (const item of items) {
-    if (item.kind === 'file' && item.type.startsWith('image/')) {
+  for (const item of items)
+  {
+    if (item.kind === 'file' && item.type.startsWith('image/'))
+    {
       event.preventDefault()
       const file = item.getAsFile()
-      if (file) { pastedFile.value = file; selectedFile.value = null; if (fileInputRef.value) fileInputRef.value.value = '' }
+      if (file)
+      {
+        pastedFile.value = file
+        selectedFile.value = null
+        if (fileInputRef.value) fileInputRef.value.value = ''
+      }
       break
     }
   }
 }
 
-async function runOcr() {
+
+async function runOcr()
+{
   const file = selectedFile.value || pastedFile.value
   if (!file) return
   ocrLoading.value = true
   error.value = null
-  try {
+  try
+  {
     const res = await scanOcr(file)
     text.value = res.data as string
-  } catch {
+  }
+  catch
+  {
     error.value = 'OCR failed.'
-  } finally {
+  }
+  finally
+  {
     ocrLoading.value = false
   }
 }
 
-function resetForm() {
-  title.value = ''; text.value = ''; url.value = ''
-  selectedFile.value = null; pastedFile.value = null
-  date.value = todayIso(); catid.value = ''
-  error.value = null; successMsg.value = false; validationError.value = null
+
+function resetForm()
+{
+  title.value = ''
+  text.value = ''
+  url.value = ''
+  selectedFile.value = null
+  pastedFile.value = null
+  date.value = todayIso()
+  catid.value = ''
+  error.value = null
+  successMsg.value = false
+  validationError.value = null
   if (fileInputRef.value) fileInputRef.value.value = ''
 }
 
-async function submit() {
-  validationError.value = null; error.value = null; successMsg.value = false
+
+async function submit()
+{
+  validationError.value = null
+  error.value = null
+  successMsg.value = false
   if (!title.value.trim()) { validationError.value = 'Title is required.'; return }
   if (!language.value) { validationError.value = 'Language is required.'; return }
   const hasFile = !!(selectedFile.value || pastedFile.value)
@@ -216,19 +260,28 @@ async function submit() {
   if (url.value) fd.append('url', url.value)
 
   loading.value = true
-  try {
+  try
+  {
     const res = await storeDocument(fd)
     const data = res.data as { success: boolean; id?: number }
-    if (data.success) {
-      savedId.value = data.id ?? null; successMsg.value = true
+    if (data.success)
+    {
+      savedId.value = data.id ?? null
+      successMsg.value = true
       resetForm()
       emit('saved')
-    } else {
+    }
+    else
+    {
       error.value = 'Server reported an error saving the document.'
     }
-  } catch {
+  }
+  catch
+  {
     error.value = 'Failed to save document — check the connection.'
-  } finally {
+  }
+  finally
+  {
     loading.value = false
   }
 }

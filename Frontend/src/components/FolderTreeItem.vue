@@ -36,8 +36,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import FolderTreeItem from './FolderTreeItem.vue'
 import type { Folder } from '../types'
+import FolderTreeItem from './FolderTreeItem.vue'
+
 
 defineProps<{
   folder: Folder
@@ -46,6 +47,7 @@ defineProps<{
 }>()
 
 defineEmits<{ select: [id: number] }>()
+
 
 const open = ref(true)
 </script>

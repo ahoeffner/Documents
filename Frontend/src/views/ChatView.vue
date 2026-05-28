@@ -117,16 +117,19 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
-import { useChatStore } from '../stores/chat'
-import { useCategoriesStore } from '../stores/categories'
-import { chat } from '../api/chat'
 import type { AxiosError } from 'axios'
 import type { DocumentResult } from '../types'
+import { chat } from '../api/chat'
+import { useChatStore } from '../stores/chat'
+import { useCategoriesStore } from '../stores/categories'
+
 
 const srcTextDoc = ref<DocumentResult | null>(null)
 
+
 const chatStore = useChatStore()
 const categoriesStore = useCategoriesStore()
+
 
 const query = ref('')
 const selectedCategory = ref(0)
@@ -138,39 +141,56 @@ const isListening = ref(false)
 const messagesEl = ref<HTMLElement | null>(null)
 const textareaEl = ref<HTMLTextAreaElement | null>(null)
 
+
 onMounted(() => categoriesStore.load())
 
 defineExpose({ focus: () => textareaEl.value?.focus() })
 
-function scrollBottom() {
-  nextTick(() => { if (messagesEl.value) messagesEl.value.scrollTop = messagesEl.value.scrollHeight })
+
+function scrollBottom()
+{
+  nextTick(() =>
+  {
+    if (messagesEl.value) messagesEl.value.scrollTop = messagesEl.value.scrollHeight
+  })
 }
 
-async function sendMessage() {
+
+async function sendMessage()
+{
   const q = query.value.trim()
   if (!q || loading.value) return
   chatStore.addMessage('user', q)
   query.value = ''
   loading.value = true
   scrollBottom()
-  try {
+  try
+  {
     const res = await chat({ id: chatStore.sessionId, query: q, folder: selectedCategory.value, match: matchValue.value })
     const data = res.data as { success: boolean; response?: string; documents?: DocumentResult[]; refresh?: boolean }
-    if (data.success) {
+    if (data.success)
+    {
       chatStore.addMessage('ai', data.response ?? '', data.documents ?? null)
       if (data.refresh) await categoriesStore.load()
-    } else {
+    }
+    else
+    {
       chatStore.addMessage('ai', data.response || 'Request failed.')
     }
-  } catch (err) {
+  }
+  catch (err)
+  {
     const e = err as AxiosError<string>
     const msg = e.response?.data
     chatStore.addMessage('ai', `Error: ${typeof msg === 'string' ? msg : (e.message || 'Connection error')}`)
-  } finally {
+  }
+  finally
+  {
     loading.value = false
     scrollBottom()
   }
 }
+
 
 // Voice
 interface Recognition {
@@ -186,19 +206,38 @@ const RecognitionClass: RecognitionCtor | undefined =
   (window as unknown as { webkitSpeechRecognition?: RecognitionCtor }).webkitSpeechRecognition
 let recognition: Recognition | null = null
 
-if (RecognitionClass) {
+if (RecognitionClass)
+{
   recognition = new RecognitionClass()
-  recognition.lang = 'da-DK'; recognition.interimResults = true; recognition.continuous = false
+  recognition.lang = 'da-DK'
+  recognition.interimResults = true
+  recognition.continuous = false
   recognition.onstart = () => { isListening.value = true; voiceStatus.value = 'Listening…' }
   recognition.onend = () => { isListening.value = false; voiceStatus.value = ''; if (query.value.trim()) sendMessage() }
   recognition.onresult = (e) => { query.value = e.results[0][0].transcript; voiceStatus.value = e.results[0].isFinal ? 'Submitting…' : `"${query.value}"` }
   recognition.onerror = (e) => { isListening.value = false; voiceStatus.value = `Mic error: ${e.error}` }
 }
 
-function toggleMic() {
+
+function toggleMic()
+{
   if (!recognition || loading.value) return
-  if (isListening.value) { recognition.stop() }
-  else { query.value = ''; try { recognition.start() } catch { voiceStatus.value = 'Could not start microphone.' } }
+  if (isListening.value)
+  {
+    recognition.stop()
+  }
+  else
+  {
+    query.value = ''
+    try
+    {
+      recognition.start()
+    }
+    catch
+    {
+      voiceStatus.value = 'Could not start microphone.'
+    }
+  }
 }
 </script>
 

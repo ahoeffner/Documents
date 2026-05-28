@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
-import { listCategories } from '../api/categories'
 import type { Category } from '../types'
+import { listCategories } from '../api/categories'
+
 
 export const useCategoriesStore = defineStore('categories', {
   state: () => ({
@@ -9,15 +10,21 @@ export const useCategoriesStore = defineStore('categories', {
     error: null as string | null
   }),
   actions: {
-    async load() {
+    async load()
+    {
       this.loading = true
       this.error = null
-      try {
+      try
+      {
         const res = await listCategories()
         this.categories = (res.data.folders || []) as Category[]
-      } catch {
+      }
+      catch
+      {
         this.error = 'Failed to load categories'
-      } finally {
+      }
+      finally
+      {
         this.loading = false
       }
     }

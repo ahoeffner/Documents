@@ -33,43 +33,53 @@
 
 <script setup lang="ts">
 import { ref, watch, nextTick, h } from 'vue'
-import ExplorerView from './views/ExplorerView.vue'
-import SearchView   from './views/SearchView.vue'
-import ChatView     from './views/ChatView.vue'
-import LoginView    from './views/LoginView.vue'
 import { useAuthStore } from './stores/auth'
+import ChatView from './views/ChatView.vue'
+import LoginView from './views/LoginView.vue'
+import SearchView from './views/SearchView.vue'
+import ExplorerView from './views/ExplorerView.vue'
+
 
 const auth = useAuthStore()
 
+
 const activeTab = ref<'browse' | 'search' | 'chat'>('browse')
 
-const searchRef = ref<InstanceType<typeof SearchView> | null>(null)
-const chatRef   = ref<InstanceType<typeof ChatView>   | null>(null)
 
-watch(activeTab, tab => {
-  nextTick(() => {
+const searchRef = ref<InstanceType<typeof SearchView> | null>(null)
+const chatRef = ref<InstanceType<typeof ChatView> | null>(null)
+
+
+watch(activeTab, tab =>
+{
+  nextTick(() =>
+  {
     if (tab === 'search') searchRef.value?.focus()
-    if (tab === 'chat')   chatRef.value?.focus()
+    if (tab === 'chat') chatRef.value?.focus()
   })
 })
+
 
 const IconBrowse = { render: () => h('svg', { width: 14, height: 14, viewBox: '0 0 20 20', fill: 'currentColor' }, [
   h('path', { d: 'M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z' })
 ]) }
 
+
 const IconSearch = { render: () => h('svg', { width: 14, height: 14, viewBox: '0 0 20 20', fill: 'currentColor' }, [
   h('path', { 'fill-rule': 'evenodd', d: 'M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z', 'clip-rule': 'evenodd' })
 ]) }
+
 
 const IconChat = { render: () => h('svg', { width: 14, height: 14, viewBox: '0 0 20 20', fill: 'currentColor' }, [
   h('path', { d: 'M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z' }),
   h('path', { d: 'M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z' })
 ]) }
 
+
 const tabs = [
-  { id: 'browse' as const, label: 'Browse',  icon: IconBrowse },
-  { id: 'search' as const, label: 'Search',  icon: IconSearch },
-  { id: 'chat'   as const, label: 'AI Chat', icon: IconChat },
+  { id: 'browse' as const, label: 'Browse', icon: IconBrowse },
+  { id: 'search' as const, label: 'Search', icon: IconSearch },
+  { id: 'chat' as const, label: 'AI Chat', icon: IconChat },
 ]
 </script>
 

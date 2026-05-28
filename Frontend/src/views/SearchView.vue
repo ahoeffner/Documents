@@ -49,10 +49,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useCategoriesStore } from '../stores/categories'
-import { search } from '../api/documents'
-import DocumentCard from '../components/DocumentCard.vue'
 import type { DocumentResult } from '../types'
+import { search } from '../api/documents'
+import { useCategoriesStore } from '../stores/categories'
+import DocumentCard from '../components/DocumentCard.vue'
+
 
 const categoriesStore = useCategoriesStore()
 const searchInputEl = ref<HTMLInputElement | null>(null)
@@ -64,22 +65,30 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const searched = ref(false)
 
+
 onMounted(() => categoriesStore.load())
 
 defineExpose({ focus: () => searchInputEl.value?.focus() })
 
-async function doSearch() {
+
+async function doSearch()
+{
   if (!query.value.trim()) return
   loading.value = true
   error.value = null
   lastQuery.value = query.value
-  try {
+  try
+  {
     const res = await search({ query: query.value, folder: selectedCategory.value })
     documents.value = (res.data.documents || []) as DocumentResult[]
     searched.value = true
-  } catch {
+  }
+  catch
+  {
     error.value = 'Search failed — could not reach the server.'
-  } finally {
+  }
+  finally
+  {
     loading.value = false
   }
 }

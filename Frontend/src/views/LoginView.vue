@@ -74,7 +74,9 @@ import { ref, onMounted } from 'vue'
 import { login, getTenants, switchTenant } from '../api/auth'
 import { useAuthStore } from '../stores/auth'
 
+
 const auth = useAuthStore()
+
 
 const tenant = ref('')
 const username = ref('')
@@ -83,71 +85,102 @@ const loading = ref(false)
 const error = ref('')
 const usernameInput = ref<HTMLInputElement | null>(null)
 
+
 const tenants = ref<string[]>([])
 const switching = ref(false)
 const switchingTo = ref('')
 
-onMounted(() => {
+
+onMounted(() =>
+{
   tenant.value = window.location.pathname.split('/').filter(Boolean)[0] ?? ''
   usernameInput.value?.focus()
 })
 
-async function sha256(str: string): Promise<string> {
+
+async function sha256(str: string): Promise<string>
+{
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str))
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
+  return(Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join(''))
 }
 
-async function submit() {
+
+async function submit()
+{
   error.value = ''
   loading.value = true
-  try {
+  try
+  {
     const hashed = await sha256(password.value)
     const result = await login(username.value, hashed, tenant.value || undefined)
-    if (!result.success) {
+    if (!result.success)
+    {
       error.value = result.message ?? 'Invalid credentials.'
       return
     }
-    if (tenant.value) {
+    if (tenant.value)
+    {
       auth.setLoggedIn(tenant.value)
       return
     }
     // No tenant in URL — discover which tenants the user can access
     const res = await getTenants()
-    if (res.tenants.length === 1) {
+    if (res.tenants.length === 1)
+    {
       await switchTenant(res.tenants[0])
       await finalizeTenant(res.tenants[0])
-    } else if (res.tenants.length > 1) {
+    }
+    else if (res.tenants.length > 1)
+    {
       tenants.value = res.tenants
-    } else {
+    }
+    else
+    {
       error.value = 'No tenants available for this account.'
     }
-  } catch {
+  }
+  catch
+  {
     error.value = 'Could not reach the server.'
-  } finally {
+  }
+  finally
+  {
     loading.value = false
   }
 }
 
-async function selectTenant(t: string) {
+
+async function selectTenant(t: string)
+{
   error.value = ''
   switching.value = true
   switchingTo.value = t
-  try {
+  try
+  {
     const res = await switchTenant(t)
-    if (res.success) {
+    if (res.success)
+    {
       await finalizeTenant(t)
-    } else {
+    }
+    else
+    {
       error.value = res.message ?? 'Could not switch tenant.'
     }
-  } catch {
+  }
+  catch
+  {
     error.value = 'Could not reach the server.'
-  } finally {
+  }
+  finally
+  {
     switching.value = false
     switchingTo.value = ''
   }
 }
 
-async function finalizeTenant(t: string) {
+
+async function finalizeTenant(t: string)
+{
   history.pushState({}, '', '/' + t)
   tenant.value = t
   tenants.value = []

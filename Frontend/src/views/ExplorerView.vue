@@ -237,35 +237,42 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
-import { useFoldersStore } from '../stores/folders'
-import { getFolderDocuments, createFolder, deleteFolder } from '../api/folders'
-import { getDocument, updateDocument, deleteDocument } from '../api/documents'
-import { storeDocument } from '../api/store'
-import { listLanguages } from '../api/languages'
-import { scanOcr } from '../api/ocr'
-import { useResize } from '../composables/useResize'
-import FolderTreeItem from '../components/FolderTreeItem.vue'
-import DocumentCard from '../components/DocumentCard.vue'
 import type { DocumentResult, DocumentDetail, Language, Folder } from '../types'
+import { scanOcr } from '../api/ocr'
+import { storeDocument } from '../api/store'
+import { getFolderDocuments, createFolder, deleteFolder } from '../api/folders'
+import { listLanguages } from '../api/languages'
+import { getDocument, updateDocument, deleteDocument } from '../api/documents'
+import { useFoldersStore } from '../stores/folders'
+import { useResize } from '../composables/useResize'
+import DocumentCard from '../components/DocumentCard.vue'
+import FolderTreeItem from '../components/FolderTreeItem.vue'
+
 
 const { width: sidebarWidth, startResize } = useResize(280, 140, 520)
+
 
 // ── Folders ──────────────────────────────────────────────────────
 const foldersStore = useFoldersStore()
 foldersStore.load()
 
-function flattenFolders(nodes: Folder[], prefix = ''): { id: number; path: string }[] {
+
+function flattenFolders(nodes: Folder[], prefix = ''): { id: number; path: string }[]
+{
   const out: { id: number; path: string }[] = []
-  for (const n of nodes) {
+  for (const n of nodes)
+  {
     const path = prefix ? `${prefix} / ${n.name}` : n.name
     out.push({ id: n.id, path })
     out.push(...flattenFolders(n.children, path))
   }
-  return out
+  return(out)
 }
+
 
 const flatFolders = computed(() => flattenFolders(foldersStore.tree))
 const selectedFolder = computed(() => flatFolders.value.find(f => f.id === selectedFolderId.value) ?? null)
+
 
 // ── Folder documents ─────────────────────────────────────────────
 const selectedFolderId = ref<number | null>(null)
@@ -273,29 +280,41 @@ const docs = ref<DocumentResult[]>([])
 const docsLoading = ref(false)
 const docsError = ref<string | null>(null)
 
-async function selectFolder(id: number) {
+
+async function selectFolder(id: number)
+{
   if (selectedFolderId.value === id) return
   selectedFolderId.value = id
   docs.value = []
   docsError.value = null
   docsLoading.value = true
-  try {
+  try
+  {
     const res = await getFolderDocuments(id)
     docs.value = (res.data.documents || []) as DocumentResult[]
-  } catch {
+  }
+  catch
+  {
     docsError.value = 'Failed to load documents.'
-  } finally {
+  }
+  finally
+  {
     docsLoading.value = false
   }
 }
 
-async function reloadDocs() {
+
+async function reloadDocs()
+{
   if (selectedFolderId.value === null) return
-  try {
+  try
+  {
     const res = await getFolderDocuments(selectedFolderId.value)
     docs.value = (res.data.documents || []) as DocumentResult[]
-  } catch { /* ignore */ }
+  }
+  catch { /* ignore */ }
 }
+
 
 // ── New Folder ────────────────────────────────────────────────────
 const showNewFolder = ref(false)
@@ -304,48 +323,74 @@ const newFolderLoading = ref(false)
 const newFolderInputEl = ref<HTMLInputElement | null>(null)
 const deleteFolderLoading = ref(false)
 
-watch(showNewFolder, v => { if (v) nextTick(() => newFolderInputEl.value?.focus()) })
 
-async function addFolder() {
+watch(showNewFolder, v =>
+{
+  if (v) nextTick(() => newFolderInputEl.value?.focus())
+})
+
+
+async function addFolder()
+{
   const name = newFolderName.value.trim()
   if (!name) return
   newFolderLoading.value = true
-  try {
+  try
+  {
     await createFolder(name, selectedFolderId.value)
     await foldersStore.load()
     newFolderName.value = ''
     showNewFolder.value = false
-  } catch { /* ignore */ }
-  finally { newFolderLoading.value = false }
+  }
+  catch { /* ignore */ }
+  finally
+  {
+    newFolderLoading.value = false
+  }
 }
 
-async function deleteSelectedFolder() {
+
+async function deleteSelectedFolder()
+{
   if (!selectedFolderId.value || docs.value.length) return
   if (!window.confirm(`Delete folder "${selectedFolder.value?.path}"?`)) return
   deleteFolderLoading.value = true
-  try {
+  try
+  {
     await deleteFolder(selectedFolderId.value)
     selectedFolderId.value = null
     docs.value = []
     await foldersStore.load()
-  } catch {
+  }
+  catch
+  {
     docsError.value = 'Failed to delete folder.'
-  } finally {
+  }
+  finally
+  {
     deleteFolderLoading.value = false
   }
 }
 
+
 // ── Languages ─────────────────────────────────────────────────────
 const languages = ref<Language[]>([])
-async function loadLanguages() {
-  try {
+
+async function loadLanguages()
+{
+  try
+  {
     const res = await listLanguages()
     languages.value = (res.data.languages || []) as Language[]
-  } catch {
+  }
+  catch
+  {
     languages.value = [{ id: 'DA', name: 'danish' }, { id: 'EN', name: 'english' }]
   }
 }
+
 onMounted(loadLanguages)
+
 
 // ── Edit / New Document modal ─────────────────────────────────────
 const showEditModal = ref(false)
@@ -370,14 +415,22 @@ const ocrLoading = ref(false)
 const editErrorMsg = ref<string | null>(null)
 const editValidationError = ref<string | null>(null)
 
-const ocrEnabled = computed(() => {
+
+const ocrEnabled = computed(() =>
+{
   const f = editSelectedFile.value || editPastedFile.value
-  return !!f && (f.type.startsWith('image/') || f.type === 'application/pdf')
+  return(!!f && (f.type.startsWith('image/') || f.type === 'application/pdf'))
 })
 
-function todayIso() { return new Date().toISOString().split('T')[0] }
 
-function clearEditForm() {
+function todayIso()
+{
+  return(new Date().toISOString().split('T')[0])
+}
+
+
+function clearEditForm()
+{
   editDate.value = todayIso()
   editTitleField.value = ''
   editText.value = ''
@@ -389,13 +442,16 @@ function clearEditForm() {
   editErrorMsg.value = null
   editValidationError.value = null
   if (editFileInputRef.value) editFileInputRef.value.value = ''
-  if (languages.value.length && !editLanguage.value) {
+  if (languages.value.length && !editLanguage.value)
+  {
     const da = languages.value.find(l => l.id === 'DA')
     editLanguage.value = da ? da.name : languages.value[0].name
   }
 }
 
-function openNew() {
+
+function openNew()
+{
   editIsNew.value = true
   editId.value = null
   editTitle.value = 'New Document'
@@ -403,13 +459,16 @@ function openNew() {
   showEditModal.value = true
 }
 
-async function openEdit(id: number) {
+
+async function openEdit(id: number)
+{
   editIsNew.value = false
   editId.value = id
   clearEditForm()
   showEditModal.value = true
   editFormLoading.value = true
-  try {
+  try
+  {
     const res = await getDocument(id)
     const d = res.data.document as DocumentDetail
     editDate.value = d.date ?? ''
@@ -419,34 +478,49 @@ async function openEdit(id: number) {
     editFldid.value = d.fldid ?? null
     editUrl.value = d.url ?? ''
     editCurrentFilename.value = d.filename ?? null
-  } catch {
+  }
+  catch
+  {
     editErrorMsg.value = 'Failed to load document details.'
-  } finally {
+  }
+  finally
+  {
     editFormLoading.value = false
   }
 }
 
-function closeEditModal() {
+
+function closeEditModal()
+{
   showEditModal.value = false
 }
 
-function resetEditForm() {
+
+function resetEditForm()
+{
   if (editIsNew.value) clearEditForm()
   else if (editId.value !== null) openEdit(editId.value)
 }
 
-function onFileChange(e: Event) {
+
+function onFileChange(e: Event)
+{
   const input = e.target as HTMLInputElement
   editSelectedFile.value = input.files?.[0] ?? null
   editPastedFile.value = null
 }
 
-function onPaste(e: ClipboardEvent) {
-  for (const item of (e.clipboardData?.items ?? [])) {
-    if (item.kind === 'file' && item.type.startsWith('image/')) {
+
+function onPaste(e: ClipboardEvent)
+{
+  for (const item of (e.clipboardData?.items ?? []))
+  {
+    if (item.kind === 'file' && item.type.startsWith('image/'))
+    {
       e.preventDefault()
       const file = item.getAsFile()
-      if (file) {
+      if (file)
+      {
         editPastedFile.value = file
         editSelectedFile.value = null
         if (editFileInputRef.value) editFileInputRef.value.value = ''
@@ -456,22 +530,31 @@ function onPaste(e: ClipboardEvent) {
   }
 }
 
-async function runOcr() {
+
+async function runOcr()
+{
   const file = editSelectedFile.value || editPastedFile.value
   if (!file) return
   ocrLoading.value = true
-  try {
+  try
+  {
     const res = await scanOcr(file)
     editText.value = res.data as string
-  } catch (err) {
+  }
+  catch (err)
+  {
     console.error('OCR error:', err)
     editErrorMsg.value = 'OCR failed.'
-  } finally {
+  }
+  finally
+  {
     ocrLoading.value = false
   }
 }
 
-async function submitEdit() {
+
+async function submitEdit()
+{
   editValidationError.value = null
   editErrorMsg.value = null
   if (!editTitleField.value.trim()) { editValidationError.value = 'Title is required.'; return }
@@ -490,53 +573,78 @@ async function submitEdit() {
   if (editUrl.value) fd.append('url', editUrl.value)
 
   editFormLoading.value = true
-  try {
-    if (editIsNew.value) {
+  try
+  {
+    if (editIsNew.value)
+    {
       const res = await storeDocument(fd)
       const data = res.data as { success: boolean; id?: number }
-      if (data.success) {
+      if (data.success)
+      {
         closeEditModal()
         await reloadDocs()
-      } else {
-        editErrorMsg.value = 'Server reported an error.'
       }
-    } else if (editId.value !== null) {
-      const res = await updateDocument(editId.value, fd)
-      if ((res.data as { success: boolean }).success) {
-        closeEditModal()
-        await reloadDocs()
-      } else {
+      else
+      {
         editErrorMsg.value = 'Server reported an error.'
       }
     }
-  } catch {
+    else if (editId.value !== null)
+    {
+      const res = await updateDocument(editId.value, fd)
+      if ((res.data as { success: boolean }).success)
+      {
+        closeEditModal()
+        await reloadDocs()
+      }
+      else
+      {
+        editErrorMsg.value = 'Server reported an error.'
+      }
+    }
+  }
+  catch
+  {
     editErrorMsg.value = 'Failed — check the connection.'
-  } finally {
+  }
+  finally
+  {
     editFormLoading.value = false
   }
 }
 
-async function confirmDelete() {
+
+async function confirmDelete()
+{
   if (editId.value === null || !window.confirm(`Delete "${editTitleField.value}"?`)) return
   editFormLoading.value = true
-  try {
+  try
+  {
     await deleteDocument(editId.value)
     closeEditModal()
     await reloadDocs()
-  } catch {
+  }
+  catch
+  {
     editErrorMsg.value = 'Delete failed.'
-  } finally {
+  }
+  finally
+  {
     editFormLoading.value = false
   }
 }
 
+
 // ── Global Escape key ─────────────────────────────────────────────
-function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') {
+function onKeydown(e: KeyboardEvent)
+{
+  if (e.key === 'Escape')
+  {
     if (showEditModal.value) { closeEditModal(); return }
     if (showNewFolder.value) { showNewFolder.value = false }
   }
 }
+
 onMounted(() => window.addEventListener('keydown', onKeydown))
 onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 </script>

@@ -135,7 +135,7 @@ public class DocumentRepository
         List<byte[]> results = jdbc.query
         (
             "SELECT content FROM " + docs() + " WHERE id = ?",
-            (rs, i) -> rs.getBytes("content"),id
+            (rs, i) -> rs.getBytes("content"), id
         );
 
         return(results.isEmpty() ? null : results.get(0));
@@ -147,7 +147,7 @@ public class DocumentRepository
         List<String> results = jdbc.query
         (
             "SELECT extref FROM " + docs() + " WHERE id = ?",
-            (rs, i) -> rs.getString("extref"),id
+            (rs, i) -> rs.getString("extref"), id
         );
 
         return(results.isEmpty() ? null : results.get(0));
@@ -159,7 +159,7 @@ public class DocumentRepository
         List<String> results = jdbc.query
         (
             "SELECT text FROM " + docs() + " WHERE id = ?",
-            (rs, i) -> rs.getString("text"),id
+            (rs, i) -> rs.getString("text"), id
         );
 
         return(results.isEmpty() ? null : results.get(0));
@@ -171,7 +171,7 @@ public class DocumentRepository
         List<String> rows = jdbc.query
         (
             "SELECT text FROM " + chunks() + " WHERE docid = ? ORDER BY line",
-            (rs, i) -> rs.getString("text"),id
+            (rs, i) -> rs.getString("text"), id
         );
 
         return(String.join("\n", rows));

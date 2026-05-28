@@ -1,7 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import SearchView from '../views/SearchView.vue'
-import CreateView from '../views/CreateView.vue'
 import ChatView from '../views/ChatView.vue'
+import CreateView from '../views/CreateView.vue'
+import SearchView from '../views/SearchView.vue'
+
 
 export default createRouter({
   history: createWebHistory(),

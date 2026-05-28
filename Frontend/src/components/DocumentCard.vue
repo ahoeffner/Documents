@@ -32,20 +32,34 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import type { DocumentResult } from '../types'
 
+
 defineProps<{ doc: DocumentResult; canEdit?: boolean }>()
 defineEmits<{ edit: [id: number] }>()
 
+
 const showText = ref(false)
 
-function onKeydown(e: KeyboardEvent) {
+
+function onKeydown(e: KeyboardEvent)
+{
   if (e.key === 'Escape' && showText.value) showText.value = false
 }
+
 onMounted(() => window.addEventListener('keydown', onKeydown))
 onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
-function formatDate(d: string): string {
-  if (!d) return ''
-  try { return new Date(d).toLocaleDateString('en-CA') } catch { return d }
+
+function formatDate(d: string): string
+{
+  if (!d) return('')
+  try
+  {
+    return(new Date(d).toLocaleDateString('en-CA'))
+  }
+  catch
+  {
+    return(d)
+  }
 }
 </script>
 

@@ -18,6 +18,7 @@ public class Database
         "slotsdalen", "slotsdalen"
     );
 
+
     public String getUserStoreSchema()
     {
         return(USER_STORE_SCHEMA);

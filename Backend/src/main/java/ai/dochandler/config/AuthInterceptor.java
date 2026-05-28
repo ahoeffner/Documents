@@ -2,8 +2,8 @@ package ai.dochandler.config;
 
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.stereotype.Component;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 
@@ -17,7 +17,7 @@ public class AuthInterceptor implements HandlerInterceptor
         if (request.getRequestURI().startsWith("/api/auth/")) return(true);
 
         HttpSession session = request.getSession(false);
-        
+
         if (session == null || session.getAttribute("tenant") == null)
         {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Not authenticated");

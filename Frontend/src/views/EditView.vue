@@ -219,32 +219,39 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import type { DocumentResult, DocumentDetail, Language, Folder } from '../types'
+import { scanOcr } from '../api/ocr'
+import { storeDocument } from '../api/store'
+import { createFolder } from '../api/folders'
+import { listLanguages } from '../api/languages'
+import { listDocuments, getDocument, updateDocument, deleteDocument } from '../api/documents'
 import { useFoldersStore } from '../stores/folders'
 import { useResize } from '../composables/useResize'
-import { listDocuments, getDocument, updateDocument, deleteDocument } from '../api/documents'
-import { createFolder } from '../api/folders'
-import { storeDocument } from '../api/store'
-import { listLanguages } from '../api/languages'
-import { scanOcr } from '../api/ocr'
-import type { DocumentResult, DocumentDetail, Language, Folder } from '../types'
+
 
 const { width: listWidth, startResize } = useResize(320, 160, 600)
+
 
 // ── Folders ──────────────────────────────────────────────────────
 const foldersStore = useFoldersStore()
 onMounted(() => { foldersStore.load(); loadList(); loadLanguages() })
 
 type FlatFolder = { id: number; path: string }
-function flattenFolders(nodes: typeof foldersStore.tree, prefix = ''): FlatFolder[] {
+
+function flattenFolders(nodes: typeof foldersStore.tree, prefix = ''): FlatFolder[]
+{
   const out: FlatFolder[] = []
-  for (const n of nodes) {
+  for (const n of nodes)
+  {
     const path = prefix ? `${prefix} / ${n.name}` : n.name
     out.push({ id: n.id, path })
     out.push(...flattenFolders(n.children, path))
   }
-  return out
+  return(out)
 }
+
 const flatFolders = computed(() => flattenFolders(foldersStore.tree))
+
 
 // ── Document list ─────────────────────────────────────────────────
 const docList = ref<DocumentResult[]>([])
@@ -254,41 +261,56 @@ const filterCatid = ref<number | null>(null)
 const filterQ = ref('')
 let filterTimer: ReturnType<typeof setTimeout> | null = null
 
-async function loadList() {
+
+async function loadList()
+{
   listLoading.value = true
   listError.value = null
-  try {
+  try
+  {
     const res = await listDocuments(filterCatid.value, filterQ.value)
     docList.value = (res.data.documents || []) as DocumentResult[]
-  } catch {
+  }
+  catch
+  {
     listError.value = 'Failed to load.'
-  } finally {
+  }
+  finally
+  {
     listLoading.value = false
   }
 }
 
-function onFilterInput() {
+
+function onFilterInput()
+{
   if (filterTimer) clearTimeout(filterTimer)
   filterTimer = setTimeout(loadList, 300)
 }
+
 
 // ── Mode ──────────────────────────────────────────────────────────
 const editId = ref<number | null>(null)
 const isNew = ref(false)
 
-function startNew() {
+
+function startNew()
+{
   editId.value = null
   isNew.value = true
   clearForm()
 }
 
-async function selectDoc(id: number) {
+
+async function selectDoc(id: number)
+{
   if (editId.value === id) return
   editId.value = id
   isNew.value = false
   clearForm()
   formLoading.value = true
-  try {
+  try
+  {
     const res = await getDocument(id)
     const d = res.data.document as DocumentDetail
     date.value = d.date ?? ''
@@ -297,27 +319,39 @@ async function selectDoc(id: number) {
     catid.value = d.fldid ?? null
     url.value = d.url ?? ''
     currentFilename.value = d.filename ?? null
-  } catch {
+  }
+  catch
+  {
     errorMsg.value = 'Failed to load document details.'
-  } finally {
+  }
+  finally
+  {
     formLoading.value = false
   }
 }
 
+
 // ── Languages ─────────────────────────────────────────────────────
 const languages = ref<Language[]>([])
-async function loadLanguages() {
-  try {
+
+async function loadLanguages()
+{
+  try
+  {
     const res = await listLanguages()
     languages.value = (res.data.languages || []) as Language[]
-    if (!language.value && languages.value.length) {
+    if (!language.value && languages.value.length)
+    {
       const da = languages.value.find(l => l.id === 'DA')
       language.value = da ? da.name : languages.value[0].name
     }
-  } catch {
+  }
+  catch
+  {
     languages.value = [{ id: 'DA', name: 'danish' }, { id: 'EN', name: 'english' }]
   }
 }
+
 
 // ── Form state ────────────────────────────────────────────────────
 const date = ref(todayIso())
@@ -338,101 +372,181 @@ const successMsg = ref<string | null>(null)
 const errorMsg = ref<string | null>(null)
 const validationError = ref<string | null>(null)
 
-const ocrEnabled = computed(() => {
+
+const ocrEnabled = computed(() =>
+{
   const f = selectedFile.value || pastedFile.value
-  return !!f && (f.type.startsWith('image/') || f.type === 'application/pdf')
+  return(!!f && (f.type.startsWith('image/') || f.type === 'application/pdf'))
 })
 
-function todayIso() { return new Date().toISOString().split('T')[0] }
 
-function clearForm() {
-  date.value = todayIso(); title.value = ''; text.value = ''
-  url.value = ''; catid.value = null
-  selectedFile.value = null; pastedFile.value = null
+function todayIso()
+{
+  return(new Date().toISOString().split('T')[0])
+}
+
+
+function clearForm()
+{
+  date.value = todayIso()
+  title.value = ''
+  text.value = ''
+  url.value = ''
+  catid.value = null
+  selectedFile.value = null
+  pastedFile.value = null
   currentFilename.value = null
-  successMsg.value = null; errorMsg.value = null; validationError.value = null
+  successMsg.value = null
+  errorMsg.value = null
+  validationError.value = null
   if (fileInputRef.value) fileInputRef.value.value = ''
 }
 
-function resetForm() {
+
+function resetForm()
+{
   if (isNew.value) clearForm()
   else if (editId.value !== null) selectDoc(editId.value)
 }
 
-function onFileChange(e: Event) {
+
+function onFileChange(e: Event)
+{
   const input = e.target as HTMLInputElement
   selectedFile.value = input.files?.[0] ?? null
   pastedFile.value = null
 }
 
-function onPaste(e: ClipboardEvent) {
-  for (const item of (e.clipboardData?.items ?? [])) {
-    if (item.kind === 'file' && item.type.startsWith('image/')) {
+
+function onPaste(e: ClipboardEvent)
+{
+  for (const item of (e.clipboardData?.items ?? []))
+  {
+    if (item.kind === 'file' && item.type.startsWith('image/'))
+    {
       e.preventDefault()
       const file = item.getAsFile()
-      if (file) { pastedFile.value = file; selectedFile.value = null; if (fileInputRef.value) fileInputRef.value.value = '' }
+      if (file)
+      {
+        pastedFile.value = file
+        selectedFile.value = null
+        if (fileInputRef.value) fileInputRef.value.value = ''
+      }
       break
     }
   }
 }
 
-async function runOcr() {
+
+async function runOcr()
+{
   const file = selectedFile.value || pastedFile.value
   if (!file) return
   ocrLoading.value = true
-  try { const res = await scanOcr(file); text.value = res.data as string }
-  catch { errorMsg.value = 'OCR failed.' }
-  finally { ocrLoading.value = false }
+  try
+  {
+    const res = await scanOcr(file)
+    text.value = res.data as string
+  }
+  catch
+  {
+    errorMsg.value = 'OCR failed.'
+  }
+  finally
+  {
+    ocrLoading.value = false
+  }
 }
 
+
 // ── Submit ────────────────────────────────────────────────────────
-async function submit() {
-  validationError.value = null; errorMsg.value = null; successMsg.value = null
+async function submit()
+{
+  validationError.value = null
+  errorMsg.value = null
+  successMsg.value = null
   if (!title.value.trim()) { validationError.value = 'Title is required.'; return }
   const hasFile = !!(selectedFile.value || pastedFile.value)
   const hasUrl = !!url.value.trim()
   if (hasFile && hasUrl) { validationError.value = 'Provide a file or a URL, not both.'; return }
 
   const fd = new FormData()
-  fd.append('date', date.value); fd.append('fldid', String(catid.value ?? 0))
-  fd.append('title', title.value); fd.append('language', language.value)
+  fd.append('date', date.value)
+  fd.append('fldid', String(catid.value ?? 0))
+  fd.append('title', title.value)
+  fd.append('language', language.value)
   if (text.value) fd.append('text', text.value)
   if (selectedFile.value) fd.append('file', selectedFile.value)
   else if (pastedFile.value) fd.append('file', pastedFile.value, 'pasted-image.png')
   if (url.value) fd.append('url', url.value)
 
   formLoading.value = true
-  try {
-    if (isNew.value) {
+  try
+  {
+    if (isNew.value)
+    {
       const res = await storeDocument(fd)
       const data = res.data as { success: boolean; id?: number }
-      if (data.success) {
+      if (data.success)
+      {
         successMsg.value = `Saved — ID ${data.id}`
-        isNew.value = false; editId.value = data.id ?? null
+        isNew.value = false
+        editId.value = data.id ?? null
         await loadList()
-      } else { errorMsg.value = 'Server reported an error.' }
-    } else if (editId.value !== null) {
+      }
+      else
+      {
+        errorMsg.value = 'Server reported an error.'
+      }
+    }
+    else if (editId.value !== null)
+    {
       const res = await updateDocument(editId.value, fd)
-      if ((res.data as { success: boolean }).success) {
+      if ((res.data as { success: boolean }).success)
+      {
         successMsg.value = 'Updated.'
         await loadList()
-      } else { errorMsg.value = 'Server reported an error.' }
+      }
+      else
+      {
+        errorMsg.value = 'Server reported an error.'
+      }
     }
-  } catch { errorMsg.value = 'Failed — check the connection.' }
-  finally { formLoading.value = false }
+  }
+  catch
+  {
+    errorMsg.value = 'Failed — check the connection.'
+  }
+  finally
+  {
+    formLoading.value = false
+  }
 }
 
+
 // ── Delete ────────────────────────────────────────────────────────
-async function confirmDelete() {
+async function confirmDelete()
+{
   if (editId.value === null || !window.confirm(`Delete "${title.value}"?`)) return
   formLoading.value = true
-  try {
+  try
+  {
     await deleteDocument(editId.value)
-    editId.value = null; isNew.value = false; clearForm()
+    editId.value = null
+    isNew.value = false
+    clearForm()
     await loadList()
-  } catch { errorMsg.value = 'Delete failed.' }
-  finally { formLoading.value = false }
+  }
+  catch
+  {
+    errorMsg.value = 'Delete failed.'
+  }
+  finally
+  {
+    formLoading.value = false
+  }
 }
+
 
 // ── New Folder ────────────────────────────────────────────────────
 const showNewFolder = ref(false)
@@ -441,20 +555,31 @@ const newFolderPid = ref<number | null>(null)
 const newFolderLoading = ref(false)
 const newFolderInputEl = ref<HTMLInputElement | null>(null)
 
-watch(showNewFolder, v => { if (v) nextTick(() => newFolderInputEl.value?.focus()) })
 
-async function addFolder() {
+watch(showNewFolder, v =>
+{
+  if (v) nextTick(() => newFolderInputEl.value?.focus())
+})
+
+
+async function addFolder()
+{
   const name = newFolderName.value.trim()
   if (!name) return
   newFolderLoading.value = true
-  try {
+  try
+  {
     await createFolder(name, newFolderPid.value)
     await foldersStore.load()
     newFolderName.value = ''
     newFolderPid.value = null
     showNewFolder.value = false
-  } catch { /* ignore */ }
-  finally { newFolderLoading.value = false }
+  }
+  catch { /* ignore */ }
+  finally
+  {
+    newFolderLoading.value = false
+  }
 }
 </script>
 

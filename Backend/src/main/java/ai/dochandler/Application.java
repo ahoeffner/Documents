@@ -2,8 +2,8 @@ package ai.dochandler;
 
 import java.util.Arrays;
 import ai.dochandler.config.Database;
-import ai.dochandler.config.AdminRunner;
 import ai.dochandler.entities.Folder;
+import ai.dochandler.config.AdminRunner;
 import ai.dochandler.entities.Document;
 import ai.dochandler.entities.Language;
 import ai.dochandler.entities.ChatRequest;
@@ -12,12 +12,12 @@ import ai.dochandler.entities.LoginRequest;
 import ai.dochandler.entities.SearchRequest;
 import ai.dochandler.entities.CreateResponse;
 import ai.dochandler.entities.DocumentDetail;
-import ai.dochandler.repository.UserRepository;
 import com.zaxxer.hikari.HikariDataSource;
+import ai.dochandler.repository.UserRepository;
 import org.springframework.boot.SpringApplication;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.aot.hint.annotation.RegisterReflectionForBinding;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 
 @SpringBootApplication
