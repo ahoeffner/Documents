@@ -19,8 +19,7 @@
           </button>
         </nav>
         <div class="spacer" />
-        <span class="tenant-badge">{{ auth.tenant }}</span>
-        <button class="btn btn-ghost btn-sm" @click="auth.logout()">Sign out</button>
+        <button class="btn btn-ghost btn-sm" style="align-self:center" @click="auth.logout()">Sign out</button>
       </header>
 
       <ExplorerView v-show="activeTab === 'browse'" />
@@ -174,13 +173,4 @@ a { text-decoration: none; }
 }
 .tab.active .tab-icon { opacity: 1; color: var(--accent); }
 
-.tenant-badge {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: capitalize;
-  color: var(--text-muted);
-  padding-bottom: 6px;
-  align-self: center;
-}
 </style>

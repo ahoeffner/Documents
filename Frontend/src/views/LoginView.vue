@@ -194,6 +194,7 @@ async function finalizeTenant(t: string, admin: boolean)
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-bottom: 30vh;
   background: var(--bg-subtle);
 }
 

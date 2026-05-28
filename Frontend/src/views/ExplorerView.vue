@@ -2,10 +2,10 @@
   <div class="explorer-view">
 
     <!-- ── Sidebar ── -->
-    <div class="sidebar" :style="{ width: sidebarWidth + 'px' }">
+    <div class="sidebar" :style="{ width: sidebarWidth + 'px' }" @contextmenu.prevent="showCtx($event, 'tree')">
       <div class="sidebar-header">
         <span class="section-label">Folders</span>
-        <button v-if="auth.isAdmin" class="btn-icon" title="New folder" @click="showNewFolder = true">
+        <button v-if="auth.isAdmin" class="btn-icon" title="New folder" @click="openNewFolder(null)">
           <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
             <path d="M10 4v12M4 10h12"/>
           </svg>
@@ -33,18 +33,18 @@
     <div class="resize-handle" @mousedown="startResize"></div>
 
     <!-- ── Main panel ── -->
-    <div class="main-panel">
+    <div class="main-panel" @contextmenu.prevent="showCtx($event, 'content')">
       <div class="panel-header">
         <span class="panel-title">
           {{ selectedFolder ? selectedFolder.path : 'Select a folder' }}
         </span>
         <div style="display:flex;gap:6px;flex-shrink:0">
-          <button v-if="auth.isAdmin && selectedFolderId" class="btn btn-primary btn-xs" @click="openNew">+ New Document</button>
-          <button v-if="auth.isAdmin" class="btn btn-ghost btn-xs" @click="showNewFolder = true">+ New Folder</button>
-          <button v-if="auth.isAdmin && selectedFolderId" class="btn btn-ghost btn-xs" @click="startRename">Rename Folder</button>
+          <button v-if="auth.isAdmin && selectedFolderId" class="btn btn-primary btn-xs" @click="openNew">New Document</button>
+          <button v-if="auth.isAdmin" class="btn btn-primary btn-xs" @click="openNewFolder(selectedFolderId)">New Folder</button>
+          <button v-if="auth.isAdmin && selectedFolderId" class="btn btn-primary btn-xs" @click="startRename">Rename Folder</button>
           <button
             v-if="auth.isAdmin && selectedFolderId && !docs.length && !docsLoading"
-            class="btn btn-ghost btn-xs"
+            class="btn btn-primary btn-xs"
             :disabled="deleteFolderLoading"
             @click="deleteSelectedFolder"
           >Delete Folder</button>
@@ -66,7 +66,6 @@
 
       <div v-else-if="!docs.length" class="empty-state">
         <span>No documents in this folder</span>
-        <button class="btn btn-primary btn-sm" @click="openNew">+ New Document</button>
       </div>
 
       <div v-else class="doc-list">
@@ -139,6 +138,19 @@
             </button>
           </div>
         </div>
+      </div>
+    </Teleport>
+
+    <!-- ── Context menu ── -->
+    <Teleport to="body">
+      <div v-if="ctxMenu" class="ctx-menu" :style="{ top: ctxMenu.y + 'px', left: ctxMenu.x + 'px' }" @click.stop>
+        <template v-if="ctxMenu.type === 'tree'">
+          <button class="ctx-item" @click="ctxAction(() => openNewFolder(null))">New Folder at root</button>
+        </template>
+        <template v-if="ctxMenu.type === 'content'">
+          <button class="ctx-item" @click="ctxAction(() => openNewFolder(selectedFolderId))">New Folder</button>
+          <button v-if="selectedFolderId" class="ctx-item" @click="ctxAction(openNew)">New Document</button>
+        </template>
       </div>
     </Teleport>
 
@@ -350,7 +362,9 @@ async function reloadDocs()
 
 
 // ── New Folder ────────────────────────────────────────────────────
+const ctxMenu = ref<{ x: number; y: number; type: 'tree' | 'content' } | null>(null)
 const showNewFolder = ref(false)
+const newFolderPid = ref<number | null>(null)
 const newFolderName = ref('')
 const newFolderLoading = ref(false)
 const newFolderInputEl = ref<HTMLInputElement | null>(null)
@@ -372,6 +386,27 @@ watch(showRenameFolder, v =>
 })
 
 
+function openNewFolder(pid: number | null)
+{
+  newFolderPid.value = pid
+  showNewFolder.value = true
+}
+
+
+function showCtx(e: MouseEvent, type: 'tree' | 'content')
+{
+  if (!auth.isAdmin) return
+  ctxMenu.value = { x: e.clientX, y: e.clientY, type }
+}
+
+
+function ctxAction(fn: () => void)
+{
+  ctxMenu.value = null
+  fn()
+}
+
+
 async function addFolder()
 {
   const name = newFolderName.value.trim()
@@ -379,7 +414,7 @@ async function addFolder()
   newFolderLoading.value = true
   try
   {
-    await createFolder(name, selectedFolderId.value)
+    await createFolder(name, newFolderPid.value)
     await foldersStore.load()
     newFolderName.value = ''
     showNewFolder.value = false
@@ -709,14 +744,28 @@ function onKeydown(e: KeyboardEvent)
 {
   if (e.key === 'Escape')
   {
+    if (ctxMenu.value) { ctxMenu.value = null; return }
     if (showEditModal.value) { closeEditModal(); return }
     if (showRenameFolder.value) { showRenameFolder.value = false; return }
     if (showNewFolder.value) { showNewFolder.value = false }
   }
 }
 
-onMounted(() => window.addEventListener('keydown', onKeydown))
-onUnmounted(() => window.removeEventListener('keydown', onKeydown))
+function onGlobalClick()
+{
+  ctxMenu.value = null
+}
+
+onMounted(() =>
+{
+  window.addEventListener('keydown', onKeydown)
+  window.addEventListener('click', onGlobalClick)
+})
+onUnmounted(() =>
+{
+  window.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('click', onGlobalClick)
+})
 </script>
 
 <style scoped>
@@ -878,4 +927,29 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   font-size: 12px;
   color: var(--text-faint);
 }
+
+.ctx-menu {
+  position: fixed;
+  z-index: 9999;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  padding: 4px 0;
+  min-width: 170px;
+}
+
+.ctx-item {
+  display: block;
+  width: 100%;
+  padding: 6px 14px;
+  text-align: left;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: var(--text);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.ctx-item:hover { background: var(--bg-subtle); }
 </style>
