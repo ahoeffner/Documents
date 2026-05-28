@@ -298,6 +298,7 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
 }
 .modal-popup-sm { width: min(360px, 90vw); }
+.modal-popup-lg { width: min(860px, 96vw); max-height: 88vh; }
 .modal-header {
   display: flex;
   align-items: center;

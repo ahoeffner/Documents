@@ -9,6 +9,7 @@
       <span v-else class="doc-btn doc-btn-off">Text</span>
       <a v-if="doc.hasFile" :href="`/api/content/${doc.id}/file`" target="_blank" class="doc-btn">File</a>
       <span v-else class="doc-btn doc-btn-off">File</span>
+      <button v-if="canEdit" type="button" class="doc-btn" @click="$emit('edit', doc.id)">Edit</button>
     </div>
 
     <Teleport to="body">
@@ -28,11 +29,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import type { DocumentResult } from '../types'
 
-defineProps<{ doc: DocumentResult }>()
+defineProps<{ doc: DocumentResult; canEdit?: boolean }>()
+defineEmits<{ edit: [id: number] }>()
+
 const showText = ref(false)
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape' && showText.value) showText.value = false
+}
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 function formatDate(d: string): string {
   if (!d) return ''

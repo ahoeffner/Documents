@@ -2,6 +2,11 @@ server:
   port: 8080
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
   datasource:
     url: jdbc:postgresql://home:5432/private
     username: alex
@@ -12,6 +17,8 @@ spring:
 
 app:
   ai-services: http://home:9000
+  tesseract:
+    language: dan
   chunker:
     max-tokens: 4096
     overlap-size: 64

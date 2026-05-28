@@ -22,9 +22,14 @@ FROM --platform=linux/arm64 debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
         tesseract-ocr \
         tesseract-ocr-dan \
+        tesseract-ocr-eng \
+        tesseract-ocr-deu \
+        tesseract-ocr-fra \
+        tesseract-ocr-spa \
         libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY --from=native-build /app/target/documents app
+COPY --from=native-build /app/target/documents documents
+ENV PATH="/app:$PATH"
 EXPOSE 8080
-ENTRYPOINT ["/app/backend"]
+ENTRYPOINT ["/app/documents","-d"]

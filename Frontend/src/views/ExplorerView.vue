@@ -12,28 +12,6 @@
         </button>
       </div>
 
-      <!-- New folder inline form -->
-      <form v-if="showNewFolder" class="new-folder-form" @submit.prevent="addFolder">
-        <input
-          ref="newFolderInputEl"
-          v-model="newFolderName"
-          type="text"
-          placeholder="Folder name"
-          class="input new-folder-input"
-          @keydown.esc="showNewFolder = false"
-        />
-        <div class="new-folder-row">
-          <select v-model="newFolderPid" class="select new-folder-select">
-            <option :value="null">— root —</option>
-            <option v-for="f in flatFolders" :key="f.id" :value="f.id">{{ f.path }}</option>
-          </select>
-        </div>
-        <div class="new-folder-actions">
-          <button type="submit" class="btn btn-primary btn-xs" :disabled="!newFolderName.trim()">Add</button>
-          <button type="button" class="btn btn-ghost btn-xs" @click="showNewFolder = false">Cancel</button>
-        </div>
-      </form>
-
       <div v-if="foldersStore.loading" class="tree-empty">
         <span class="spinner spinner-md"></span>
       </div>
@@ -60,6 +38,16 @@
         <span class="panel-title">
           {{ selectedFolder ? selectedFolder.path : 'Select a folder' }}
         </span>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button v-if="selectedFolderId" class="btn btn-primary btn-xs" @click="openNew">+ New Document</button>
+          <button class="btn btn-ghost btn-xs" @click="showNewFolder = true">+ New Folder</button>
+          <button
+            v-if="selectedFolderId && !docs.length && !docsLoading"
+            class="btn btn-ghost btn-xs"
+            :disabled="deleteFolderLoading"
+            @click="deleteSelectedFolder"
+          >Delete Folder</button>
+        </div>
       </div>
 
       <div v-if="!selectedFolderId" class="empty-state">
@@ -75,41 +63,196 @@
 
       <div v-else-if="docsError" class="notice notice-error" style="margin:12px">{{ docsError }}</div>
 
-      <div v-else-if="!docs.length" class="empty-state">No documents in this folder</div>
+      <div v-else-if="!docs.length" class="empty-state">
+        <span>No documents in this folder</span>
+        <button class="btn btn-primary btn-sm" @click="openNew">+ New Document</button>
+      </div>
 
       <div v-else class="doc-list">
-        <DocumentCard v-for="doc in docs" :key="doc.id" :doc="doc" />
+        <DocumentCard
+          v-for="doc in docs"
+          :key="doc.id"
+          :doc="doc"
+          :can-edit="true"
+          @edit="openEdit"
+        />
       </div>
     </div>
+
+    <!-- ── New Folder modal ── -->
+    <Teleport to="body">
+      <div v-if="showNewFolder" class="modal-backdrop" @click.self="showNewFolder = false">
+        <div class="modal-popup modal-popup-sm">
+          <div class="modal-header">
+            <span class="modal-header-title">New Folder</span>
+            <button type="button" class="modal-close" @click="showNewFolder = false">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="field">
+              <label class="field-label">Name</label>
+              <input
+                ref="newFolderInputEl"
+                v-model="newFolderName"
+                type="text"
+                class="input"
+                placeholder="Folder name"
+                @keydown.enter.prevent="addFolder"
+              />
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost btn-sm" @click="showNewFolder = false">Cancel</button>
+            <button type="button" class="btn btn-primary btn-sm"
+              :disabled="!newFolderName.trim() || newFolderLoading" @click="addFolder">
+              {{ newFolderLoading ? 'Saving…' : 'Save' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- ── Edit / New Document modal ── -->
+    <Teleport to="body">
+      <div v-if="showEditModal" class="modal-backdrop" @click.self="closeEditModal">
+        <div class="modal-popup modal-popup-lg">
+
+          <div class="modal-header">
+            <span class="modal-header-title">{{ editIsNew ? 'New Document' : editTitle }}</span>
+            <button type="button" class="modal-close" @click="closeEditModal">✕</button>
+          </div>
+
+          <div v-if="editValidationError" class="notice notice-warn edit-notice">{{ editValidationError }}</div>
+          <div v-if="editErrorMsg" class="notice notice-error edit-notice">{{ editErrorMsg }}</div>
+
+          <div class="edit-modal-body">
+
+            <!-- Metadata column -->
+            <div class="edit-col">
+              <div class="edit-col-header">Metadata</div>
+              <div class="edit-col-body">
+
+                <div class="field-row">
+                  <div class="field">
+                    <label class="field-label">Date</label>
+                    <input type="date" v-model="editDate" class="input" />
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Language</label>
+                    <select v-model="editLanguage" class="select">
+                      <option v-for="lang in languages" :key="lang.id" :value="lang.name">{{ lang.name }}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label class="field-label">Folder</label>
+                  <select v-model="editFldid" class="select">
+                    <option :value="null">— none —</option>
+                    <option v-for="f in flatFolders" :key="f.id" :value="f.id">{{ f.path }}</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label class="field-label">Title <span class="req">*</span></label>
+                  <input type="text" v-model="editTitleField" placeholder="Document title" class="input"
+                    @input="editValidationError = null" />
+                </div>
+
+                <div class="field edit-field-grow">
+                  <label class="field-label">Description / Text</label>
+                  <textarea v-model="editText" rows="6" placeholder="Enter description or paste OCR result here…"
+                    class="input textarea"></textarea>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Source column -->
+            <div class="edit-col">
+              <div class="edit-col-header">Source</div>
+              <div class="edit-col-body">
+
+                <div v-if="!editIsNew && editCurrentFilename" class="field">
+                  <label class="field-label">Current File</label>
+                  <div class="current-file">
+                    <a :href="`/api/content/${editId}/file`" target="_blank" class="file-link">{{ editCurrentFilename }}</a>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label class="field-label">Choose File</label>
+                  <div class="file-row">
+                    <button type="button" class="btn btn-grey btn-sm" @click="editFileInputRef?.click()">
+                      Choose File
+                    </button>
+                    <span class="file-chosen">{{ editSelectedFile ? editSelectedFile.name : 'No file chosen' }}</span>
+                    <button type="button" class="btn btn-grey btn-sm"
+                      :disabled="!ocrEnabled || ocrLoading" @click="runOcr">
+                      {{ ocrLoading ? '…' : 'OCR' }}
+                    </button>
+                    <input ref="editFileInputRef" type="file" @change="onFileChange" style="display:none" />
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label class="field-label">Paste Image</label>
+                  <div ref="pasteArea" tabindex="0" @paste="onPaste" class="paste-zone"
+                    :class="{ 'paste-active': !!editPastedFile }">
+                    {{ editPastedFile ? `Pasted: ${editPastedFile.name || 'image'}` : 'Click here, then Ctrl+V / Cmd+V' }}
+                  </div>
+                </div>
+
+                <div class="divider"><span>or</span></div>
+
+                <div class="field">
+                  <label class="field-label">URL</label>
+                  <input type="url" v-model="editUrl" placeholder="https://example.com/document.pdf" class="input"
+                    :disabled="!!(editSelectedFile || editPastedFile)" />
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button v-if="!editIsNew" class="btn btn-primary btn-sm" :disabled="editFormLoading" @click="confirmDelete">
+              Delete
+            </button>
+            <div class="spacer"></div>
+            <span v-if="editFormLoading" class="saving-hint">
+              <span class="spinner spinner-sm"></span> Saving…
+            </span>
+            <button class="btn btn-ghost btn-sm" @click="resetEditForm">Reset</button>
+            <button class="btn btn-primary btn-sm" :disabled="editFormLoading" @click="submitEdit">
+              {{ editIsNew ? 'Save' : 'Update' }}
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </Teleport>
 
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, watch } from 'vue'
+import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
 import { useFoldersStore } from '../stores/folders'
-import { getFolderDocuments, createFolder } from '../api/folders'
+import { getFolderDocuments, createFolder, deleteFolder } from '../api/folders'
+import { getDocument, updateDocument, deleteDocument } from '../api/documents'
+import { storeDocument } from '../api/store'
+import { listLanguages } from '../api/languages'
+import { scanOcr } from '../api/ocr'
 import { useResize } from '../composables/useResize'
 import FolderTreeItem from '../components/FolderTreeItem.vue'
 import DocumentCard from '../components/DocumentCard.vue'
-import type { DocumentResult, Folder } from '../types'
+import type { DocumentResult, DocumentDetail, Language, Folder } from '../types'
 
 const { width: sidebarWidth, startResize } = useResize(280, 140, 520)
 
+// ── Folders ──────────────────────────────────────────────────────
 const foldersStore = useFoldersStore()
 foldersStore.load()
-
-const selectedFolderId = ref<number | null>(null)
-const docs = ref<DocumentResult[]>([])
-const docsLoading = ref(false)
-const docsError = ref<string | null>(null)
-
-const showNewFolder = ref(false)
-const newFolderName = ref('')
-const newFolderPid = ref<number | null>(null)
-const newFolderInputEl = ref<HTMLInputElement | null>(null)
-
-watch(showNewFolder, v => { if (v) nextTick(() => newFolderInputEl.value?.focus()) })
 
 function flattenFolders(nodes: Folder[], prefix = ''): { id: number; path: string }[] {
   const out: { id: number; path: string }[] = []
@@ -123,6 +266,12 @@ function flattenFolders(nodes: Folder[], prefix = ''): { id: number; path: strin
 
 const flatFolders = computed(() => flattenFolders(foldersStore.tree))
 const selectedFolder = computed(() => flatFolders.value.find(f => f.id === selectedFolderId.value) ?? null)
+
+// ── Folder documents ─────────────────────────────────────────────
+const selectedFolderId = ref<number | null>(null)
+const docs = ref<DocumentResult[]>([])
+const docsLoading = ref(false)
+const docsError = ref<string | null>(null)
 
 async function selectFolder(id: number) {
   if (selectedFolderId.value === id) return
@@ -140,17 +289,256 @@ async function selectFolder(id: number) {
   }
 }
 
+async function reloadDocs() {
+  if (selectedFolderId.value === null) return
+  try {
+    const res = await getFolderDocuments(selectedFolderId.value)
+    docs.value = (res.data.documents || []) as DocumentResult[]
+  } catch { /* ignore */ }
+}
+
+// ── New Folder ────────────────────────────────────────────────────
+const showNewFolder = ref(false)
+const newFolderName = ref('')
+const newFolderLoading = ref(false)
+const newFolderInputEl = ref<HTMLInputElement | null>(null)
+const deleteFolderLoading = ref(false)
+
+watch(showNewFolder, v => { if (v) nextTick(() => newFolderInputEl.value?.focus()) })
+
 async function addFolder() {
   const name = newFolderName.value.trim()
   if (!name) return
+  newFolderLoading.value = true
   try {
-    await createFolder(name, newFolderPid.value)
+    await createFolder(name, selectedFolderId.value)
     await foldersStore.load()
     newFolderName.value = ''
-    newFolderPid.value = null
     showNewFolder.value = false
-  } catch { /* toast later */ }
+  } catch { /* ignore */ }
+  finally { newFolderLoading.value = false }
 }
+
+async function deleteSelectedFolder() {
+  if (!selectedFolderId.value || docs.value.length) return
+  if (!window.confirm(`Delete folder "${selectedFolder.value?.path}"?`)) return
+  deleteFolderLoading.value = true
+  try {
+    await deleteFolder(selectedFolderId.value)
+    selectedFolderId.value = null
+    docs.value = []
+    await foldersStore.load()
+  } catch {
+    docsError.value = 'Failed to delete folder.'
+  } finally {
+    deleteFolderLoading.value = false
+  }
+}
+
+// ── Languages ─────────────────────────────────────────────────────
+const languages = ref<Language[]>([])
+async function loadLanguages() {
+  try {
+    const res = await listLanguages()
+    languages.value = (res.data.languages || []) as Language[]
+  } catch {
+    languages.value = [{ id: 'DA', name: 'danish' }, { id: 'EN', name: 'english' }]
+  }
+}
+onMounted(loadLanguages)
+
+// ── Edit / New Document modal ─────────────────────────────────────
+const showEditModal = ref(false)
+const editIsNew = ref(false)
+const editId = ref<number | null>(null)
+const editTitle = ref('')
+
+const editDate = ref(todayIso())
+const editTitleField = ref('')
+const editLanguage = ref('')
+const editText = ref('')
+const editFldid = ref<number | null>(null)
+const editUrl = ref('')
+const editSelectedFile = ref<File | null>(null)
+const editPastedFile = ref<File | null>(null)
+const editCurrentFilename = ref<string | null>(null)
+const editFileInputRef = ref<HTMLInputElement | null>(null)
+const pasteArea = ref<HTMLElement | null>(null)
+
+const editFormLoading = ref(false)
+const ocrLoading = ref(false)
+const editErrorMsg = ref<string | null>(null)
+const editValidationError = ref<string | null>(null)
+
+const ocrEnabled = computed(() => {
+  const f = editSelectedFile.value || editPastedFile.value
+  return !!f && (f.type.startsWith('image/') || f.type === 'application/pdf')
+})
+
+function todayIso() { return new Date().toISOString().split('T')[0] }
+
+function clearEditForm() {
+  editDate.value = todayIso()
+  editTitleField.value = ''
+  editText.value = ''
+  editUrl.value = ''
+  editFldid.value = selectedFolderId.value
+  editSelectedFile.value = null
+  editPastedFile.value = null
+  editCurrentFilename.value = null
+  editErrorMsg.value = null
+  editValidationError.value = null
+  if (editFileInputRef.value) editFileInputRef.value.value = ''
+  if (languages.value.length && !editLanguage.value) {
+    const da = languages.value.find(l => l.id === 'DA')
+    editLanguage.value = da ? da.name : languages.value[0].name
+  }
+}
+
+function openNew() {
+  editIsNew.value = true
+  editId.value = null
+  editTitle.value = 'New Document'
+  clearEditForm()
+  showEditModal.value = true
+}
+
+async function openEdit(id: number) {
+  editIsNew.value = false
+  editId.value = id
+  clearEditForm()
+  showEditModal.value = true
+  editFormLoading.value = true
+  try {
+    const res = await getDocument(id)
+    const d = res.data.document as DocumentDetail
+    editDate.value = d.date ?? ''
+    editTitleField.value = d.title ?? ''
+    editTitle.value = d.title ?? ''
+    editText.value = d.text ?? ''
+    editFldid.value = d.fldid ?? null
+    editUrl.value = d.url ?? ''
+    editCurrentFilename.value = d.filename ?? null
+  } catch {
+    editErrorMsg.value = 'Failed to load document details.'
+  } finally {
+    editFormLoading.value = false
+  }
+}
+
+function closeEditModal() {
+  showEditModal.value = false
+}
+
+function resetEditForm() {
+  if (editIsNew.value) clearEditForm()
+  else if (editId.value !== null) openEdit(editId.value)
+}
+
+function onFileChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  editSelectedFile.value = input.files?.[0] ?? null
+  editPastedFile.value = null
+}
+
+function onPaste(e: ClipboardEvent) {
+  for (const item of (e.clipboardData?.items ?? [])) {
+    if (item.kind === 'file' && item.type.startsWith('image/')) {
+      e.preventDefault()
+      const file = item.getAsFile()
+      if (file) {
+        editPastedFile.value = file
+        editSelectedFile.value = null
+        if (editFileInputRef.value) editFileInputRef.value.value = ''
+      }
+      break
+    }
+  }
+}
+
+async function runOcr() {
+  const file = editSelectedFile.value || editPastedFile.value
+  if (!file) return
+  ocrLoading.value = true
+  try {
+    const res = await scanOcr(file)
+    editText.value = res.data as string
+  } catch (err) {
+    console.error('OCR error:', err)
+    editErrorMsg.value = 'OCR failed.'
+  } finally {
+    ocrLoading.value = false
+  }
+}
+
+async function submitEdit() {
+  editValidationError.value = null
+  editErrorMsg.value = null
+  if (!editTitleField.value.trim()) { editValidationError.value = 'Title is required.'; return }
+  const hasFile = !!(editSelectedFile.value || editPastedFile.value)
+  const hasUrl = !!editUrl.value.trim()
+  if (hasFile && hasUrl) { editValidationError.value = 'Provide a file or a URL, not both.'; return }
+
+  const fd = new FormData()
+  fd.append('date', editDate.value)
+  fd.append('fldid', String(editFldid.value ?? 0))
+  fd.append('title', editTitleField.value)
+  fd.append('language', editLanguage.value)
+  if (editText.value) fd.append('text', editText.value)
+  if (editSelectedFile.value) fd.append('file', editSelectedFile.value)
+  else if (editPastedFile.value) fd.append('file', editPastedFile.value, 'pasted-image.png')
+  if (editUrl.value) fd.append('url', editUrl.value)
+
+  editFormLoading.value = true
+  try {
+    if (editIsNew.value) {
+      const res = await storeDocument(fd)
+      const data = res.data as { success: boolean; id?: number }
+      if (data.success) {
+        closeEditModal()
+        await reloadDocs()
+      } else {
+        editErrorMsg.value = 'Server reported an error.'
+      }
+    } else if (editId.value !== null) {
+      const res = await updateDocument(editId.value, fd)
+      if ((res.data as { success: boolean }).success) {
+        closeEditModal()
+        await reloadDocs()
+      } else {
+        editErrorMsg.value = 'Server reported an error.'
+      }
+    }
+  } catch {
+    editErrorMsg.value = 'Failed — check the connection.'
+  } finally {
+    editFormLoading.value = false
+  }
+}
+
+async function confirmDelete() {
+  if (editId.value === null || !window.confirm(`Delete "${editTitleField.value}"?`)) return
+  editFormLoading.value = true
+  try {
+    await deleteDocument(editId.value)
+    closeEditModal()
+    await reloadDocs()
+  } catch {
+    editErrorMsg.value = 'Delete failed.'
+  } finally {
+    editFormLoading.value = false
+  }
+}
+
+// ── Global Escape key ─────────────────────────────────────────────
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') {
+    if (showEditModal.value) { closeEditModal(); return }
+    if (showNewFolder.value) { showNewFolder.value = false }
+  }
+}
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <style scoped>
@@ -179,21 +567,6 @@ async function addFolder() {
   flex-shrink: 0;
 }
 
-.new-folder-form {
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex-shrink: 0;
-  background: var(--bg);
-}
-
-.new-folder-input { height: 28px; font-size: 12px; }
-.new-folder-row { display: flex; gap: 4px; }
-.new-folder-select { height: 26px; font-size: 11px; }
-.new-folder-actions { display: flex; gap: 4px; }
-
 .tree-body { flex: 1; overflow-y: auto; padding: 3px; }
 
 .tree-empty {
@@ -219,8 +592,9 @@ async function addFolder() {
 .panel-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   height: 38px;
-  padding: 0 14px;
+  padding: 0 10px 0 14px;
   border-bottom: 1px solid var(--border);
   background: var(--bg);
   flex-shrink: 0;
@@ -237,4 +611,93 @@ async function addFolder() {
 
 /* ── Document list ── */
 .doc-list { flex: 1; overflow-y: auto; }
+
+/* ── Edit modal internals ── */
+.edit-notice { margin: 8px 16px 0; flex-shrink: 0; }
+
+.edit-modal-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.edit-col {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+}
+.edit-col:last-child { border-right: none; }
+
+.edit-col-header {
+  height: 30px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.edit-col-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field { display: flex; flex-direction: column; gap: 4px; }
+.edit-field-grow { flex: 1; }
+.edit-field-grow .textarea { flex: 1; min-height: 100px; }
+.field-row { display: flex; gap: 10px; }
+.field-row .field { flex: 1; }
+
+.input.textarea { height: auto; padding: 7px 10px; resize: vertical; }
+
+.current-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  background: var(--bg-muted);
+  border-radius: 4px;
+  font-size: 12px;
+}
+.file-link { color: var(--accent); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-link:hover { text-decoration: underline; }
+
+.file-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.file-chosen { font-size: 11px; color: var(--text-muted); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.paste-zone {
+  padding: 10px 12px;
+  border: 2px dashed var(--border-input);
+  border-radius: 5px;
+  background: var(--bg-subtle);
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.1s;
+}
+.paste-zone:focus { border-color: var(--accent); }
+.paste-active { border-color: var(--success); color: #15803d; background: var(--success-bg); }
+
+.saving-hint {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-faint);
+}
 </style>

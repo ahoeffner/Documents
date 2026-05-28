@@ -7,6 +7,7 @@ servers:
   - url: http://localhost:8080
 
 tags:
+  - name: auth
   - name: ai
   - name: ocr
   - name: search
@@ -16,6 +17,121 @@ tags:
   - name: languages
 
 paths:
+
+  /api/auth/login:
+    post:
+      tags: [auth]
+      summary: Log in and lock session to a tenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  admin:
+                    type: boolean
+                    description: True if the user is admin for the selected tenant. Present only when tenant was included in the request.
+                  tenants:
+                    type: array
+                    description: Available tenants. Present only when tenant was omitted — pass one to POST /api/auth/switch to lock the session.
+                    items:
+                      type: string
+        "401":
+          description: Invalid credentials or tenant not allowed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  /api/auth/logout:
+    post:
+      tags: [auth]
+      summary: Invalidate the current session
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /api/auth/tenants:
+    get:
+      tags: [auth]
+      summary: List tenants available to the current user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  tenants:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Not authenticated
+
+  /api/auth/switch:
+    post:
+      tags: [auth]
+      summary: Switch the session to a different tenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenant]
+              properties:
+                tenant:
+                  type: string
+      responses:
+        "200":
+          description: Tenant switched
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  admin:
+                    type: boolean
+                    description: True if the user is admin for the switched tenant
+        "403":
+          description: Tenant not allowed for this user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
 
   /api/folders:
     get:
@@ -604,3 +720,16 @@ components:
           type: string
         name:
           type: string
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+        tenant:
+          type: string
+          description: Schema name / tenant. Omit to authenticate without locking to a tenant — use GET /api/auth/tenants to list available tenants, then POST /api/auth/switch to select one.
