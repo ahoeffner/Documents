@@ -101,7 +101,7 @@ async function submit() {
   error.value = ''
   loading.value = true
   try {
-    const hashed = await sha256(username.value + password.value)
+    const hashed = await sha256(password.value)
     const result = await login(username.value, hashed, tenant.value || undefined)
     if (!result.success) {
       error.value = result.message ?? 'Invalid credentials.'
