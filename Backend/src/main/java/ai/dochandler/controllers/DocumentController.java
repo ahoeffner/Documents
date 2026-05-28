@@ -5,8 +5,9 @@ import java.util.List;
 import ai.dochandler.entities.Document;
 import ai.dochandler.model.DocumentRecord;
 import ai.dochandler.services.GeminiService;
-import ai.dochandler.entities.DocumentDetail;
 import ai.dochandler.entities.CreateResponse;
+import ai.dochandler.entities.DocumentDetail;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ai.dochandler.services.FileProcessorService;
@@ -60,22 +61,26 @@ public class DocumentController
         @RequestParam(required = false) String text,
         @RequestParam(required = false) String language,
         @RequestParam(required = false) MultipartFile file,
-        @RequestParam(required = false) String url
+        @RequestParam(required = false) String url,
+        HttpSession session
     )
     {
+        if (!Boolean.TRUE.equals(session.getAttribute("admin")))
+            return(ResponseEntity.status(403).body(new CreateResponse(false, null)));
+
         try
         {
             DocumentRecord existing = documentRepo.findByIdWithLang(id);
             if (existing == null) return(ResponseEntity.notFound().build());
 
-            String effectiveDate = date != null ? date : (existing.getDate() != null ? existing.getDate().toString() : null);
-            String effectiveFldid = fldid != null ? fldid : String.valueOf(existing.getFldid());
-            String effectiveTitle = title != null ? title : existing.getTitle();
-            String effectiveLang = language != null ? language : existing.getLang();
+            String effectiveDate  = date     != null ? date     : (existing.getDate() != null ? existing.getDate().toString() : null);
+            String effectiveFldid = fldid    != null ? fldid    : String.valueOf(existing.getFldid());
+            String effectiveTitle = title    != null ? title    : existing.getTitle();
+            String effectiveLang  = language != null ? language : existing.getLang();
 
             boolean reprocess = (text != null && !text.isBlank())
                 || (file != null && !file.isEmpty())
-                || (url != null && !url.isBlank());
+                || (url  != null && !url.isBlank());
 
             DocumentRecord record;
             if (reprocess)
@@ -105,8 +110,11 @@ public class DocumentController
 
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> delete(@PathVariable long id)
+    public ResponseEntity<Map<String, Object>> delete(@PathVariable long id, HttpSession session)
     {
+        if (!Boolean.TRUE.equals(session.getAttribute("admin")))
+            return(ResponseEntity.status(403).body(Map.of("success", false, "message", "Admin required")));
+
         boolean success = documentRepo.deleteById(id);
         if (!success) return(ResponseEntity.notFound().build());
         return(ResponseEntity.ok(Map.of("success", true)));

@@ -44,13 +44,17 @@ public class UserAdmin
 
     private static void create(Connection con, String[] args) throws SQLException, NoSuchAlgorithmException
     {
-        if (args.length < 3) { System.err.println("Usage: create <username> <password> [tenant...]"); System.exit(1); }
+        if (args.length < 3)
+        {
+            System.err.println("Usage: create <username> <password> [tenant...]");
+            System.exit(1);
+        }
 
         String username = args[1];
         String hash     = sha256(args[2]);
 
         PreparedStatement ps = con.prepareStatement(
-            "INSERT INTO documents.users (username, password) VALUES (?, ?) ON CONFLICT (username) DO NOTHING RETURNING id"
+            "INSERT INTO idm.users (username, password) VALUES (?, ?) ON CONFLICT (username) DO NOTHING RETURNING id"
         );
         ps.setString(1, username);
         ps.setString(2, hash);
@@ -66,29 +70,38 @@ public class UserAdmin
         System.out.println("Created user '" + username + "' (id=" + uid + ")");
 
         for (int i = 3; i < args.length; i++)
-            grantTenant(con, uid, args[i]);
+            grantTenant(con, uid, args[i], false);
     }
 
 
     private static void grant(Connection con, String[] args) throws SQLException
     {
-        if (args.length < 3) { System.err.println("Usage: grant <username> <tenant>"); System.exit(1); }
+        if (args.length < 3)
+        {
+            System.err.println("Usage: grant <username> <tenant> [--admin]");
+            System.exit(1);
+        }
 
-        PreparedStatement ps = con.prepareStatement("SELECT id FROM documents.users WHERE username = ?");
+        PreparedStatement ps = con.prepareStatement("SELECT id FROM idm.users WHERE username = ?");
         ps.setString(1, args[1]);
         ResultSet rs = ps.executeQuery();
 
-        if (!rs.next()) { System.err.println("User not found: " + args[1]); System.exit(1); }
+        if (!rs.next())
+        {
+            System.err.println("User not found: " + args[1]);
+            System.exit(1);
+        }
 
-        grantTenant(con, rs.getLong(1), args[2]);
+        boolean admin = args.length > 3 && args[3].equals("--admin");
+        grantTenant(con, rs.getLong(1), args[2], admin);
     }
 
 
     private static void list(Connection con) throws SQLException
     {
         ResultSet rs = con.createStatement().executeQuery(
-            "SELECT u.username, t.tenant FROM documents.users u " +
-            "LEFT JOIN documents.user_tenants t ON t.user_id = u.id " +
+            "SELECT u.username, t.tenant FROM idm.users u " +
+            "LEFT JOIN idm.user_tenants t ON t.user_id = u.id " +
             "ORDER BY u.username, t.tenant"
         );
 
@@ -97,15 +110,17 @@ public class UserAdmin
     }
 
 
-    private static void grantTenant(Connection con, long uid, String tenant) throws SQLException
+    private static void grantTenant(Connection con, long uid, String tenant, boolean admin) throws SQLException
     {
         PreparedStatement ps = con.prepareStatement(
-            "INSERT INTO documents.user_tenants (user_id, tenant) VALUES (?, ?) ON CONFLICT DO NOTHING"
+            "INSERT INTO idm.user_tenants (user_id, tenant, admin) VALUES (?, ?, ?) " +
+            "ON CONFLICT (user_id, tenant) DO UPDATE SET admin = EXCLUDED.admin"
         );
         ps.setLong(1, uid);
         ps.setString(2, tenant);
+        ps.setBoolean(3, admin);
         ps.executeUpdate();
-        System.out.println("Granted tenant '" + tenant + "'");
+        System.out.println("Granted tenant '" + tenant + "'" + (admin ? " [admin]" : ""));
     }
 
 
@@ -120,7 +135,7 @@ public class UserAdmin
     {
         System.err.println("Usage:");
         System.err.println("  UserAdmin create <username> <password> [tenant...]");
-        System.err.println("  UserAdmin grant  <username> <tenant>");
+        System.err.println("  UserAdmin grant  <username> <tenant> [--admin]");
         System.err.println("  UserAdmin list");
     }
 }

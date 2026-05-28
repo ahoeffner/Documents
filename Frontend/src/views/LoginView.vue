@@ -120,15 +120,15 @@ async function submit()
     }
     if (tenant.value)
     {
-      auth.setLoggedIn(tenant.value)
+      auth.setLoggedIn(tenant.value, result.admin ?? false)
       return
     }
     // No tenant in URL — discover which tenants the user can access
     const res = await getTenants()
     if (res.tenants.length === 1)
     {
-      await switchTenant(res.tenants[0])
-      await finalizeTenant(res.tenants[0])
+      const switched = await switchTenant(res.tenants[0])
+      await finalizeTenant(res.tenants[0], switched.admin ?? false)
     }
     else if (res.tenants.length > 1)
     {
@@ -160,7 +160,7 @@ async function selectTenant(t: string)
     const res = await switchTenant(t)
     if (res.success)
     {
-      await finalizeTenant(t)
+      await finalizeTenant(t, res.admin ?? false)
     }
     else
     {
@@ -179,12 +179,12 @@ async function selectTenant(t: string)
 }
 
 
-async function finalizeTenant(t: string)
+async function finalizeTenant(t: string, admin: boolean)
 {
   history.pushState({}, '', '/' + t)
   tenant.value = t
   tenants.value = []
-  auth.setLoggedIn(t)
+  auth.setLoggedIn(t, admin)
 }
 </script>
 

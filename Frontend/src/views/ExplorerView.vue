@@ -5,7 +5,7 @@
     <div class="sidebar" :style="{ width: sidebarWidth + 'px' }">
       <div class="sidebar-header">
         <span class="section-label">Folders</span>
-        <button class="btn-icon" title="New folder" @click="showNewFolder = true">
+        <button v-if="auth.isAdmin" class="btn-icon" title="New folder" @click="showNewFolder = true">
           <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
             <path d="M10 4v12M4 10h12"/>
           </svg>
@@ -39,10 +39,11 @@
           {{ selectedFolder ? selectedFolder.path : 'Select a folder' }}
         </span>
         <div style="display:flex;gap:6px;flex-shrink:0">
-          <button v-if="selectedFolderId" class="btn btn-primary btn-xs" @click="openNew">+ New Document</button>
-          <button class="btn btn-ghost btn-xs" @click="showNewFolder = true">+ New Folder</button>
+          <button v-if="auth.isAdmin && selectedFolderId" class="btn btn-primary btn-xs" @click="openNew">+ New Document</button>
+          <button v-if="auth.isAdmin" class="btn btn-ghost btn-xs" @click="showNewFolder = true">+ New Folder</button>
+          <button v-if="auth.isAdmin && selectedFolderId" class="btn btn-ghost btn-xs" @click="startRename">Rename Folder</button>
           <button
-            v-if="selectedFolderId && !docs.length && !docsLoading"
+            v-if="auth.isAdmin && selectedFolderId && !docs.length && !docsLoading"
             class="btn btn-ghost btn-xs"
             :disabled="deleteFolderLoading"
             @click="deleteSelectedFolder"
@@ -73,7 +74,7 @@
           v-for="doc in docs"
           :key="doc.id"
           :doc="doc"
-          :can-edit="true"
+          :can-edit="auth.isAdmin"
           @edit="openEdit"
         />
       </div>
@@ -105,6 +106,36 @@
             <button type="button" class="btn btn-primary btn-sm"
               :disabled="!newFolderName.trim() || newFolderLoading" @click="addFolder">
               {{ newFolderLoading ? 'Saving…' : 'Save' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Rename Folder modal ── -->
+      <div v-if="showRenameFolder" class="modal-backdrop" @click.self="showRenameFolder = false">
+        <div class="modal-popup modal-popup-sm">
+          <div class="modal-header">
+            <span class="modal-header-title">Rename Folder</span>
+            <button type="button" class="modal-close" @click="showRenameFolder = false">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="field">
+              <label class="field-label">New name</label>
+              <input
+                ref="renameFolderInputEl"
+                v-model="renameFolderName"
+                type="text"
+                class="input"
+                placeholder="Folder name"
+                @keydown.enter.prevent="doRenameFolder"
+              />
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost btn-sm" @click="showRenameFolder = false">Cancel</button>
+            <button type="button" class="btn btn-primary btn-sm"
+              :disabled="!renameFolderName.trim() || renameFolderLoading" @click="doRenameFolder">
+              {{ renameFolderLoading ? 'Saving…' : 'Rename' }}
             </button>
           </div>
         </div>
@@ -240,16 +271,18 @@ import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
 import type { DocumentResult, DocumentDetail, Language, Folder } from '../types'
 import { scanOcr } from '../api/ocr'
 import { storeDocument } from '../api/store'
-import { getFolderDocuments, createFolder, deleteFolder } from '../api/folders'
+import { getFolderDocuments, createFolder, renameFolder, deleteFolder } from '../api/folders'
 import { listLanguages } from '../api/languages'
 import { getDocument, updateDocument, deleteDocument } from '../api/documents'
 import { useFoldersStore } from '../stores/folders'
+import { useAuthStore } from '../stores/auth'
 import { useResize } from '../composables/useResize'
 import DocumentCard from '../components/DocumentCard.vue'
 import FolderTreeItem from '../components/FolderTreeItem.vue'
 
 
 const { width: sidebarWidth, startResize } = useResize(280, 140, 520)
+const auth = useAuthStore()
 
 
 // ── Folders ──────────────────────────────────────────────────────
@@ -322,11 +355,20 @@ const newFolderName = ref('')
 const newFolderLoading = ref(false)
 const newFolderInputEl = ref<HTMLInputElement | null>(null)
 const deleteFolderLoading = ref(false)
+const showRenameFolder = ref(false)
+const renameFolderName = ref('')
+const renameFolderLoading = ref(false)
+const renameFolderInputEl = ref<HTMLInputElement | null>(null)
 
 
 watch(showNewFolder, v =>
 {
   if (v) nextTick(() => newFolderInputEl.value?.focus())
+})
+
+watch(showRenameFolder, v =>
+{
+  if (v) nextTick(() => renameFolderInputEl.value?.focus())
 })
 
 
@@ -346,6 +388,33 @@ async function addFolder()
   finally
   {
     newFolderLoading.value = false
+  }
+}
+
+
+function startRename()
+{
+  renameFolderName.value = selectedFolder.value?.path.split(' / ').at(-1) ?? ''
+  showRenameFolder.value = true
+}
+
+
+async function doRenameFolder()
+{
+  const name = renameFolderName.value.trim()
+  if (!name || selectedFolderId.value === null) return
+  renameFolderLoading.value = true
+  try
+  {
+    await renameFolder(selectedFolderId.value, name)
+    await foldersStore.load()
+    renameFolderName.value = ''
+    showRenameFolder.value = false
+  }
+  catch { /* ignore */ }
+  finally
+  {
+    renameFolderLoading.value = false
   }
 }
 
@@ -641,6 +710,7 @@ function onKeydown(e: KeyboardEvent)
   if (e.key === 'Escape')
   {
     if (showEditModal.value) { closeEditModal(); return }
+    if (showRenameFolder.value) { showRenameFolder.value = false; return }
     if (showNewFolder.value) { showNewFolder.value = false }
   }
 }

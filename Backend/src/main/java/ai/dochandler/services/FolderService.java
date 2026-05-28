@@ -38,6 +38,12 @@ public class FolderService
     }
 
 
+    public boolean rename(long id, String name)
+    {
+        return(repo.rename(id, name));
+    }
+
+
     public boolean deleteById(long id)
     {
         return(repo.deleteById(id));

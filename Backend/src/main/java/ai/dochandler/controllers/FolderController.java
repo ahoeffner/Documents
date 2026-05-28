@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.List;
 import ai.dochandler.entities.Folder;
 import ai.dochandler.entities.Document;
+import jakarta.servlet.http.HttpSession;
 import ai.dochandler.services.FolderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,12 +35,28 @@ public class FolderController
 
 
     @PostMapping
-    public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body)
+    public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body, HttpSession session)
     {
+        if (!Boolean.TRUE.equals(session.getAttribute("admin")))
+            return(ResponseEntity.status(403).body(Map.of("success", false, "message", "Admin required")));
+
         String name = (String) body.get("name");
         Long pid = body.get("pid") != null ? ((Number) body.get("pid")).longValue() : null;
         long id = service.create(name, pid);
         return(ResponseEntity.ok(Map.of("success", true, "id", id)));
+    }
+
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> rename(@PathVariable long id, @RequestBody Map<String, Object> body, HttpSession session)
+    {
+        if (!Boolean.TRUE.equals(session.getAttribute("admin")))
+            return(ResponseEntity.status(403).body(Map.of("success", false, "message", "Admin required")));
+
+        String name = (String) body.get("name");
+        boolean ok = service.rename(id, name);
+        if (!ok) return(ResponseEntity.notFound().build());
+        return(ResponseEntity.ok(Map.of("success", true)));
     }
 
 
@@ -63,8 +80,11 @@ public class FolderController
 
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> delete(@PathVariable long id)
+    public ResponseEntity<Map<String, Object>> delete(@PathVariable long id, HttpSession session)
     {
+        if (!Boolean.TRUE.equals(session.getAttribute("admin")))
+            return(ResponseEntity.status(403).body(Map.of("success", false, "message", "Admin required")));
+
         boolean success = service.deleteById(id);
         return(ResponseEntity.ok(Map.of("success", success)));
     }

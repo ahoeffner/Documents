@@ -3,11 +3,11 @@ package ai.dochandler.controllers;
 import java.io.IOException;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.util.UriUtils;
+import org.springframework.http.ResponseEntity;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.MediaTypeFactory;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.MediaTypeFactory;
 import ai.dochandler.repository.DocumentRepository;
 
 

@@ -54,7 +54,11 @@ public class AdminRunner implements CommandLineRunner
 
     private void create(String[] args) throws NoSuchAlgorithmException
     {
-        if (args.length < 3) { System.err.println("Usage: create <user> <pass> [tenant...]"); System.exit(1); }
+        if (args.length < 3)
+        {
+            System.err.println("Usage: create <user> <pass> [tenant...]");
+            System.exit(1);
+        }
 
         String username = args[1];
         String hash     = sha256(args[2]);
@@ -72,10 +76,18 @@ public class AdminRunner implements CommandLineRunner
 
     private void delete(String[] args)
     {
-        if (args.length < 2) { System.err.println("Usage: delete <user>"); System.exit(1); }
+        if (args.length < 2)
+        {
+            System.err.println("Usage: delete <user>");
+            System.exit(1);
+        }
 
         boolean ok = userRepo.deleteUser(args[1]);
-        if (!ok) { System.err.println("User not found: " + args[1]); System.exit(1); }
+        if (!ok)
+        {
+            System.err.println("User not found: " + args[1]);
+            System.exit(1);
+        }
         System.out.println("Deleted user '" + args[1] + "'");
     }
 
@@ -83,10 +95,18 @@ public class AdminRunner implements CommandLineRunner
     @SuppressWarnings("null")
     private void grant(String[] args)
     {
-        if (args.length < 3) { System.err.println("Usage: grant <user> <tenant> [--admin]"); System.exit(1); }
+        if (args.length < 3)
+        {
+            System.err.println("Usage: grant <user> <tenant> [--admin]");
+            System.exit(1);
+        }
 
-        Long    uid   = userRepo.findUserId(args[1]);
-        if (uid == null) { System.err.println("User not found: " + args[1]); System.exit(1); }
+        Long uid = userRepo.findUserId(args[1]);
+        if (uid == null)
+        {
+            System.err.println("User not found: " + args[1]);
+            System.exit(1);
+        }
 
         boolean admin = args.length > 3 && args[3].equals("--admin");
         userRepo.grantTenant(uid, args[2], admin);
@@ -97,10 +117,18 @@ public class AdminRunner implements CommandLineRunner
     @SuppressWarnings("null")
     private void revoke(String[] args)
     {
-        if (args.length < 3) { System.err.println("Usage: revoke <user> <tenant>"); System.exit(1); }
+        if (args.length < 3)
+        {
+            System.err.println("Usage: revoke <user> <tenant>");
+            System.exit(1);
+        }
 
         Long uid = userRepo.findUserId(args[1]);
-        if (uid == null) { System.err.println("User not found: " + args[1]); System.exit(1); }
+        if (uid == null)
+        {
+            System.err.println("User not found: " + args[1]);
+            System.exit(1);
+        }
 
         userRepo.revokeTenant(uid, args[2]);
         System.out.println("Revoked tenant '" + args[2] + "' from '" + args[1] + "'");
@@ -110,7 +138,11 @@ public class AdminRunner implements CommandLineRunner
     private void list()
     {
         List<String[]> rows = userRepo.listUsersWithTenants();
-        if (rows.isEmpty()) { System.out.println("No users found."); return; }
+        if (rows.isEmpty())
+        {
+            System.out.println("No users found.");
+            return;
+        }
         rows.forEach(r -> System.out.println(r[0] + " -> " + r[1] + (Boolean.parseBoolean(r[2]) ? " [admin]" : "")));
     }
 

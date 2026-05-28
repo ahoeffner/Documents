@@ -67,6 +67,12 @@ public class FolderRepository
     }
 
 
+    public boolean rename(long id, String name)
+    {
+        return(jdbc.update("UPDATE " + folders() + " SET name = ? WHERE id = ?", name, id) > 0);
+    }
+
+
     public boolean deleteByName(String name)
     {
         return(jdbc.update("DELETE FROM " + folders() + " WHERE upper(name) = upper(?)", name) > 0);

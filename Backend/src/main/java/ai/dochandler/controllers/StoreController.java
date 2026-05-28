@@ -2,6 +2,7 @@ package ai.dochandler.controllers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import jakarta.servlet.http.HttpSession;
 import ai.dochandler.model.DocumentRecord;
 import ai.dochandler.services.GeminiService;
 import ai.dochandler.entities.CreateResponse;
@@ -40,9 +41,13 @@ public class StoreController
         @RequestParam(required = false) String text,
         @RequestParam String language,
         @RequestParam(required = false) MultipartFile file,
-        @RequestParam(required = false) String url
+        @RequestParam(required = false) String url,
+        HttpSession session
     )
     {
+        if (!Boolean.TRUE.equals(session.getAttribute("admin")))
+            return(ResponseEntity.status(403).body(new CreateResponse(false, null)));
+
         try
         {
             DocumentRecord record = processor.process(date, fldid, title, text, language, file, url);
