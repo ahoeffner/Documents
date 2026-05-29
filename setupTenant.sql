@@ -2,7 +2,7 @@
 -- Usage: psql -v schema=<tenant_name> -f setup_tenant.sql
 -- Requires setup_public.sql to have been run first.
 
-CREATE SCHEMA IF NOT EXISTS documents;
+CREATE SCHEMA IF NOT EXISTS slotsdalen;
 
 
 
@@ -41,13 +41,14 @@ ALTER TABLE documents.documents ADD CONSTRAINT doccat
 
 CREATE TABLE documents.textchunks
 (
-    docid     integer NOT NULL,
-    line      integer NOT NULL,
-    text      text    NOT NULL,
-    lang      varchar NOT NULL DEFAULT 'danish',
+    docid     integer       NOT NULL,
+    line      integer       NOT NULL,
+    section	  varchar(30)   NOT NULL,
+    lang      varchar       NOT NULL DEFAULT 'danish',
+    text      text          NOT NULL,
     lexvector tsvector,
-    embedding public.vector(768),
-    PRIMARY KEY (docid, line)
+    embedding public.halfvec(3072),
+    PRIMARY KEY (docid, section, line)
 );
 
 ALTER TABLE documents.textchunks ADD CONSTRAINT doctext
@@ -57,9 +58,8 @@ ALTER TABLE documents.textchunks ADD CONSTRAINT doctext
 -- Full-text search index
 CREATE INDEX textchunks_lex ON documents.textchunks USING gin(lexvector);
 
--- Vector similarity index (HNSW, cosine distance — best recall for semantic search)
-CREATE INDEX textchunks_embedding ON documents.textchunks USING hnsw (embedding vector_cosine_ops)
-    WITH (m = 16, ef_construction = 64);
+CREATE INDEX textchunks_embedding ON documents.textchunks USING hnsw (embedding halfvec_cosine_ops)
+WITH (m = 32, ef_construction = 128); -- Boosted for high-dimensional accuracy
 
 
 CREATE TRIGGER ginvec
@@ -69,3 +69,17 @@ CREATE TRIGGER ginvec
 CREATE TRIGGER embeddings
     BEFORE INSERT OR UPDATE ON documents.textchunks
     FOR EACH ROW EXECUTE FUNCTION public.embeddings();
+
+
+-- 2. Grant rights on all EXISTING tables, sequences, and functions
+GRANT ALL PRIVILEGES ON SCHEMA slotsdalen TO alex;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA slotsdalen TO alex;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA slotsdalen TO alex;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA slotsdalen TO alex;
+
+-- 3. Grant rights on all FUTURE tables and sequences automatically
+ALTER DEFAULT PRIVILEGES IN SCHEMA slotsdalen
+GRANT ALL PRIVILEGES ON TABLES TO alex;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA slotsdalen
+GRANT ALL PRIVILEGES ON SEQUENCES TO alex;

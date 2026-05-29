@@ -7,10 +7,10 @@ CREATE TABLE idm.users
     password TEXT         NOT NULL
 );
 
-CREATE TABLE idm.user_tenants
+CREATE TABLE idm.tenants
 (
-    user_id  BIGINT       NOT NULL REFERENCES idm.users(id) ON DELETE CASCADE,
+    uid      BIGINT       NOT NULL REFERENCES idm.users(id) ON DELETE CASCADE,
     tenant   TEXT         NOT NULL,
     admin    BOOLEAN      NOT NULL DEFAULT FALSE,
-    PRIMARY KEY (user_id, tenant)
+    PRIMARY KEY (uid, tenant)
 );
