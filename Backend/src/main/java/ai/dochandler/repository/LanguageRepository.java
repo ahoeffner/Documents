@@ -32,6 +32,6 @@ public class LanguageRepository
 
     private String languages()
     {
-        return(db.getPrefix() + ".languages");
+        return(db.getTenant() + ".languages");
     }
 }

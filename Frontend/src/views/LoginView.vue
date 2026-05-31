@@ -93,8 +93,7 @@ const switchingTo = ref('')
 
 onMounted(() =>
 {
-  const host = window.location.hostname
-  tenant.value = host === 'localhost' ? 'private' : host.split('.')[0]
+  tenant.value = window.location.hostname
   usernameInput.value?.focus()
 })
 

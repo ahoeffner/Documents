@@ -93,6 +93,6 @@ public class FolderRepository
 
     private String folders()
     {
-        return(db.getPrefix() + ".folders");
+        return(db.getTenant() + ".folders");
     }
 }

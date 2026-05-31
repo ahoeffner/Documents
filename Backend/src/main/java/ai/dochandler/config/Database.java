@@ -12,11 +12,12 @@ public class Database
 {
     private static final String USER_STORE_SCHEMA = "idm";
 
-    private final static Map<String, String> schemas = Map.of
+    private final static Map<String, String> hosts = Map.of
     (
-        "home", "documents",
-        "private", "documents",
-        "slotsdalen", "slotsdalen"
+        "localhost", "documents",
+        "home.hoeffner.net", "documents",
+        "private.hoeffner.net", "documents",
+        "slotsdalen.hoeffner.net", "slotsdalen"
     );
 
 
@@ -26,7 +27,7 @@ public class Database
     }
 
 
-    public String getPrefix()
+    public String getTenant()
     {
         ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attrs == null) throw new IllegalStateException("No request context");
@@ -37,9 +38,6 @@ public class Database
         String tenant = (String) session.getAttribute("tenant");
         if (tenant == null) throw new IllegalStateException("No tenant in session");
 
-        String schema = schemas.get(tenant);
-        if (schema == null) throw new IllegalStateException("No schema mapping for tenant: " + tenant);
-
-        return(schema);
+        return(hosts.getOrDefault(tenant, tenant));
     }
 }

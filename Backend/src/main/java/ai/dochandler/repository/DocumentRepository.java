@@ -373,12 +373,12 @@ public class DocumentRepository
 
     private String docs()
     {
-        return(db.getPrefix() + ".documents");
+        return(db.getTenant() + ".documents");
     }
 
 
     private String chunks()
     {
-        return(db.getPrefix() + ".textchunks");
+        return(db.getTenant() + ".textchunks");
     }
 }

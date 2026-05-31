@@ -101,7 +101,7 @@ public class UserAdmin
     {
         ResultSet rs = con.createStatement().executeQuery(
             "SELECT u.username, t.tenant FROM idm.users u " +
-            "LEFT JOIN idm.user_tenants t ON t.user_id = u.id " +
+            "LEFT JOIN idm.tenants t ON t.uid = u.id " +
             "ORDER BY u.username, t.tenant"
         );
 
@@ -113,8 +113,8 @@ public class UserAdmin
     private static void grantTenant(Connection con, long uid, String tenant, boolean admin) throws SQLException
     {
         PreparedStatement ps = con.prepareStatement(
-            "INSERT INTO idm.user_tenants (user_id, tenant, admin) VALUES (?, ?, ?) " +
-            "ON CONFLICT (user_id, tenant) DO UPDATE SET admin = EXCLUDED.admin"
+            "INSERT INTO idm.tenants (uid, tenant, admin) VALUES (?, ?, ?) " +
+            "ON CONFLICT (uid, tenant) DO UPDATE SET admin = EXCLUDED.admin"
         );
         ps.setLong(1, uid);
         ps.setString(2, tenant);
