@@ -21,33 +21,23 @@ public class AuthService
     }
 
 
-    public boolean login(String username, String passwordHash, String host, HttpSession session)
+    public boolean login(String username, String passwordHash, HttpSession session)
     {
         String stored = userRepo.findPasswordHash(username);
         if (stored == null || !stored.equals(passwordHash)) return(false);
 
-        if (host != null && !host.isBlank())
-        {
-            session.setAttribute("tenant", host);
-            
-            String tenant = db.getTenant();
-            List<String> tenants = userRepo.findTenants(username);
+        String tenant = db.getTenant();
+        List<String> tenants = userRepo.findTenants(username);
 
-            if (!tenants.contains(tenant))
-            {
-                session.invalidate();
-                return(false);
-            }
-
-            session.setAttribute("user", username);
-            session.setAttribute("tenant", tenant);
-            session.setAttribute("admin", userRepo.isAdmin(username, tenant));
-        }
-        else
+        if (!tenants.contains(tenant))
         {
-            session.setAttribute("user", username);
+            session.invalidate();
+            return(false);
         }
 
+        session.setAttribute("user", username);
+        session.setAttribute("tenant", tenant);
+        session.setAttribute("admin", userRepo.isAdmin(username, tenant));
         return(true);
     }
 
@@ -68,7 +58,6 @@ public class AuthService
 
         session.setAttribute("tenant", tenant);
         session.setAttribute("admin", userRepo.isAdmin(username, tenant));
-
         return(true);
     }
 

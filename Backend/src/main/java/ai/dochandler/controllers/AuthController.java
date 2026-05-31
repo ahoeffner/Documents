@@ -29,19 +29,20 @@ public class AuthController
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest req, HttpSession session)
     {
-        boolean ok = service.login(req.username(), req.password(), req.tenant(), session);
+        boolean ok = service.login(req.username(), req.password(), session);
 
         if (!ok)
         {
-            log.warn("Login failed for user={} tenant={}", req.username(), req.tenant());
+            log.warn("Login failed for user={}", req.username());
             return(ResponseEntity.status(401).body(Map.of("success", false, "message", "Invalid credentials or tenant")));
         }
 
-        log.info("Login successful: user={} tenant={}", req.username(), req.tenant());
+        log.info("Login successful: user={} tenant={}", req.username(), session.getAttribute("tenant"));
 
         Map<String, Object> body = new HashMap<>();
         body.put("success", true);
 
+        body.put("tenant", session.getAttribute("tenant"));
         if (session.getAttribute("tenant") != null) body.put("admin", session.getAttribute("admin"));
         else body.put("tenants", service.getTenants(session));
 

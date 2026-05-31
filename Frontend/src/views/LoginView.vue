@@ -91,11 +91,7 @@ const switching = ref(false)
 const switchingTo = ref('')
 
 
-onMounted(() =>
-{
-  tenant.value = window.location.hostname
-  usernameInput.value?.focus()
-})
+onMounted(() => usernameInput.value?.focus())
 
 
 async function sha256(str: string): Promise<string>
@@ -112,18 +108,17 @@ async function submit()
   try
   {
     const hashed = await sha256(password.value)
-    const result = await login(username.value, hashed, tenant.value || undefined)
+    const result = await login(username.value, hashed)
     if (!result.success)
     {
       error.value = `[${(result as any)._status}] ${result.message ?? '(no message)'}`
       return
     }
-    if (tenant.value)
+    if (result.tenant)
     {
-      auth.setLoggedIn(tenant.value, result.admin ?? false)
+      auth.setLoggedIn(result.tenant, result.admin ?? false)
       return
     }
-    // No tenant in URL — discover which tenants the user can access
     const res = await getTenants()
     if (res.tenants.length === 1)
     {

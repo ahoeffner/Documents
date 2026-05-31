@@ -16,6 +16,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import ai.dochandler.repository.UserRepository;
 import org.springframework.boot.SpringApplication;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.core.env.StandardEnvironment;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.aot.hint.annotation.RegisterReflectionForBinding;
 
@@ -38,8 +39,8 @@ public class Application
 {
     public static void main(String[] args) throws Exception
     {
+        boolean aot = Boolean.getBoolean("spring.aot.processing");
         boolean daemon = Arrays.stream(args).anyMatch(a -> a.equals("-d") || a.equals("--daemon"));
-        boolean aot    = Boolean.getBoolean("spring.aot.processing");
 
         if (!aot && !daemon)
         {
@@ -62,14 +63,16 @@ public class Application
     private static void runCli(String[] args) throws Exception
     {
         HikariDataSource ds = new HikariDataSource();
+
         ds.setJdbcUrl(System.getenv("SPRING_DATASOURCE_URL"));
         ds.setUsername(System.getenv("SPRING_DATASOURCE_USERNAME"));
         ds.setPassword(System.getenv("SPRING_DATASOURCE_PASSWORD"));
+        
         ds.setMaximumPoolSize(1);
 
         try
         {
-            AdminRunner runner = new AdminRunner(new UserRepository(new JdbcTemplate(ds), new Database()));
+            AdminRunner runner = new AdminRunner(new UserRepository(new JdbcTemplate(ds), new Database(new StandardEnvironment())));
             runner.run(args);
         }
         finally

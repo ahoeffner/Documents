@@ -1,11 +1,11 @@
 import { api } from './index'
 
 
-export async function login(username: string, password: string, tenant?: string)
+export async function login(username: string, password: string)
 {
-  const res = await api.post('/auth/login', { username, password, ...(tenant ? { tenant } : {}) }, { validateStatus: () => true })
+  const res = await api.post('/auth/login', { username, password }, { validateStatus: () => true })
   console.debug('[login] status:', res.status, 'data:', res.data)
-  return({ ...res.data as { success: boolean; message?: string; admin?: boolean }, _status: res.status })
+  return({ ...res.data as { success: boolean; message?: string; tenant?: string; admin?: boolean }, _status: res.status })
 }
 
 

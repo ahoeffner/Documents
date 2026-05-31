@@ -1,25 +1,23 @@
 package ai.dochandler.config;
 
-import java.util.Map;
-import java.util.HashMap;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 
 
 @Component
-@ConfigurationProperties(prefix = "app")
 public class Database
 {
     private static final String USER_STORE_SCHEMA = "idm";
-    private Map<String, String> hosts = new HashMap<>();
+
+    private final Environment env;
 
 
-    public void setHosts(Map<String, String> hosts)
+    public Database(Environment env)
     {
-        this.hosts = hosts;
+        this.env = env;
     }
 
 
@@ -34,12 +32,18 @@ public class Database
         ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attrs == null) throw new IllegalStateException("No request context");
 
-        HttpSession session = attrs.getRequest().getSession(false);
-        if (session == null) throw new IllegalStateException("No active session");
+        HttpServletRequest request = attrs.getRequest();
+        var session = request.getSession(false);
 
-        String tenant = (String) session.getAttribute("tenant");
-        if (tenant == null) throw new IllegalStateException("No tenant in session");
+        if (session != null)
+        {
+            String tenant = (String) session.getAttribute("tenant");
+            if (tenant != null) return(tenant);
+        }
 
-        return(hosts.getOrDefault(tenant, tenant));
+        String host = request.getServerName();
+        String tenant = env.getProperty("app.hosts." + host);
+        if (tenant == null) throw new IllegalStateException("No tenant mapping for host: " + host);
+        return(tenant);
     }
 }

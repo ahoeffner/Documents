@@ -1,3 +1,3 @@
 package ai.dochandler.entities;
 
-public record LoginRequest(String username, String password, String tenant) {}
+public record LoginRequest(String username, String password) {}
