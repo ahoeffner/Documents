@@ -1,24 +1,26 @@
 package ai.dochandler.config;
 
 import java.util.Map;
+import java.util.HashMap;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 
 @Component
+@ConfigurationProperties(prefix = "app")
 public class Database
 {
     private static final String USER_STORE_SCHEMA = "idm";
+    private Map<String, String> hosts = new HashMap<>();
 
-    private final static Map<String, String> hosts = Map.of
-    (
-        "localhost", "documents",
-        "home.hoeffner.net", "documents",
-        "private.hoeffner.net", "documents",
-        "slotsdalen.hoeffner.net", "slotsdalen"
-    );
+
+    public void setHosts(Map<String, String> hosts)
+    {
+        this.hosts = hosts;
+    }
 
 
     public String getUserStoreSchema()

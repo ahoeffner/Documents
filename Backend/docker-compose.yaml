@@ -24,3 +24,5 @@ services:
       LOGGING_LEVEL_AI_DOCHANDLER: INFO
       SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE: 50MB
       SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE: 50MB
+    volumes:
+      - ./config.yaml:/app/config/application.yaml

@@ -28,8 +28,9 @@ public class AuthService
 
         if (host != null && !host.isBlank())
         {
-            String tenant = db.getTenant();
             session.setAttribute("tenant", host);
+            
+            String tenant = db.getTenant();
             List<String> tenants = userRepo.findTenants(username);
 
             if (!tenants.contains(tenant))
@@ -67,7 +68,7 @@ public class AuthService
 
         session.setAttribute("tenant", tenant);
         session.setAttribute("admin", userRepo.isAdmin(username, tenant));
-        
+
         return(true);
     }
 
