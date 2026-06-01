@@ -316,10 +316,17 @@ public class DocumentRepository
 
         for (int i = 0; i < chunkList.size(); i++)
         {
+            Float[] emb = embeddings.get(i);
+            if (emb == null || emb.length == 0)
+            {
+                log.warn("Skipping chunk {} for docid={}: embedding is empty", i + 1, docid);
+                continue;
+            }
+
             int line = i + 1;
             String section = sections.get(i);
             String chunk = chunkList.get(i);
-            String vecStr = toVectorLiteral(embeddings.get(i));
+            String vecStr = toVectorLiteral(emb);
             String fLang = lang;
 
             jdbc.update(con ->

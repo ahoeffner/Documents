@@ -23,6 +23,9 @@ public class GeminiService
     @Value("${app.ai-services}")
     private String aiServicesUrl;
 
+    @Value("${app.ai-timeout-seconds:30}")
+    private int timeoutSeconds;
+
     private final HttpClient client;
     private final ObjectMapper mapper;
 
@@ -84,7 +87,7 @@ public class GeminiService
         String json = mapper.writeValueAsString(body);
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(aiServicesUrl + path))
-            .timeout(Duration.ofSeconds(10))
+            .timeout(Duration.ofSeconds(timeoutSeconds))
             .header("Content-Type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8))
             .build();

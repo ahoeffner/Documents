@@ -16,7 +16,8 @@ spring:
       maximum-pool-size: 3
 
 app:
-  ai-services: http://home:9000
+  ai-services: ${AI_SERVICES_URL:http://home:9000}
+  ai-timeout-seconds: ${AI_TIMEOUT_SECONDS:30}
   tesseract:
     language: dan
   chunker:

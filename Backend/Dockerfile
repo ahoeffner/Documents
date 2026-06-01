@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         tesseract-ocr-fra \
         tesseract-ocr-spa \
         libgomp1 \
+        poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=native-build /app/target/documents documents

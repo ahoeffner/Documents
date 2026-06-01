@@ -1,0 +1,12 @@
+{
+  "resources": {
+    "includes": [
+      { "pattern": "org/apache/tika/mime/tika-mimetypes.xml" },
+      { "pattern": "org/apache/tika/parser/external/tika-external-parsers.xml" },
+      { "pattern": "META-INF/services/org.apache.tika.*" },
+      { "pattern": "META-INF/services/javax.xml.parsers.*" },
+      { "pattern": "META-INF/services/org.apache.xerces.*" },
+      { "pattern": "opennlp/.*\\.bin" }
+    ]
+  }
+}

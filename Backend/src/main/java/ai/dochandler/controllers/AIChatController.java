@@ -1,6 +1,8 @@
 package ai.dochandler.controllers;
 
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ai.dochandler.services.ChatService;
 import ai.dochandler.entities.ChatRequest;
 import ai.dochandler.entities.ChatResponse;
@@ -12,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/ai")
 public class AIChatController
 {
+    private static final Logger log = LoggerFactory.getLogger(AIChatController.class);
+
     private final ChatService chatService;
 
 
@@ -31,8 +35,9 @@ public class AIChatController
         }
         catch (Exception e)
         {
+            log.error("Chat request failed", e);
             return(ResponseEntity.internalServerError()
-                .body(Map.of("success", false, "response", e.getMessage())));
+                .body(Map.of("success", false, "response", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName())));
         }
     }
 }

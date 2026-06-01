@@ -11,9 +11,7 @@
 
       <div class="spacer"></div>
 
-      <span v-if="voiceStatus" class="status-text" :class="{ listening: isListening }">{{ voiceStatus }}</span>
-
-      <button type="button" @click="showAdvanced = !showAdvanced" class="btn btn-primary btn-sm adv-btn">
+<button type="button" @click="showAdvanced = !showAdvanced" class="btn btn-primary btn-sm adv-btn">
         <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
         </svg>
@@ -74,6 +72,10 @@
       </div>
     </div>
 
+    <Teleport to="body">
+      <div v-if="showHistory" class="history-backdrop" @click="showHistory = false"></div>
+    </Teleport>
+
     <!-- Source text popup -->
     <Teleport to="body">
       <div v-if="srcTextDoc" class="modal-backdrop" @click.self="srcTextDoc = null">
@@ -101,12 +103,17 @@
         @keydown.enter.exact.prevent="sendMessage"
       />
       <div class="input-buttons">
-        <button type="button" @click="toggleMic" :disabled="loading"
-          class="btn btn-ghost btn-mic" :class="{ listening: isListening }">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm-2 4a5 5 0 1010 0v-1h-1.5v1a3.5 3.5 0 01-7 0v-1H4v1zm5 6.93V18h-2v-3.07A7.003 7.003 0 013 8H5a5 5 0 0010 0h2a7.003 7.003 0 01-6 6.93z" clip-rule="evenodd"/>
-          </svg>
-        </button>
+        <div class="history-wrap">
+          <button type="button" @click="showHistory = !showHistory" :disabled="!queryHistory.length"
+            class="btn btn-primary btn-history">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+          <div v-if="showHistory" class="history-panel">
+            <div v-for="(h, i) in queryHistory" :key="i" class="history-item" @click="selectHistory(h)">{{ h }}</div>
+          </div>
+        </div>
         <button type="button" @click="sendMessage" :disabled="!query.trim() || loading"
           class="btn btn-primary btn-send">Send</button>
       </div>
@@ -116,7 +123,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import type { AxiosError } from 'axios'
 import type { DocumentResult } from '../types'
 import { chat } from '../api/chat'
@@ -135,14 +142,27 @@ const query = ref('')
 const selectedCategory = ref(0)
 const matchValue = ref(50)
 const showAdvanced = ref(false)
+const showHistory = ref(false)
 const loading = ref(false)
-const voiceStatus = ref('')
-const isListening = ref(false)
 const messagesEl = ref<HTMLElement | null>(null)
 const textareaEl = ref<HTMLTextAreaElement | null>(null)
+const queryHistory = ref<string[]>([])
 
 
-onMounted(() => categoriesStore.load())
+function onKeydown(e: KeyboardEvent)
+{
+  if (e.key === 'Escape' && showHistory.value) showHistory.value = false
+}
+
+onMounted(() =>
+{
+  categoriesStore.load()
+  const stored = localStorage.getItem('chat-query-history')
+  if (stored) queryHistory.value = JSON.parse(stored)
+  window.addEventListener('keydown', onKeydown)
+})
+
+onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 defineExpose({ focus: () => textareaEl.value?.focus() })
 
@@ -161,6 +181,8 @@ async function sendMessage()
   const q = query.value.trim()
   if (!q || loading.value) return
   chatStore.addMessage('user', q)
+  queryHistory.value = [q, ...queryHistory.value.filter(h => h !== q)].slice(0, 20)
+  localStorage.setItem('chat-query-history', JSON.stringify(queryHistory.value))
   query.value = ''
   loading.value = true
   scrollBottom()
@@ -188,57 +210,19 @@ async function sendMessage()
   {
     loading.value = false
     scrollBottom()
+    nextTick(() => textareaEl.value?.focus())
   }
 }
 
 
-// Voice
-interface Recognition {
-  lang: string; interimResults: boolean; continuous: boolean
-  start(): void; stop(): void
-  onstart: (() => void) | null; onend: (() => void) | null
-  onresult: ((e: { results: Array<{ isFinal: boolean; 0: { transcript: string } }> }) => void) | null
-  onerror: ((e: { error: string }) => void) | null
-}
-type RecognitionCtor = new () => Recognition
-const RecognitionClass: RecognitionCtor | undefined =
-  (window as unknown as { SpeechRecognition?: RecognitionCtor }).SpeechRecognition ||
-  (window as unknown as { webkitSpeechRecognition?: RecognitionCtor }).webkitSpeechRecognition
-let recognition: Recognition | null = null
-
-if (RecognitionClass)
+function selectHistory(h: string)
 {
-  recognition = new RecognitionClass()
-  recognition.lang = 'da-DK'
-  recognition.interimResults = true
-  recognition.continuous = false
-  recognition.onstart = () => { isListening.value = true; voiceStatus.value = 'Listening…' }
-  recognition.onend = () => { isListening.value = false; voiceStatus.value = ''; if (query.value.trim()) sendMessage() }
-  recognition.onresult = (e) => { query.value = e.results[0][0].transcript; voiceStatus.value = e.results[0].isFinal ? 'Submitting…' : `"${query.value}"` }
-  recognition.onerror = (e) => { isListening.value = false; voiceStatus.value = `Mic error: ${e.error}` }
+  query.value = h
+  showHistory.value = false
+  nextTick(() => textareaEl.value?.focus())
 }
 
 
-function toggleMic()
-{
-  if (!recognition || loading.value) return
-  if (isListening.value)
-  {
-    recognition.stop()
-  }
-  else
-  {
-    query.value = ''
-    try
-    {
-      recognition.start()
-    }
-    catch
-    {
-      voiceStatus.value = 'Could not start microphone.'
-    }
-  }
-}
 </script>
 
 <style scoped>
@@ -290,15 +274,6 @@ function toggleMic()
 
 .adv-hint { font-size: 11px; color: var(--text-faint); font-style: italic; }
 
-/* ── Status ── */
-.status-text {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  color: var(--text-faint);
-}
-.status-text.listening { color: var(--danger); }
 
 /* ── Messages ── */
 .messages {
@@ -428,8 +403,43 @@ function toggleMic()
 }
 
 .btn-send { height: 38px; padding: 0 18px; }
-.btn-mic  { width: 42px; height: 38px; padding: 0; }
-.btn-mic.listening { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }
+.btn-history { width: 42px; height: 38px; padding: 0; }
+.btn-history:disabled { opacity: 0.35; cursor: default; }
+
+.history-wrap { position: relative; }
+
+.history-panel {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  width: 320px;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  z-index: 200;
+}
+
+.history-item {
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--bg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+.history-item:last-child { border-bottom: none; }
+.history-item:hover { background: var(--bg-subtle); }
+
+.history-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+}
 
 .adv-btn { gap: 4px; }
 
