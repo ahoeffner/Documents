@@ -76,6 +76,24 @@
       <div v-if="showHistory" class="history-backdrop" @click="showHistory = false"></div>
     </Teleport>
 
+    <!-- Wait prompt -->
+    <Teleport to="body">
+      <div v-if="showWaitPrompt" class="modal-backdrop">
+        <div class="modal-popup modal-popup-sm">
+          <div class="modal-header">
+            <span class="modal-header-title">Still thinking…</span>
+          </div>
+          <div class="modal-body" style="font-size:13px;color:var(--text-muted)">
+            The AI is taking longer than expected. Keep waiting?
+          </div>
+          <div class="modal-actions">
+            <button class="btn btn-ghost btn-sm" @click="cancelRequest">Cancel</button>
+            <button class="btn btn-primary btn-sm" @click="keepWaiting">Wait 30 more seconds</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
     <!-- Source text popup -->
     <Teleport to="body">
       <div v-if="srcTextDoc" class="modal-backdrop" @click.self="srcTextDoc = null">
@@ -124,7 +142,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
-import type { AxiosError } from 'axios'
+import axios, { type AxiosError } from 'axios'
 import type { DocumentResult } from '../types'
 import { chat } from '../api/chat'
 import { useChatStore } from '../stores/chat'
@@ -143,6 +161,34 @@ const selectedCategory = ref(0)
 const matchValue = ref(50)
 const showAdvanced = ref(false)
 const showHistory = ref(false)
+const showWaitPrompt = ref(false)
+
+let waitTimer: ReturnType<typeof setTimeout> | null = null
+let abortController: AbortController | null = null
+
+function startWaitTimer()
+{
+  if (waitTimer) clearTimeout(waitTimer)
+  waitTimer = setTimeout(() => { showWaitPrompt.value = true }, 30000)
+}
+
+function clearWaitTimer()
+{
+  if (waitTimer) { clearTimeout(waitTimer); waitTimer = null }
+}
+
+function keepWaiting()
+{
+  showWaitPrompt.value = false
+  startWaitTimer()
+}
+
+function cancelRequest()
+{
+  showWaitPrompt.value = false
+  clearWaitTimer()
+  abortController?.abort()
+}
 const loading = ref(false)
 const messagesEl = ref<HTMLElement | null>(null)
 const textareaEl = ref<HTMLTextAreaElement | null>(null)
@@ -183,9 +229,11 @@ async function sendMessage()
   query.value = ''
   loading.value = true
   scrollBottom()
+  abortController = new AbortController()
+  startWaitTimer()
   try
   {
-    const res = await chat({ id: chatStore.sessionId, query: q, folder: selectedCategory.value, match: matchValue.value })
+    const res = await chat({ id: chatStore.sessionId, query: q, folder: selectedCategory.value, match: matchValue.value }, abortController.signal)
     const data = res.data as { success: boolean; response?: string; documents?: DocumentResult[]; refresh?: boolean }
     if (data.success)
     {
@@ -199,12 +247,18 @@ async function sendMessage()
   }
   catch (err)
   {
-    const e = err as AxiosError<string>
-    const msg = e.response?.data
-    chatStore.addMessage('ai', `Error: ${typeof msg === 'string' ? msg : (e.message || 'Connection error')}`)
+    if (!axios.isCancel(err))
+    {
+      const e = err as AxiosError<string>
+      const msg = e.response?.data
+      chatStore.addMessage('ai', `Error: ${typeof msg === 'string' ? msg : (e.message || 'Connection error')}`)
+    }
   }
   finally
   {
+    clearWaitTimer()
+    showWaitPrompt.value = false
+    abortController = null
     loading.value = false
     scrollBottom()
     nextTick(() => textareaEl.value?.focus())
