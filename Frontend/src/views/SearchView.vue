@@ -16,7 +16,7 @@
           placeholder="Search documents…"
           class="search-input"
         />
-        <button type="submit" :disabled="!query.trim() || loading" class="btn btn-primary btn-lg">
+        <button type="submit" class="btn btn-primary btn-sm">
           {{ loading ? 'Searching…' : 'Search' }}
         </button>
       </form>
@@ -24,7 +24,37 @@
       <span v-if="searched && !loading" class="result-count">
         {{ documents.length }} result{{ documents.length !== 1 ? 's' : '' }}
       </span>
+
+      <button type="button" @click="showHelp = true" class="btn btn-primary btn-sm">Help</button>
     </div>
+
+    <Teleport to="body">
+      <div v-if="showHelp" class="modal-backdrop" @click.self="showHelp = false">
+        <div class="modal-popup">
+          <div class="modal-header">
+            <span class="modal-header-title">About search</span>
+            <button type="button" class="modal-close" @click="showHelp = false">✕</button>
+          </div>
+          <div class="modal-body help-body">
+            <p>Search uses <strong>BM25 full-text matching</strong> — a word-based ranking algorithm. It finds documents that contain the exact words you type.</p>
+            <h4>How it works</h4>
+            <ul>
+              <li>Each word in your query is looked up directly in the document index.</li>
+              <li>Results are ranked by how often and how prominently the words appear.</li>
+              <li>No semantic expansion — <em>car</em> will not match <em>vehicle</em> or <em>automobile</em>.</li>
+              <li>No fuzzy matching — spelling must be correct.</li>
+            </ul>
+            <h4>Tips</h4>
+            <ul>
+              <li>Use the most distinctive words from what you are looking for.</li>
+              <li>Shorter, specific queries often give better results than long sentences.</li>
+              <li>Use <strong>Folder</strong> to narrow results to a specific category.</li>
+            </ul>
+            <p class="help-tip-accent">💡 For meaning-based queries, use the <strong>AI Chat</strong> instead.</p>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <div class="results">
       <div v-if="error" class="notice notice-error" style="margin:12px">{{ error }}</div>
@@ -48,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import type { DocumentResult } from '../types'
 import { search } from '../api/documents'
 import { useCategoriesStore } from '../stores/categories'
@@ -64,9 +94,12 @@ const documents = ref<DocumentResult[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const searched = ref(false)
+const showHelp = ref(false)
 
 
-onMounted(() => categoriesStore.load())
+function onKeydown(e: KeyboardEvent) { if (e.key === 'Escape') showHelp.value = false }
+onMounted(() => { categoriesStore.load(); window.addEventListener('keydown', onKeydown) })
+onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 defineExpose({ focus: () => searchInputEl.value?.focus() })
 
@@ -108,7 +141,7 @@ async function doSearch()
   gap: 10px;
   padding: 0 14px;
   height: 54px;
-  background: var(--bg);
+  background: var(--bg-muted);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }

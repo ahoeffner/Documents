@@ -18,6 +18,8 @@ spring:
 app:
   ai-services: ${AI_SERVICES_URL:http://home:9000}
   ai-timeout-seconds: ${AI_TIMEOUT_SECONDS:30}
+  hosts:
+    localhost: documents
   tesseract:
     language: dan
   chunker:

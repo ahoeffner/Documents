@@ -24,6 +24,7 @@
       </button>
 
       <button type="button" @click="chatStore.clear()" class="btn btn-primary btn-sm">Clear</button>
+      <button type="button" @click="showHelp = true" class="btn btn-primary btn-sm">Help</button>
     </div>
 
     <!-- Advanced row -->
@@ -76,6 +77,40 @@
       <div v-if="showHistory" class="history-backdrop" @click="showHistory = false"></div>
     </Teleport>
 
+    <!-- Help popup -->
+    <Teleport to="body">
+      <div v-if="showHelp" class="modal-backdrop" @click.self="showHelp = false">
+        <div class="modal-popup">
+          <div class="modal-header">
+            <span class="modal-header-title">About this assistant</span>
+            <button type="button" class="modal-close" @click="showHelp = false">✕</button>
+          </div>
+          <div class="modal-body help-body">
+            <p>This is a <strong>RAG (Retrieval-Augmented Generation)</strong> system. The AI answers questions exclusively from documents you have uploaded — it does not search the internet or rely on general knowledge.</p>
+            <h4>How to use</h4>
+            <ul>
+              <li>Upload documents (PDF, Word, Excel, images, …) via the <strong>Documents</strong> section.</li>
+              <li>Ask questions in plain language. The AI finds relevant passages and forms an answer.</li>
+              <li>Each response lists the <strong>source documents</strong> it drew from.</li>
+            </ul>
+            <h4>Tips</h4>
+            <ul>
+              <li>Use <strong>Folder</strong> to limit the search to a specific category of documents.</li>
+              <li><strong>Precision</strong> (under Advanced) controls how strictly documents must match. Lower = broader, higher = stricter.</li>
+              <li>Use the <strong>history button</strong> to recall and reuse previous questions.</li>
+              <li>If the answer seems off, try rephrasing or lowering the precision slider.</li>
+            </ul>
+            <h4>Limitations</h4>
+            <ul>
+              <li>Only documents you have uploaded are available as sources.</li>
+              <li>Very long documents may only be partially used as context.</li>
+              <li>The AI can make mistakes — always verify critical information.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
     <!-- Source text popup -->
     <Teleport to="body">
       <div v-if="srcTextDoc" class="modal-backdrop" @click.self="srcTextDoc = null">
@@ -104,18 +139,18 @@
       />
       <div class="input-buttons">
         <div class="history-wrap">
-          <button type="button" @click="showHistory = !showHistory" :disabled="!queryHistory.length"
-            class="btn btn-primary btn-history">
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+          <button type="button" @click="queryHistory.length && (showHistory = !showHistory)"
+            class="btn btn-primary btn-sm btn-history">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/>
             </svg>
           </button>
           <div v-if="showHistory" class="history-panel">
             <div v-for="(h, i) in queryHistory" :key="i" class="history-item" @click="selectHistory(h)">{{ h }}</div>
           </div>
         </div>
-        <button type="button" @click="sendMessage" :disabled="!query.trim() || loading"
-          class="btn btn-primary btn-send">Send</button>
+        <button type="button" @click="sendMessage"
+          class="btn btn-primary btn-sm btn-send">Send</button>
       </div>
     </div>
 
@@ -143,6 +178,7 @@ const selectedCategory = ref(0)
 const matchValue = ref(50)
 const showAdvanced = ref(false)
 const showHistory = ref(false)
+const showHelp = ref(false)
 const loading = ref(false)
 const messagesEl = ref<HTMLElement | null>(null)
 const textareaEl = ref<HTMLTextAreaElement | null>(null)
@@ -240,7 +276,7 @@ function selectHistory(h: string)
   gap: 10px;
   padding: 0 14px;
   height: 46px;
-  background: var(--bg);
+  background: var(--bg-muted);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -253,7 +289,7 @@ function selectHistory(h: string)
   gap: 10px;
   padding: 0 14px;
   height: 38px;
-  background: var(--bg-subtle);
+  background: var(--tab-bar-bg);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -365,7 +401,7 @@ function selectHistory(h: string)
 /* ── Input row ── */
 .input-row {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 8px;
   padding: 10px 14px;
   background: var(--bg);
@@ -402,9 +438,8 @@ function selectHistory(h: string)
   padding-bottom: 2px;
 }
 
-.btn-send { height: 38px; padding: 0 18px; }
-.btn-history { width: 42px; height: 38px; padding: 0; }
-.btn-history:disabled { opacity: 0.35; cursor: default; }
+.btn-send { width: 100%; }
+.btn-history { width: 100%; }
 
 .history-wrap { position: relative; }
 
