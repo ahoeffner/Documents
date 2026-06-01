@@ -5,11 +5,6 @@
     <div class="sidebar" :style="{ width: sidebarWidth + 'px' }" @contextmenu.prevent="showCtx($event, 'tree')">
       <div class="sidebar-header">
         <span class="section-label">Folders</span>
-        <button v-if="auth.isAdmin" class="btn-icon" title="New folder" @click="openNewFolder(null)">
-          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <path d="M10 4v12M4 10h12"/>
-          </svg>
-        </button>
       </div>
 
       <div v-if="foldersStore.loading" class="tree-empty">
@@ -25,6 +20,7 @@
           :depth="0"
           :selected-id="selectedFolderId"
           @select="selectFolder"
+          @context="onFolderCtx"
         />
       </div>
     </div>
@@ -38,17 +34,6 @@
         <span class="panel-title">
           {{ selectedFolder ? selectedFolder.path : 'Select a folder' }}
         </span>
-        <div style="display:flex;gap:6px;flex-shrink:0">
-          <button v-if="auth.isAdmin && selectedFolderId" class="btn btn-primary btn-xs" @click="openNew">New Document</button>
-          <button v-if="auth.isAdmin" class="btn btn-primary btn-xs" @click="openNewFolder(selectedFolderId)">New Folder</button>
-          <button v-if="auth.isAdmin && selectedFolderId" class="btn btn-primary btn-xs" @click="startRename">Rename Folder</button>
-          <button
-            v-if="auth.isAdmin && selectedFolderId && !docs.length && !docsLoading"
-            class="btn btn-primary btn-xs"
-            :disabled="deleteFolderLoading"
-            @click="deleteSelectedFolder"
-          >Delete Folder</button>
-        </div>
       </div>
 
       <div v-if="!selectedFolderId" class="empty-state">
@@ -145,11 +130,17 @@
     <Teleport to="body">
       <div v-if="ctxMenu" class="ctx-menu" :style="{ top: ctxMenu.y + 'px', left: ctxMenu.x + 'px' }" @click.stop>
         <template v-if="ctxMenu.type === 'tree'">
-          <button class="ctx-item" @click="ctxAction(() => openNewFolder(null))">New Folder at root</button>
+          <button class="ctx-item" @click="ctxAction(() => openNewFolder(null))">New Root Folder</button>
+        </template>
+        <template v-if="ctxMenu.type === 'folder'">
+          <button class="ctx-item" @click="ctxAction(() => openNewFolder(ctxMenu!.folderId ?? null))">New Subfolder</button>
+          <button class="ctx-item" @click="ctxRenameFolder">Rename</button>
+          <div class="ctx-divider"></div>
+          <button class="ctx-item ctx-item-danger" @click="ctxDeleteFolder">Delete</button>
         </template>
         <template v-if="ctxMenu.type === 'content'">
+          <button class="ctx-item" @click="ctxAction(openNew)">New Document</button>
           <button class="ctx-item" @click="ctxAction(() => openNewFolder(selectedFolderId))">New Folder</button>
-          <button v-if="selectedFolderId" class="ctx-item" @click="ctxAction(openNew)">New Document</button>
         </template>
       </div>
     </Teleport>
@@ -362,7 +353,7 @@ async function reloadDocs()
 
 
 // ── New Folder ────────────────────────────────────────────────────
-const ctxMenu = ref<{ x: number; y: number; type: 'tree' | 'content' } | null>(null)
+const ctxMenu = ref<{ x: number; y: number; type: 'tree' | 'content' | 'folder'; folderId?: number | null } | null>(null)
 const showNewFolder = ref(false)
 const newFolderPid = ref<number | null>(null)
 const newFolderName = ref('')
@@ -400,10 +391,54 @@ function showCtx(e: MouseEvent, type: 'tree' | 'content')
 }
 
 
+function onFolderCtx(payload: { id: number; e: MouseEvent })
+{
+  if (!auth.isAdmin) return
+  ctxMenu.value = { x: payload.e.clientX, y: payload.e.clientY, type: 'folder', folderId: payload.id }
+}
+
+
 function ctxAction(fn: () => void)
 {
   ctxMenu.value = null
   fn()
+}
+
+
+function ctxRenameFolder()
+{
+  const id = ctxMenu.value?.folderId
+  ctxMenu.value = null
+  if (!id) return
+  selectedFolderId.value = id
+  const folder = flatFolders.value.find(f => f.id === id)
+  renameFolderName.value = folder?.path.split(' / ').at(-1) ?? ''
+  showRenameFolder.value = true
+}
+
+
+async function ctxDeleteFolder()
+{
+  const id = ctxMenu.value?.folderId
+  ctxMenu.value = null
+  if (!id) return
+  const folder = flatFolders.value.find(f => f.id === id)
+  if (!window.confirm(`Delete folder "${folder?.path}"?`)) return
+  deleteFolderLoading.value = true
+  try
+  {
+    await deleteFolder(id)
+    if (selectedFolderId.value === id) { selectedFolderId.value = null; docs.value = [] }
+    await foldersStore.load()
+  }
+  catch
+  {
+    docsError.value = 'Failed to delete folder.'
+  }
+  finally
+  {
+    deleteFolderLoading.value = false
+  }
 }
 
 
@@ -952,4 +987,7 @@ onUnmounted(() =>
   cursor: pointer;
 }
 .ctx-item:hover { background: var(--bg-subtle); }
+.ctx-item-danger { color: var(--danger); }
+.ctx-item-danger:hover { background: var(--danger-bg, #fef2f2); }
+.ctx-divider { height: 1px; background: var(--border); margin: 3px 0; }
 </style>

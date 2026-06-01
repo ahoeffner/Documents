@@ -24,7 +24,6 @@
       </button>
 
       <button type="button" @click="chatStore.clear()" class="btn btn-primary btn-sm">Clear</button>
-      <button type="button" @click="showHelp = true" class="btn btn-primary btn-sm">Help</button>
     </div>
 
     <!-- Advanced row -->
@@ -75,40 +74,6 @@
 
     <Teleport to="body">
       <div v-if="showHistory" class="history-backdrop" @click="showHistory = false"></div>
-    </Teleport>
-
-    <!-- Help popup -->
-    <Teleport to="body">
-      <div v-if="showHelp" class="modal-backdrop" @click.self="showHelp = false">
-        <div class="modal-popup">
-          <div class="modal-header">
-            <span class="modal-header-title">About this assistant</span>
-            <button type="button" class="modal-close" @click="showHelp = false">✕</button>
-          </div>
-          <div class="modal-body help-body">
-            <p>This is a <strong>RAG (Retrieval-Augmented Generation)</strong> system. The AI answers questions exclusively from documents you have uploaded — it does not search the internet or rely on general knowledge.</p>
-            <h4>How to use</h4>
-            <ul>
-              <li>Upload documents (PDF, Word, Excel, images, …) via the <strong>Documents</strong> section.</li>
-              <li>Ask questions in plain language. The AI finds relevant passages and forms an answer.</li>
-              <li>Each response lists the <strong>source documents</strong> it drew from.</li>
-            </ul>
-            <h4>Tips</h4>
-            <ul>
-              <li>Use <strong>Folder</strong> to limit the search to a specific category of documents.</li>
-              <li><strong>Precision</strong> (under Advanced) controls how strictly documents must match. Lower = broader, higher = stricter.</li>
-              <li>Use the <strong>history button</strong> to recall and reuse previous questions.</li>
-              <li>If the answer seems off, try rephrasing or lowering the precision slider.</li>
-            </ul>
-            <h4>Limitations</h4>
-            <ul>
-              <li>Only documents you have uploaded are available as sources.</li>
-              <li>Very long documents may only be partially used as context.</li>
-              <li>The AI can make mistakes — always verify critical information.</li>
-            </ul>
-          </div>
-        </div>
-      </div>
     </Teleport>
 
     <!-- Source text popup -->
@@ -178,17 +143,13 @@ const selectedCategory = ref(0)
 const matchValue = ref(50)
 const showAdvanced = ref(false)
 const showHistory = ref(false)
-const showHelp = ref(false)
 const loading = ref(false)
 const messagesEl = ref<HTMLElement | null>(null)
 const textareaEl = ref<HTMLTextAreaElement | null>(null)
 const queryHistory = ref<string[]>([])
 
 
-function onKeydown(e: KeyboardEvent)
-{
-  if (e.key === 'Escape' && showHistory.value) showHistory.value = false
-}
+function onKeydown(e: KeyboardEvent) { if (e.key === 'Escape') showHistory.value = false }
 
 onMounted(() =>
 {

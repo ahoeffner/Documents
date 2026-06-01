@@ -5,6 +5,7 @@
       :class="{ selected: selectedId === folder.id }"
       :style="{ paddingLeft: depth * 14 + 8 + 'px' }"
       @click="$emit('select', folder.id)"
+      @contextmenu.stop.prevent="$emit('context', { id: folder.id, e: $event })"
     >
       <span class="tree-toggle" @click.stop="open = !open">
         <svg v-if="folder.children.length" width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
@@ -29,6 +30,7 @@
         :depth="depth + 1"
         :selected-id="selectedId"
         @select="$emit('select', $event)"
+        @context="$emit('context', $event)"
       />
     </template>
   </div>
@@ -46,7 +48,10 @@ defineProps<{
   selectedId: number | null
 }>()
 
-defineEmits<{ select: [id: number] }>()
+defineEmits<{
+  select: [id: number]
+  context: [payload: { id: number; e: MouseEvent }]
+}>()
 
 
 const open = ref(true)

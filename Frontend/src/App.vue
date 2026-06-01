@@ -19,8 +19,48 @@
           </button>
         </nav>
         <div class="spacer" />
+        <button class="btn btn-ghost btn-sm" style="align-self:center" @click="showHelp = true">Help</button>
         <button class="btn btn-ghost btn-sm" style="align-self:center" @click="auth.logout()">Sign out</button>
       </header>
+
+      <Teleport to="body">
+        <div v-if="showHelp" class="modal-backdrop" @click.self="showHelp = false">
+          <div class="modal-popup">
+            <div class="modal-header">
+              <span class="modal-header-title">Help</span>
+              <button type="button" class="modal-close" @click="showHelp = false">✕</button>
+            </div>
+            <div class="modal-body help-body">
+
+              <h4>Documents</h4>
+              <p>Organise your documents into folders. Use <strong>right-click</strong> to manage everything.</p>
+              <ul>
+                <li>Right-click a <strong>folder</strong> in the sidebar → New Subfolder, Rename, Delete</li>
+                <li>Right-click <strong>empty sidebar space</strong> → New Root Folder</li>
+                <li>Right-click <strong>content area</strong> → New Document, New Folder</li>
+              </ul>
+
+              <h4>Search</h4>
+              <p>Uses <strong>BM25 full-text matching</strong> — finds documents containing the exact words you type. No semantic expansion, no fuzzy matching.</p>
+              <ul>
+                <li>Use the most distinctive words from what you are looking for.</li>
+                <li>Use <strong>Folder</strong> to narrow results to a specific category.</li>
+              </ul>
+              <p class="help-tip-accent">💡 For meaning-based queries, use <strong>AI Chat</strong> instead.</p>
+
+              <h4>AI Chat</h4>
+              <p>Uses <strong>RAG (Retrieval-Augmented Generation)</strong> — answers exclusively from your uploaded documents, not the internet.</p>
+              <ul>
+                <li>Sources below each answer show which documents were used.</li>
+                <li><strong>Precision</strong> (Advanced) controls how strictly documents must match.</li>
+                <li>Use <strong>Folder</strong> to narrow the search to a specific category.</li>
+                <li>Use the history button to recall and reuse previous questions.</li>
+              </ul>
+
+            </div>
+          </div>
+        </div>
+      </Teleport>
 
       <ExplorerView v-show="activeTab === 'browse'" />
       <SearchView   ref="searchRef" v-show="activeTab === 'search'" />
@@ -31,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, h } from 'vue'
+import { ref, watch, nextTick, h, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from './stores/auth'
 import ChatView from './views/ChatView.vue'
 import LoginView from './views/LoginView.vue'
@@ -40,6 +80,7 @@ import ExplorerView from './views/ExplorerView.vue'
 
 
 const auth = useAuthStore()
+const showHelp = ref(false)
 
 
 const activeTab = ref<'browse' | 'search' | 'chat'>('browse')
@@ -73,6 +114,11 @@ const IconChat = { render: () => h('svg', { width: 14, height: 14, viewBox: '0 0
   h('path', { d: 'M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z' }),
   h('path', { d: 'M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z' })
 ]) }
+
+
+function onKeydown(e: KeyboardEvent) { if (e.key === 'Escape') showHelp.value = false }
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 
 const tabs = [

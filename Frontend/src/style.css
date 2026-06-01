@@ -4,10 +4,10 @@
    Color scheme — swap these variables to change the whole theme
    ════════════════════════════════════════════════════════════════ */
 :root {
-  /* Accent – blue */
-  --accent:       #3b82f6;
-  --accent-dark:  #2563eb;
-  --accent-ring:  rgba(59, 130, 246, 0.14);
+  /* Accent – slate grey */
+  --accent:       #475569;
+  --accent-dark:  #334155;
+  --accent-ring:  rgba(71, 85, 105, 0.14);
 
   /* Surfaces */
   --bg:           #ffffff;
