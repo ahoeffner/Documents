@@ -67,6 +67,8 @@ public class ChatService
         List<Document> documents = new ArrayList<>();
         for (DocumentRecord d : docs)
         {
+            if (d.getDate() != null)
+                context.append("date: ").append(d.getDate().toString().replace('-', '/')).append("\n");
             context.append(documentRepo.getAllText(d.getId())).append("\n");
             documents.add(toDocument(d));
         }

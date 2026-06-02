@@ -2,8 +2,8 @@ package ai.dochandler.model;
 
 import java.sql.Date;
 import java.util.List;
-import java.time.LocalDate;
 import java.util.ArrayList;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import ai.dochandler.services.GeminiService;
 import dev.langchain4j.data.segment.TextSegment;

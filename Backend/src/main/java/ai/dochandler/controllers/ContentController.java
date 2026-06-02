@@ -1,6 +1,8 @@
 package ai.dochandler.controllers;
 
 import java.io.IOException;
+import java.text.Normalizer;
+import java.nio.charset.StandardCharsets;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.util.UriUtils;
@@ -8,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.MediaTypeFactory;
+import org.springframework.http.ContentDisposition;
 import ai.dochandler.repository.DocumentRepository;
 
 
@@ -64,9 +67,14 @@ public class ContentController
             .map(MediaType::toString)
             .orElse(MediaType.APPLICATION_OCTET_STREAM_VALUE);
 
+        String nfc = Normalizer.normalize(filename, Normalizer.Form.NFC);
+        String disposition = ContentDisposition.inline()
+            .filename(nfc, StandardCharsets.UTF_8)
+            .build().toString();
+
         return(ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_TYPE, contentType)
-            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
+            .header(HttpHeaders.CONTENT_DISPOSITION, disposition)
             .body(content));
     }
 
@@ -102,9 +110,14 @@ public class ContentController
             .map(MediaType::toString)
             .orElse(MediaType.APPLICATION_OCTET_STREAM_VALUE);
 
+        String nfc = Normalizer.normalize(filename, Normalizer.Form.NFC);
+        String disposition = ContentDisposition.attachment()
+            .filename(nfc, StandardCharsets.UTF_8)
+            .build().toString();
+
         return(ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_TYPE, contentType)
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+            .header(HttpHeaders.CONTENT_DISPOSITION, disposition)
             .body(content));
     }
 }

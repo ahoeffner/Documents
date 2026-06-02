@@ -1,15 +1,8 @@
 <template>
-  <div class="doc-row">
+  <div class="doc-row" @dblclick="openContent" @contextmenu.prevent.stop="showCtxMenu">
     <span class="doc-date">{{ formatDate(doc.date) }}</span>
     <div class="doc-main">
       <span class="doc-title">{{ doc.title || 'Untitled' }}</span><span v-if="doc.description" class="doc-desc"> — {{ doc.description }}</span>
-    </div>
-    <div class="doc-actions">
-      <button v-if="doc.description" type="button" class="doc-btn" @click="showText = true">Text</button>
-      <span v-else class="doc-btn doc-btn-off">Text</span>
-      <a v-if="doc.hasFile" :href="`/api/content/${doc.id}/file`" target="_blank" class="doc-btn">File</a>
-      <span v-else class="doc-btn doc-btn-off">File</span>
-      <button v-if="canEdit" type="button" class="doc-btn" @click="$emit('edit', doc.id)">Edit</button>
     </div>
 
     <Teleport to="body">
@@ -25,24 +18,101 @@
         </div>
       </div>
     </Teleport>
+
+    <Teleport to="body">
+      <div v-if="ctxMenu" class="ctx-menu" :style="{ top: ctxMenu.y + 'px', left: ctxMenu.x + 'px' }" @click.stop>
+        <button v-if="doc.description" class="ctx-item" @click="ctxText">Show Text</button>
+        <a v-if="doc.hasFile" :href="`/api/content/${doc.id}/file`" target="_blank" class="ctx-item" @click="ctxMenu = null">Show File</a>
+        <div v-if="(doc.description || doc.hasFile) && canEdit" class="ctx-divider"></div>
+        <button v-if="canEdit" class="ctx-item" @click="ctxEdit">Edit Document</button>
+        <div v-if="canEdit" class="ctx-divider"></div>
+        <button v-if="canEdit" class="ctx-item" @click="ctxNewFolder">New Folder</button>
+        <button v-if="canEdit" class="ctx-item" @click="ctxNewDoc">New Document</button>
+        <div class="ctx-divider"></div>
+        <button class="ctx-item" :class="{ 'ctx-item-active': activeSort === 'title' }" @click="ctxSort('title')">Sort by Title</button>
+        <button class="ctx-item" :class="{ 'ctx-item-active': activeSort === 'date' }" @click="ctxSort('date')">Sort by Date</button>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import type { DocumentResult } from '../types'
 
 
-defineProps<{ doc: DocumentResult; canEdit?: boolean }>()
-defineEmits<{ edit: [id: number] }>()
-
+const props = defineProps<{ doc: DocumentResult; canEdit?: boolean; activeSort?: 'title' | 'date' }>()
+const emit = defineEmits<{ edit: [id: number]; 'new-doc': []; 'new-folder': []; sort: ['title' | 'date'] }>()
 
 const showText = ref(false)
+const ctxMenu = ref<{ x: number; y: number } | null>(null)
+
+
+function openContent()
+{
+  if (props.doc.hasFile) window.open(`/api/content/${props.doc.id}/file`, '_blank')
+  else if (props.doc.description) showText.value = true
+}
+
+
+function showCtxMenu(e: MouseEvent)
+{
+  ctxMenu.value = { x: e.clientX, y: e.clientY }
+}
+
+
+function ctxText()
+{
+  ctxMenu.value = null
+  showText.value = true
+}
+
+
+function ctxEdit()
+{
+  ctxMenu.value = null
+  emit('edit', props.doc.id)
+}
+
+
+function ctxNewDoc()
+{
+  ctxMenu.value = null
+  emit('new-doc')
+}
+
+
+function ctxNewFolder()
+{
+  ctxMenu.value = null
+  emit('new-folder')
+}
+
+
+function ctxSort(mode: 'title' | 'date')
+{
+  ctxMenu.value = null
+  emit('sort', mode)
+}
+
+
+watch(ctxMenu, val =>
+{
+  if (val)
+  {
+    const close = () => { ctxMenu.value = null }
+    window.addEventListener('click', close, { once: true })
+  }
+})
 
 
 function onKeydown(e: KeyboardEvent)
 {
-  if (e.key === 'Escape' && showText.value) showText.value = false
+  if (e.key === 'Escape')
+  {
+    if (ctxMenu.value) { ctxMenu.value = null; return }
+    if (showText.value) showText.value = false
+  }
 }
 
 onMounted(() => window.addEventListener('keydown', onKeydown))
@@ -71,11 +141,13 @@ function formatDate(d: string): string
   padding: 7px 14px;
   border-bottom: 1px solid var(--bg-subtle);
   font-size: 12px;
+  cursor: pointer;
+  user-select: none;
 }
 .doc-row:hover { background: var(--bg-subtle); }
 
 .doc-date {
-  color: var(--text-muted);
+  color: var(--text);
   width: 88px;
   flex-shrink: 0;
 }
@@ -87,35 +159,33 @@ function formatDate(d: string): string
   white-space: nowrap;
 }
 .doc-title { color: var(--text); }
-.doc-desc  { color: var(--text-muted); }
-.doc-actions {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  flex-shrink: 0;
+.doc-desc  { color: var(--text); }
+
+.ctx-menu {
+  position: fixed;
+  z-index: 9999;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  padding: 4px 0;
+  min-width: 130px;
 }
-.doc-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 22px;
-  border: 1px solid var(--tab-border);
-  border-radius: 3px;
-  background: var(--tab-bg);
+
+.ctx-item {
+  display: block;
+  width: 100%;
+  padding: 6px 14px;
+  text-align: left;
+  font-size: 12.5px;
+  font-family: inherit;
   color: var(--text);
-  font-size: 11px;
-  font-weight: 500;
+  background: none;
+  border: none;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.1s;
 }
-.doc-btn:hover { background: var(--tab-hover-bg); }
-.doc-btn-off {
-  background: var(--bg-muted);
-  border-color: var(--border);
-  color: var(--text-faint);
-  cursor: default;
-  pointer-events: none;
-}
+.ctx-item:hover { background: var(--bg-subtle); }
+.ctx-item-active { font-weight: 600; color: var(--accent); }
+.ctx-divider { height: 1px; background: var(--border); margin: 3px 0; }
 </style>

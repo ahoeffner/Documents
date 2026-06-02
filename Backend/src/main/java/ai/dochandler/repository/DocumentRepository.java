@@ -180,13 +180,24 @@ public class DocumentRepository
 
     public List<DocumentRecord> lexicalSearch(String[] words, long fldid)
     {
-        String wordlist = String.join(" ", words);
+        boolean hasWildcard = Arrays.stream(words).anyMatch(w -> w.endsWith("*"));
 
-        List<Long> docids = jdbc.query
-        (
-            "SELECT DISTINCT(docid) FROM " + chunks() + " WHERE lexvector @@ plainto_tsquery(lang::regconfig, ?)",
-            (rs, i) -> rs.getLong("docid"), wordlist
-        );
+        String sql = "SELECT DISTINCT(docid) FROM " + chunks() + " WHERE lexvector @@ ";
+        List<Long> docids;
+
+        if (hasWildcard)
+        {
+            String tsquery = Arrays.stream(words)
+                .map(w -> w.replaceAll("[^\\p{L}\\p{N}_-]", "") + (w.endsWith("*") ? ":*" : ""))
+                .filter(w -> !w.isEmpty() && !w.equals(":*"))
+                .collect(Collectors.joining(" & "));
+
+            docids = jdbc.query(sql + "to_tsquery(lang::regconfig, ?)", (rs, i) -> rs.getLong("docid"), tsquery);
+        }
+        else
+        {
+            docids = jdbc.query(sql + "plainto_tsquery(lang::regconfig, ?)", (rs, i) -> rs.getLong("docid"), String.join(" ", words));
+        }
 
         return(fetchByIds(docids, fldid));
     }

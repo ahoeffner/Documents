@@ -79,7 +79,9 @@ public class Application
                         }
                     }
                 }
-                catch (Exception ignored) {}
+                catch (Exception ignored)
+                {
+                }
             }
         }
     }

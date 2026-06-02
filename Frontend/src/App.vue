@@ -33,25 +33,30 @@
             <div class="modal-body help-body">
 
               <h4>Documents</h4>
-              <p>Organise your documents into folders. Use <strong>right-click</strong> to manage everything.</p>
+              <p>Organise your documents into folders. Use <strong>right-click</strong> to manage everything — no toolbar buttons.</p>
               <ul>
                 <li>Right-click a <strong>folder</strong> in the sidebar → New Subfolder, Rename, Delete</li>
                 <li>Right-click <strong>empty sidebar space</strong> → New Root Folder</li>
                 <li>Right-click <strong>content area</strong> → New Document, New Folder</li>
+                <li>Right-click a <strong>document row</strong> → Text, File, Edit</li>
+                <li>Double-click a <strong>document row</strong> → open file, or show text if no file</li>
               </ul>
 
               <h4>Search</h4>
               <p>Uses <strong>BM25 full-text matching</strong> — finds documents containing the exact words you type. No semantic expansion, no fuzzy matching.</p>
               <ul>
                 <li>Use the most distinctive words from what you are looking for.</li>
+                <li>Add <strong>*</strong> to a word for prefix search — <em>VVS*</em> matches VVS, VVS-rør, VVSfirma, etc.</li>
                 <li>Use <strong>Folder</strong> to narrow results to a specific category.</li>
+                <li>Right-click or double-click a result row to open it.</li>
               </ul>
-              <p class="help-tip-accent">💡 For meaning-based queries, use <strong>AI Chat</strong> instead.</p>
+              <p class="help-tip-accent">For meaning-based queries, use <strong>AI Chat</strong> instead.</p>
 
               <h4>AI Chat</h4>
               <p>Uses <strong>RAG (Retrieval-Augmented Generation)</strong> — answers exclusively from your uploaded documents, not the internet.</p>
               <ul>
                 <li>Sources below each answer show which documents were used.</li>
+                <li>Right-click or double-click a source row to open its file or text.</li>
                 <li><strong>Precision</strong> (Advanced) controls how strictly documents must match.</li>
                 <li>Use <strong>Folder</strong> to narrow the search to a specific category.</li>
                 <li>Use the history button to recall and reuse previous questions.</li>
@@ -116,7 +121,11 @@ const IconChat = { render: () => h('svg', { width: 14, height: 14, viewBox: '0 0
 ]) }
 
 
-function onKeydown(e: KeyboardEvent) { if (e.key === 'Escape') showHelp.value = false }
+function onKeydown(e: KeyboardEvent)
+{
+  if (e.key === 'Escape') showHelp.value = false
+}
+
 onMounted(() => window.addEventListener('keydown', onKeydown))
 onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 

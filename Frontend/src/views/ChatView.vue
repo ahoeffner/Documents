@@ -48,15 +48,15 @@
 
           <div v-if="msg.documents && msg.documents.length" class="sources">
             <div class="sources-label">Sources</div>
-            <div v-for="d in msg.documents" :key="d.id" class="source-row">
+            <div
+              v-for="d in msg.documents"
+              :key="d.id"
+              class="source-row"
+              @dblclick="openSourceContent(d)"
+              @contextmenu.prevent="showSourceCtx($event, d)"
+            >
               <span class="source-date">{{ d.date }}</span>
-              <span class="source-title">{{ d.title }}</span>
-              <div class="source-btns">
-                <button v-if="d.description" type="button" class="src-btn" @click="srcTextDoc = d">Text</button>
-                <span v-else class="src-btn src-btn-off">Text</span>
-                <a v-if="d.hasFile" :href="`/api/content/${d.id}/file`" target="_blank" class="src-btn">File</a>
-                <span v-else class="src-btn src-btn-off">File</span>
-              </div>
+              <span class="source-title">{{ d.title }}</span><span v-if="d.description" class="source-desc"> — {{ d.description }}</span>
             </div>
           </div>
         </div>
@@ -109,6 +109,16 @@
       </div>
     </Teleport>
 
+    <!-- Source row context menu -->
+    <Teleport to="body">
+      <div v-if="srcCtxMenu" class="src-ctx-menu" :style="{ top: srcCtxMenu.y + 'px', left: srcCtxMenu.x + 'px' }" @click.stop>
+        <button v-if="srcCtxMenu.doc.description" class="src-ctx-item" @click="srcCtxText">Show Text</button>
+        <a v-if="srcCtxMenu.doc.hasFile" :href="`/api/content/${srcCtxMenu.doc.id}/file`" target="_blank" class="src-ctx-item" @click="srcCtxMenu = null">Show File</a>
+        <div v-if="auth.isAdmin" class="src-ctx-divider"></div>
+        <button v-if="auth.isAdmin" class="src-ctx-item" @click="srcCtxEdit">Edit Document</button>
+      </div>
+    </Teleport>
+
     <!-- Input row -->
     <div class="input-row">
       <textarea
@@ -141,15 +151,60 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import axios, { type AxiosError } from 'axios'
 import type { DocumentResult } from '../types'
 import { chat } from '../api/chat'
 import { useChatStore } from '../stores/chat'
 import { useCategoriesStore } from '../stores/categories'
+import { useAuthStore } from '../stores/auth'
+import { useEditRequestStore } from '../stores/editRequest'
 
 
 const srcTextDoc = ref<DocumentResult | null>(null)
+const srcCtxMenu = ref<{ x: number; y: number; doc: DocumentResult } | null>(null)
+const auth = useAuthStore()
+const editRequestStore = useEditRequestStore()
+
+
+function openSourceContent(d: DocumentResult)
+{
+  if (d.hasFile) window.open(`/api/content/${d.id}/file`, '_blank')
+  else if (d.description) srcTextDoc.value = d
+}
+
+
+function showSourceCtx(e: MouseEvent, d: DocumentResult)
+{
+  if (!d.description && !d.hasFile && !auth.isAdmin) return
+  srcCtxMenu.value = { x: e.clientX, y: e.clientY, doc: d }
+}
+
+
+function srcCtxText()
+{
+  const doc = srcCtxMenu.value?.doc ?? null
+  srcCtxMenu.value = null
+  if (doc) srcTextDoc.value = doc
+}
+
+
+function srcCtxEdit()
+{
+  const id = srcCtxMenu.value?.doc.id
+  srcCtxMenu.value = null
+  if (id !== undefined) editRequestStore.request(Number(id))
+}
+
+
+watch(srcCtxMenu, val =>
+{
+  if (val)
+  {
+    const close = () => { srcCtxMenu.value = null }
+    window.addEventListener('click', close, { once: true })
+  }
+})
 
 
 const chatStore = useChatStore()
@@ -172,10 +227,12 @@ function startWaitTimer()
   waitTimer = setTimeout(() => { showWaitPrompt.value = true }, 30000)
 }
 
+
 function clearWaitTimer()
 {
   if (waitTimer) { clearTimeout(waitTimer); waitTimer = null }
 }
+
 
 function keepWaiting()
 {
@@ -183,19 +240,29 @@ function keepWaiting()
   startWaitTimer()
 }
 
+
 function cancelRequest()
 {
   showWaitPrompt.value = false
   clearWaitTimer()
   abortController?.abort()
 }
+
+
 const loading = ref(false)
 const messagesEl = ref<HTMLElement | null>(null)
 const textareaEl = ref<HTMLTextAreaElement | null>(null)
 const queryHistory = ref<string[]>([])
 
 
-function onKeydown(e: KeyboardEvent) { if (e.key === 'Escape') showHistory.value = false }
+function onKeydown(e: KeyboardEvent)
+{
+  if (e.key === 'Escape')
+  {
+    if (srcCtxMenu.value) { srcCtxMenu.value = null; return }
+    showHistory.value = false
+  }
+}
 
 onMounted(() =>
 {
@@ -272,8 +339,6 @@ function selectHistory(h: string)
   showHistory.value = false
   nextTick(() => textareaEl.value?.focus())
 }
-
-
 </script>
 
 <style scoped>
@@ -373,45 +438,51 @@ function selectHistory(h: string)
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 0;
+  padding: 3px 4px;
   border-bottom: 1px solid var(--bg-muted);
+  border-radius: 3px;
   font-size: 11px;
+  cursor: pointer;
+  user-select: none;
 }
 .source-row:last-child { border-bottom: none; }
+.source-row:hover { background: var(--bg-muted); }
 .source-date {
   font-family: 'SFMono-Regular', Consolas, monospace;
   font-size: 10px;
-  color: var(--text-faint);
+  color: var(--text);
   width: 80px;
   flex-shrink: 0;
 }
-.source-title { flex: 1; min-width: 0; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.source-btns { display: flex; gap: 4px; flex-shrink: 0; }
+.source-title { color: var(--text); }
+.source-desc  { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
 
-.src-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 18px;
-  border: 1px solid var(--tab-border);
-  border-radius: 3px;
-  background: var(--tab-bg);
+.src-ctx-menu {
+  position: fixed;
+  z-index: 9999;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  padding: 4px 0;
+  min-width: 130px;
+}
+
+.src-ctx-item {
+  display: block;
+  width: 100%;
+  padding: 6px 14px;
+  text-align: left;
+  font-size: 12.5px;
+  font-family: inherit;
   color: var(--text);
-  font-size: 10px;
-  font-weight: 500;
+  background: none;
+  border: none;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.1s;
 }
-.src-btn:hover { background: var(--tab-hover-bg); }
-.src-btn-off {
-  background: var(--bg-muted);
-  border-color: var(--border);
-  color: var(--text-faint);
-  cursor: default;
-  pointer-events: none;
-}
+.src-ctx-item:hover { background: var(--bg-subtle); }
+.src-ctx-divider { height: 1px; background: var(--border); margin: 3px 0; }
 
 /* ── Input row ── */
 .input-row {

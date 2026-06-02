@@ -55,11 +55,15 @@
 
       <div v-else class="doc-list">
         <DocumentCard
-          v-for="doc in docs"
+          v-for="doc in sortedDocs"
           :key="doc.id"
           :doc="doc"
           :can-edit="auth.isAdmin"
+          :active-sort="sortMode"
           @edit="openEdit"
+          @new-doc="openNew"
+          @new-folder="() => openNewFolder(selectedFolderId)"
+          @sort="sortMode = $event"
         />
       </div>
     </div>
@@ -249,13 +253,13 @@
           </div>
 
           <div class="modal-actions">
-            <button v-if="!editIsNew" class="btn btn-primary btn-sm" :disabled="editFormLoading" @click="confirmDelete">
-              Delete
-            </button>
             <div class="spacer"></div>
             <span v-if="editFormLoading" class="saving-hint">
               <span class="spinner spinner-sm"></span> Saving…
             </span>
+            <button v-if="!editIsNew" class="btn btn-primary btn-sm" :disabled="editFormLoading" @click="confirmDelete">
+              Delete
+            </button>
             <button class="btn btn-ghost btn-sm" @click="resetEditForm">Reset</button>
             <button class="btn btn-primary btn-sm" :disabled="editFormLoading" @click="submitEdit">
               {{ editIsNew ? 'Save' : 'Update' }}
@@ -280,12 +284,23 @@ import { getDocument, updateDocument, deleteDocument } from '../api/documents'
 import { useFoldersStore } from '../stores/folders'
 import { useAuthStore } from '../stores/auth'
 import { useResize } from '../composables/useResize'
+import { useEditRequestStore } from '../stores/editRequest'
 import DocumentCard from '../components/DocumentCard.vue'
 import FolderTreeItem from '../components/FolderTreeItem.vue'
 
 
 const { width: sidebarWidth, startResize } = useResize(280, 140, 520)
 const auth = useAuthStore()
+const editRequestStore = useEditRequestStore()
+
+watch(() => editRequestStore.pendingId, id =>
+{
+  if (id !== null)
+  {
+    openEdit(id)
+    editRequestStore.clear()
+  }
+})
 
 
 // ── Folders ──────────────────────────────────────────────────────
@@ -315,6 +330,15 @@ const selectedFolderId = ref<number | null>(null)
 const docs = ref<DocumentResult[]>([])
 const docsLoading = ref(false)
 const docsError = ref<string | null>(null)
+const sortMode = ref<'title' | 'date'>('title')
+
+const sortedDocs = computed(() =>
+{
+  const list = [...docs.value]
+  if (sortMode.value === 'date')
+    return(list.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '')))
+  return(list.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? '', undefined, { sensitivity: 'base' })))
+})
 
 
 async function selectFolder(id: number)

@@ -70,7 +70,9 @@ public class UserAdmin
         System.out.println("Created user '" + username + "' (id=" + uid + ")");
 
         for (int i = 3; i < args.length; i++)
+        {
             grantTenant(con, uid, args[i], false);
+        }
     }
 
 
@@ -106,7 +108,9 @@ public class UserAdmin
         );
 
         while (rs.next())
+        {
             System.out.println(rs.getString("username") + " -> " + rs.getString("tenant"));
+        }
     }
 
 

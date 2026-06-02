@@ -41,7 +41,15 @@
       </div>
 
       <template v-else>
-        <DocumentCard v-for="doc in documents" :key="doc.id" :doc="doc" />
+        <DocumentCard
+          v-for="doc in sortedDocuments"
+          :key="doc.id"
+          :doc="doc"
+          :can-edit="auth.isAdmin"
+          :active-sort="sortMode"
+          @edit="editRequestStore.request($event)"
+          @sort="sortMode = $event"
+        />
       </template>
     </div>
 
@@ -49,19 +57,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import type { DocumentResult } from '../types'
 import { search } from '../api/documents'
 import { useCategoriesStore } from '../stores/categories'
+import { useAuthStore } from '../stores/auth'
+import { useEditRequestStore } from '../stores/editRequest'
 import DocumentCard from '../components/DocumentCard.vue'
 
 
 const categoriesStore = useCategoriesStore()
+const auth = useAuthStore()
+const editRequestStore = useEditRequestStore()
 const searchInputEl = ref<HTMLInputElement | null>(null)
 const query = ref('')
 const lastQuery = ref('')
 const selectedCategory = ref(0)
 const documents = ref<DocumentResult[]>([])
+const sortMode = ref<'title' | 'date'>('title')
+
+const sortedDocuments = computed(() =>
+{
+  const list = [...documents.value]
+  if (sortMode.value === 'date')
+    return(list.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '')))
+  return(list.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? '', undefined, { sensitivity: 'base' })))
+})
+
 const loading = ref(false)
 const error = ref<string | null>(null)
 const searched = ref(false)

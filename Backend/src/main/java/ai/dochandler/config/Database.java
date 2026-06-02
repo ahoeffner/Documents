@@ -1,8 +1,8 @@
 package ai.dochandler.config;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
+import org.springframework.core.env.Environment;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
