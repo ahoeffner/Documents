@@ -75,10 +75,12 @@ public class ChatService
 
         JsonNode ragResult = geminiService.ragQuery(req.id(), req.query(), context.toString());
 
+        boolean answered = !ragResult.has("answered") || ragResult.get("answered").asBoolean();
+
         ChatResponse response = new ChatResponse();
         response.setSuccess(true);
         response.setResponse(ragResult.get("response").asText());
-        response.setDocuments(documents);
+        response.setDocuments(answered ? documents : List.of());
         response.setRefresh(false);
         return(response);
     }

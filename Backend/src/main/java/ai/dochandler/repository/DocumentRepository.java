@@ -239,20 +239,36 @@ public class DocumentRepository
 
         log.debug("Hybrid search: threshold={}, lexical='{}', semantic='{}'", threshold, wordlist, semantic);
 
-        String sql =
-            "SELECT DISTINCT(docid) FROM " + chunks() + " WHERE (embedding <=> ?::vector) < ? " +
-            "UNION " +
-            "SELECT DISTINCT(docid) FROM " + chunks() + " WHERE lexvector @@ plainto_tsquery(lang::regconfig,?)";
+        List<Long> docids;
 
-        List<Long> docids = jdbc.query(sql,
-            ps ->
-            {
-                ps.setObject(1, vecStr, Types.OTHER);
-                ps.setDouble(2, threshold);
-                ps.setString(3, wordlist);
-            },
-            (rs, i) -> rs.getLong("docid")
-        );
+        if (wordlist.isBlank())
+        {
+            docids = jdbc.query(
+                "SELECT DISTINCT(docid) FROM " + chunks() + " WHERE (embedding <=> ?::vector) < ?",
+                ps ->
+                {
+                    ps.setObject(1, vecStr, Types.OTHER);
+                    ps.setDouble(2, threshold);
+                },
+                (rs, i) -> rs.getLong("docid")
+            );
+        }
+        else
+        {
+            String sql =
+                "SELECT DISTINCT(docid) FROM " + chunks() + " WHERE (embedding <=> ?::vector) < ? " +
+                "UNION " +
+                "SELECT DISTINCT(docid) FROM " + chunks() + " WHERE lexvector @@ plainto_tsquery(lang::regconfig,?)";
+            docids = jdbc.query(sql,
+                ps ->
+                {
+                    ps.setObject(1, vecStr, Types.OTHER);
+                    ps.setDouble(2, threshold);
+                    ps.setString(3, wordlist);
+                },
+                (rs, i) -> rs.getLong("docid")
+            );
+        }
 
         return(fetchByIds(docids, fldid));
     }

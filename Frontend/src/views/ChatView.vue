@@ -31,7 +31,7 @@
       <span class="section-label">Precision</span>
       <input type="range" min="0" max="100" step="5" v-model.number="matchValue" class="slider" />
       <span class="precision-val">{{ matchValue }}%</span>
-      <span class="adv-hint">Controls how closely documents must match before being used as sources.</span>
+      <span class="adv-hint">Controls how closely documents must match before being used as relevant documents.</span>
     </div>
 
     <!-- Messages -->
@@ -47,7 +47,7 @@
           <span class="msg-text">{{ msg.text }}</span>
 
           <div v-if="msg.documents && msg.documents.length" class="sources">
-            <div class="sources-label">Sources</div>
+            <div class="sources-label">Relevant Documents</div>
             <div
               v-for="d in msg.documents"
               :key="d.id"
