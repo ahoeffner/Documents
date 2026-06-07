@@ -162,7 +162,9 @@ public class ChatService
             d.getFile(),
             d.getText(),
             d.getContent() != null,
-            d.getFldid()
+            d.getFldid(),
+            false,
+            null
         ));
     }
 }

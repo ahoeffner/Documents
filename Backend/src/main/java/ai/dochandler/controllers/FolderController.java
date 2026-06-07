@@ -72,7 +72,9 @@ public class FolderController
                 d.getFile(),
                 d.getText(),
                 d.getContent() != null,
-                d.getFldid()
+                d.getFldid(),
+                d.isLink(),
+                d.getLinkId()
             ))
             .toList();
         return(ResponseEntity.ok(Map.of("success", true, "documents", documents)));

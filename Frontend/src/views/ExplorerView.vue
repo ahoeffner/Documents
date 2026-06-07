@@ -59,8 +59,21 @@
           :key="doc.id"
           :doc="doc"
           :can-edit="auth.isAdmin"
+          :can-link="auth.isAdmin"
+          :is-link="doc.isLink"
+          :link-id="doc.linkId"
+          :selectable="auth.isAdmin"
+          :checked="selectedIds.has(doc.id)"
+          :selected-count="selectedIds.size"
+          :all-selected="selectedIds.size === docs.length && docs.length > 0"
           :active-sort="sortMode"
           @edit="openEdit"
+          @delete="deleteDoc"
+          @remove-link="removeLink"
+          @check="toggleCheck"
+          @select-all="toggleAll"
+          @link="onLinkDoc"
+          @move="onMoveDoc"
           @new-doc="openNew"
           @new-folder="() => openNewFolder(selectedFolderId)"
           @sort="sortMode = $event"
@@ -270,6 +283,13 @@
       </div>
     </Teleport>
 
+    <LinkFolderModal
+      :visible="showFolderPicker"
+      :title="folderPickerMode === 'move' ? 'Move to Folder' : 'Link to Folder'"
+      @close="showFolderPicker = false"
+      @confirm="onFolderPickerConfirm"
+    />
+
   </div>
 </template>
 
@@ -280,13 +300,14 @@ import { scanOcr } from '../api/ocr'
 import { storeDocument } from '../api/store'
 import { getFolderDocuments, createFolder, renameFolder, deleteFolder } from '../api/folders'
 import { listLanguages } from '../api/languages'
-import { getDocument, updateDocument, deleteDocument } from '../api/documents'
+import { getDocument, updateDocument, deleteDocument, deleteLink, linkDocuments, moveDocument } from '../api/documents'
 import { useFoldersStore } from '../stores/folders'
 import { useAuthStore } from '../stores/auth'
 import { useResize } from '../composables/useResize'
 import { useEditRequestStore } from '../stores/editRequest'
 import DocumentCard from '../components/DocumentCard.vue'
 import FolderTreeItem from '../components/FolderTreeItem.vue'
+import LinkFolderModal from '../components/LinkFolderModal.vue'
 
 
 const { width: sidebarWidth, startResize } = useResize(280, 140, 520)
@@ -298,6 +319,15 @@ watch(() => editRequestStore.pendingId, id =>
   if (id !== null)
   {
     openEdit(id)
+    editRequestStore.clear()
+  }
+})
+
+watch(() => editRequestStore.pendingNew, val =>
+{
+  if (val)
+  {
+    openNew()
     editRequestStore.clear()
   }
 })
@@ -331,6 +361,7 @@ const docs = ref<DocumentResult[]>([])
 const docsLoading = ref(false)
 const docsError = ref<string | null>(null)
 const sortMode = ref<'title' | 'date'>('title')
+const selectedIds = ref(new Set<number>())
 
 const sortedDocs = computed(() =>
 {
@@ -348,6 +379,7 @@ async function selectFolder(id: number)
   docs.value = []
   docsError.value = null
   docsLoading.value = true
+  selectedIds.value = new Set()
   try
   {
     const res = await getFolderDocuments(id)
@@ -620,6 +652,102 @@ function openNew()
   editTitle.value = 'New Document'
   clearEditForm()
   showEditModal.value = true
+}
+
+
+async function deleteDoc(id: number)
+{
+  const idsToDelete = selectedIds.value.size > 1 ? [...selectedIds.value] : [id]
+  if (idsToDelete.length > 1)
+  {
+    if (!window.confirm(`Delete ${idsToDelete.length} documents? This cannot be undone.`)) return
+    try
+    {
+      await Promise.all(idsToDelete.map(d => deleteDocument(d)))
+      selectedIds.value = new Set()
+      await reloadDocs()
+    }
+    catch { /* ignore */ }
+  }
+  else
+  {
+    const doc = docs.value.find(d => d.id === id)
+    if (!window.confirm(`Delete "${doc?.title ?? id}"? This cannot be undone.`)) return
+    try
+    {
+      await deleteDocument(id)
+      await reloadDocs()
+    }
+    catch { /* ignore */ }
+  }
+}
+
+
+const showFolderPicker = ref(false)
+const folderPickerMode = ref<'link' | 'move'>('link')
+const folderPickerDocIds = ref<number[]>([])
+
+
+function onLinkDoc(id: number)
+{
+  folderPickerMode.value = 'link'
+  folderPickerDocIds.value = selectedIds.value.size > 0 ? [...selectedIds.value] : [id]
+  showFolderPicker.value = true
+}
+
+
+function onMoveDoc(id: number)
+{
+  folderPickerMode.value = 'move'
+  folderPickerDocIds.value = selectedIds.value.size > 0 ? [...selectedIds.value] : [id]
+  showFolderPicker.value = true
+}
+
+
+async function onFolderPickerConfirm(fldid: number)
+{
+  showFolderPicker.value = false
+  try
+  {
+    if (folderPickerMode.value === 'link')
+      await linkDocuments(fldid, folderPickerDocIds.value)
+    else
+    {
+      await Promise.all(folderPickerDocIds.value.map(id => moveDocument(id, fldid)))
+      selectedIds.value = new Set()
+      await reloadDocs()
+    }
+  }
+  catch { /* ignore */ }
+}
+
+
+function toggleCheck(id: number)
+{
+  const next = new Set(selectedIds.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  selectedIds.value = next
+}
+
+
+function toggleAll()
+{
+  if (selectedIds.value.size === docs.value.length)
+    selectedIds.value = new Set()
+  else
+    selectedIds.value = new Set(docs.value.map(d => d.id))
+}
+
+
+async function removeLink(linkId: number)
+{
+  try
+  {
+    await deleteLink(linkId)
+    await reloadDocs()
+  }
+  catch { /* ignore */ }
 }
 
 

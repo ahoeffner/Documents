@@ -91,42 +91,70 @@ public class DocumentRepository
 
     public List<DocumentRecord> findAll(Long fldid)
     {
+        if (fldid != null && fldid > 0)
+        {
+            String sql =
+                "SELECT id, fldid, date, title, text, extref, (content IS NOT NULL) AS has_content, FALSE AS is_link, CAST(NULL AS bigint) AS link_id" +
+                " FROM " + docs() + " WHERE fldid = ?" +
+                " UNION " +
+                "SELECT d.id, d.fldid, d.date, d.title, d.text, d.extref, (d.content IS NOT NULL) AS has_content, TRUE AS is_link, l.id AS link_id" +
+                " FROM " + docs() + " d JOIN " + links() + " l ON l.docid = d.id WHERE l.fldid = ?";
+            return(jdbc.query(sql, (rs, i) -> mapRowWithLink(rs), fldid, fldid));
+        }
+
         String sql = "SELECT id, fldid, date, title, text, extref, (content IS NOT NULL) AS has_content FROM " + docs();
-        if (fldid != null && fldid > 0) return(jdbc.query(sql + " WHERE fldid = ?", (rs, i) -> mapRow(rs), fldid));
         return(jdbc.query(sql, (rs, i) -> mapRow(rs)));
     }
 
 
     @SuppressWarnings("null")
-    public List<DocumentRecord> findAll(Long fldid, String q, int limit)
+    public List<DocumentRecord> findAll(Long fldid, String q)
     {
-        StringBuilder sql = new StringBuilder
-        (
-            "SELECT id, fldid, date, title, text, extref, (content IS NOT NULL) AS has_content FROM " + docs()
-        );
-
+        boolean hasFolder = fldid != null && fldid > 0;
+        boolean hasQuery  = q != null && !q.isBlank();
         ArrayList<Object> params = new ArrayList<>();
-        ArrayList<String> conditions = new ArrayList<>();
+        String sql;
 
-        if (fldid != null && fldid > 0)
+        if (hasFolder)
         {
-            conditions.add("fldid = ?");
+            String titleCond  = hasQuery ? " AND title ILIKE ?"   : "";
+            String dtitleCond = hasQuery ? " AND d.title ILIKE ?" : "";
+
+            sql = "SELECT * FROM (" +
+                  "SELECT id, fldid, date, title, text, extref, (content IS NOT NULL) AS has_content" +
+                  " FROM " + docs() + " WHERE fldid = ?" + titleCond +
+                  " UNION " +
+                  "SELECT d.id, d.fldid, d.date, d.title, d.text, d.extref, (d.content IS NOT NULL) AS has_content" +
+                  " FROM " + docs() + " d JOIN " + links() + " l ON l.docid = d.id WHERE l.fldid = ?" + dtitleCond +
+                  ") sub ORDER BY date DESC, title";
+
             params.add(fldid);
+            if (hasQuery) params.add("%" + q + "%");
+            
+            params.add(fldid);
+            if (hasQuery) params.add("%" + q + "%");
         }
-
-        if (q != null && !q.isBlank())
+        else
         {
-            conditions.add("title ILIKE ?");
-            params.add("%" + q + "%");
+            StringBuilder sqlBuilder = new StringBuilder(
+                "SELECT id, fldid, date, title, text, extref, (content IS NOT NULL) AS has_content FROM " + docs()
+            );
+            ArrayList<String> conditions = new ArrayList<>();
+
+            if (hasQuery)
+            {
+                conditions.add("title ILIKE ?");
+                params.add("%" + q + "%");
+            }
+
+            if (!conditions.isEmpty())
+                sqlBuilder.append(" WHERE ").append(String.join(" AND ", conditions));
+
+            sqlBuilder.append(" ORDER BY date DESC, title");
+            sql = sqlBuilder.toString();
         }
 
-        if (!conditions.isEmpty())
-            sql.append(" WHERE ").append(String.join(" AND ", conditions));
-
-        sql.append(" ORDER BY date DESC, title LIMIT ?");
-        params.add(limit);
-
-        return(jdbc.query(sql.toString(), (rs, i) -> mapRow(rs), params.toArray()));
+        return(jdbc.query(sql, (rs, i) -> mapRow(rs), params.toArray()));
     }
 
 
@@ -274,11 +302,20 @@ public class DocumentRepository
     {
         List<DocumentRecord> results;
 
-        String sql = "SELECT id, fldid, date, title, text, extref, (content IS NOT NULL) AS has_content " +
-                     "FROM " + docs() + " WHERE id = ?";
-
-        if (fldid > 0) results = jdbc.query(sql + " AND fldid = ?", (rs, i) -> mapRow(rs), id, fldid);
-        else results = jdbc.query(sql, (rs, i) -> mapRow(rs), id);
+        if (fldid > 0)
+        {
+            String sql =
+                "SELECT d.id, d.fldid, d.date, d.title, d.text, d.extref, (d.content IS NOT NULL) AS has_content" +
+                " FROM " + docs() + " d WHERE d.id = ? AND" +
+                " (d.fldid = ? OR EXISTS (SELECT 1 FROM " + links() + " WHERE docid = d.id AND fldid = ?))";
+            results = jdbc.query(sql, (rs, i) -> mapRow(rs), id, fldid, fldid);
+        }
+        else
+        {
+            String sql = "SELECT id, fldid, date, title, text, extref, (content IS NOT NULL) AS has_content" +
+                         " FROM " + docs() + " WHERE id = ?";
+            results = jdbc.query(sql, (rs, i) -> mapRow(rs), id);
+        }
 
         return(results.isEmpty() ? null : results.get(0));
     }
@@ -376,6 +413,16 @@ public class DocumentRepository
     }
 
 
+    private DocumentRecord mapRowWithLink(ResultSet rs) throws SQLException
+    {
+        DocumentRecord doc = mapRow(rs);
+        doc.setIsLink(rs.getBoolean("is_link"));
+        long linkId = rs.getLong("link_id");
+        if (!rs.wasNull()) doc.setLinkId(linkId);
+        return(doc);
+    }
+
+
     private String toVectorLiteral(Float[] vector)
     {
         if (vector == null || vector.length == 0) return("[]");
@@ -398,5 +445,11 @@ public class DocumentRepository
     private String chunks()
     {
         return(db.getTenant() + ".textchunks");
+    }
+
+
+    private String links()
+    {
+        return(db.getTenant() + ".links");
     }
 }

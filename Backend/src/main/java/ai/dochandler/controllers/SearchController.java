@@ -39,7 +39,9 @@ public class SearchController
                 d.getFile(),
                 d.getText(),
                 d.getContent() != null,
-                d.getFldid()
+                d.getFldid(),
+                false,
+                null
             ))
             .toList();
 

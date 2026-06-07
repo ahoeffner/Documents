@@ -2,7 +2,7 @@
 -- Usage: psql -v schema=<tenant_name> -f setup_tenant.sql
 -- Requires setup_public.sql to have been run first.
 
-CREATE SCHEMA IF NOT EXISTS slotsdalen;
+CREATE SCHEMA IF NOT EXISTS documents;
 
 
 
@@ -24,6 +24,21 @@ CREATE TABLE documents.folders
 );
 
 
+CREATE TABLE documents.links
+(
+    id serial      NOT NULL PRIMARY KEY,
+    fldid integer  NOT NULL,
+    docid integer  NOT NULL
+);
+
+
+ALTER TABLE documents.links ADD CONSTRAINT fldkey
+    FOREIGN KEY (fldid) REFERENCES documents.folders (id);
+
+ALTER TABLE documents.links ADD CONSTRAINT dockey
+    FOREIGN KEY (docid) REFERENCES documents.documents (id);
+
+
 CREATE TABLE documents.documents
 (
     id      serial       NOT NULL PRIMARY KEY,
@@ -35,7 +50,7 @@ CREATE TABLE documents.documents
     content bytea
 );
 
-ALTER TABLE documents.documents ADD CONSTRAINT doccat
+ALTER TABLE documents.documents ADD CONSTRAINT dockey
     FOREIGN KEY (fldid) REFERENCES documents.folders (id);
 
 

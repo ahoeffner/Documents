@@ -1,7 +1,9 @@
 package ai.dochandler;
 
 import java.net.URL;
+import java.util.Map;
 import java.util.Arrays;
+import java.io.InputStream;
 import java.util.Enumeration;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -108,14 +110,41 @@ public class Application
     }
 
 
+    private static String cfg(String envKey, String propKey, Map<String, Object> yaml)
+    {
+        String v = System.getenv(envKey);
+        if (v != null && !v.isBlank()) return(v);
+        v = System.getProperty(propKey);
+        if (v != null && !v.isBlank()) return(v);
+        return(yamlGet(yaml, propKey.split("\\.")));
+    }
+
+
+    @SuppressWarnings("unchecked")
+    private static String yamlGet(Map<String, Object> map, String[] keys)
+    {
+        Object cur = map;
+        for (String k : keys)
+        {
+            if (!(cur instanceof Map)) return(null);
+            cur = ((Map<String, Object>) cur).get(k);
+        }
+        return(cur != null ? cur.toString() : null);
+    }
+
+
     private static void runCli(String[] args) throws Exception
     {
+        Map<String, Object> yaml = new java.util.HashMap<>();
+        try (InputStream is = Application.class.getResourceAsStream("/application.yml"))
+        {
+            if (is != null) yaml = new org.yaml.snakeyaml.Yaml().load(is);
+        }
+
         HikariDataSource ds = new HikariDataSource();
-
-        ds.setJdbcUrl(System.getenv("SPRING_DATASOURCE_URL"));
-        ds.setUsername(System.getenv("SPRING_DATASOURCE_USERNAME"));
-        ds.setPassword(System.getenv("SPRING_DATASOURCE_PASSWORD"));
-
+        ds.setJdbcUrl(cfg("SPRING_DATASOURCE_URL", "spring.datasource.url", yaml));
+        ds.setUsername(cfg("SPRING_DATASOURCE_USERNAME", "spring.datasource.username", yaml));
+        ds.setPassword(cfg("SPRING_DATASOURCE_PASSWORD", "spring.datasource.password", yaml));
         ds.setMaximumPoolSize(1);
 
         try

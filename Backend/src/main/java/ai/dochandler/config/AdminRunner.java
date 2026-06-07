@@ -56,20 +56,22 @@ public class AdminRunner implements CommandLineRunner
     {
         if (args.length < 3)
         {
-            System.err.println("Usage: create <user> <pass> [tenant...]");
+            System.err.println("Usage: create <user> <pass> [tenant...] [--admin]");
             System.exit(1);
         }
 
-        String username = args[1];
-        String hash     = sha256(args[2]);
-        long   uid      = userRepo.createUser(username, hash);
+        String  username = args[1];
+        String  hash     = sha256(args[2]);
+        boolean admin    = Arrays.stream(args).anyMatch(a -> a.equals("--admin"));
+        long    uid      = userRepo.createUser(username, hash);
 
         System.out.println("Created user '" + username + "'");
 
         for (int i = 3; i < args.length; i++)
         {
-            userRepo.grantTenant(uid, args[i], false);
-            System.out.println("Granted tenant '" + args[i] + "'");
+            if (args[i].equals("--admin")) continue;
+            userRepo.grantTenant(uid, args[i], admin);
+            System.out.println("Granted tenant '" + args[i] + "'" + (admin ? " [admin]" : ""));
         }
     }
 
@@ -159,11 +161,11 @@ public class AdminRunner implements CommandLineRunner
         System.out.println("Usage: documents <command>");
         System.out.println();
         System.out.println("Commands:");
-        System.out.println("  -d, --daemon                         Start the HTTP server");
-        System.out.println("  create <user> <pass> [tenant...]     Create a user");
-        System.out.println("  delete <user>                        Delete a user");
-        System.out.println("  grant  <user> <tenant>               Grant tenant access");
-        System.out.println("  revoke <user> <tenant>               Revoke tenant access");
-        System.out.println("  list                                 List all users and their tenants");
+        System.out.println("  -d, --daemon                                  Start the HTTP server");
+        System.out.println("  create <user> <pass> [tenant...] [--admin]    Create a user (--admin grants admin on all listed tenants)");
+        System.out.println("  delete <user>                                 Delete a user");
+        System.out.println("  grant  <user> <tenant> [--admin]              Grant tenant access");
+        System.out.println("  revoke <user> <tenant>                        Revoke tenant access");
+        System.out.println("  list                                          List all users and their tenants");
     }
 }

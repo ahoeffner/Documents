@@ -18,6 +18,8 @@ export interface DocumentResult {
   description?: string
   hasFile: boolean
   fldid?: number | null
+  isLink?: boolean
+  linkId?: number | null
 }
 
 export interface Language {

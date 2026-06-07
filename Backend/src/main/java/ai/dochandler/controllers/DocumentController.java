@@ -33,9 +33,9 @@ public class DocumentController
 
 
     @GetMapping
-    public ResponseEntity<Map<String, Object>> list(@RequestParam(required = false) Long fldid, @RequestParam(required = false) String q, @RequestParam(defaultValue = "200") int limit)
+    public ResponseEntity<Map<String, Object>> list(@RequestParam(required = false) Long fldid, @RequestParam(required = false) String q)
     {
-        List<Document> documents = documentRepo.findAll(fldid, q, limit).stream()
+        List<Document> documents = documentRepo.findAll(fldid, q).stream()
             .map(this::toDocument)
             .toList();
         return(ResponseEntity.ok(Map.of("success", true, "documents", documents)));
@@ -130,7 +130,9 @@ public class DocumentController
             d.getFile(),
             d.getText(),
             d.getContent() != null,
-            d.getFldid()
+            d.getFldid(),
+            false,
+            null
         ));
     }
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="search-view">
+  <div class="search-view" @contextmenu.prevent="showAreaCtx">
 
     <div class="toolbar">
       <span class="section-label">Folder</span>
@@ -20,10 +20,6 @@
           {{ loading ? 'Searching…' : 'Search' }}
         </button>
       </form>
-
-      <span v-if="searched && !loading" class="result-count">
-        {{ documents.length }} result{{ documents.length !== 1 ? 's' : '' }}
-      </span>
 
     </div>
 
@@ -46,12 +42,52 @@
           :key="doc.id"
           :doc="doc"
           :can-edit="auth.isAdmin"
+          :can-link="auth.isAdmin"
+          :can-create="false"
+          :selectable="auth.isAdmin"
+          :checked="selectedIds.has(doc.id)"
+          :selected-count="selectedIds.size"
+          :all-selected="selectedIds.size === documents.length && documents.length > 0"
           :active-sort="sortMode"
           @edit="editRequestStore.request($event)"
           @sort="sortMode = $event"
+          @check="toggleCheck"
+          @select-all="toggleAll"
+          @link="onLink"
+          @move="onMove"
+          @delete="deleteSingle"
         />
       </template>
     </div>
+
+    <LinkFolderModal :visible="showLinkModal" :title="pickerMode === 'move' ? 'Move to Folder' : 'Link to Folder'" @close="showLinkModal = false" @confirm="onFolderPickerConfirm" />
+
+    <Teleport to="body">
+      <div v-if="areaCtx" class="ctx-menu" :style="{ top: areaCtx.y + 'px', left: areaCtx.x + 'px' }" @click.stop>
+        <button class="ctx-item" :class="{ 'ctx-item-active': sortMode === 'title' }" @click="areaCtxSort('title')">Sort by Title</button>
+        <button class="ctx-item" :class="{ 'ctx-item-active': sortMode === 'date' }" @click="areaCtxSort('date')">Sort by Date</button>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="showDeleteConfirm" class="modal-backdrop" @click.self="showDeleteConfirm = false">
+        <div class="modal-popup modal-popup-sm">
+          <div class="modal-header">
+            <span class="modal-header-title">Delete {{ selectedIds.size }} documents?</span>
+            <button type="button" class="modal-close" @click="showDeleteConfirm = false">✕</button>
+          </div>
+          <div class="modal-body">
+            <p class="modal-text">This will permanently delete {{ selectedIds.size }} documents. This cannot be undone.</p>
+          </div>
+          <div class="modal-actions">
+            <button class="btn btn-ghost btn-sm" @click="showDeleteConfirm = false">Cancel</button>
+            <button class="btn btn-danger btn-sm" :disabled="deleteLoading" @click="confirmBulkDelete">
+              {{ deleteLoading ? 'Deleting…' : 'Delete' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
   </div>
 </template>
@@ -59,11 +95,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import type { DocumentResult } from '../types'
-import { search } from '../api/documents'
+import { search, linkDocuments, moveDocument, deleteDocument } from '../api/documents'
 import { useCategoriesStore } from '../stores/categories'
 import { useAuthStore } from '../stores/auth'
 import { useEditRequestStore } from '../stores/editRequest'
 import DocumentCard from '../components/DocumentCard.vue'
+import LinkFolderModal from '../components/LinkFolderModal.vue'
 
 
 const categoriesStore = useCategoriesStore()
@@ -75,6 +112,13 @@ const lastQuery = ref('')
 const selectedCategory = ref(0)
 const documents = ref<DocumentResult[]>([])
 const sortMode = ref<'title' | 'date'>('title')
+const selectedIds = ref(new Set<number>())
+const showLinkModal = ref(false)
+const pickerMode = ref<'link' | 'move'>('link')
+const linkTargetIds = ref<(number | string)[]>([])
+const showDeleteConfirm = ref(false)
+const deleteLoading = ref(false)
+const areaCtx = ref<{ x: number; y: number } | null>(null)
 
 const sortedDocuments = computed(() =>
 {
@@ -92,12 +136,114 @@ onMounted(() => categoriesStore.load())
 defineExpose({ focus: () => searchInputEl.value?.focus() })
 
 
+function toggleCheck(id: number)
+{
+  const next = new Set(selectedIds.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  selectedIds.value = next
+}
+
+
+function toggleAll()
+{
+  if (selectedIds.value.size === documents.value.length)
+    selectedIds.value = new Set()
+  else
+    selectedIds.value = new Set(documents.value.map(d => d.id))
+}
+
+
+function onLink(docId: string | number)
+{
+  pickerMode.value = 'link'
+  linkTargetIds.value = selectedIds.value.size > 0 ? [...selectedIds.value] : [docId]
+  showLinkModal.value = true
+}
+
+
+function onMove(docId: string | number)
+{
+  pickerMode.value = 'move'
+  linkTargetIds.value = selectedIds.value.size > 0 ? [...selectedIds.value] : [docId]
+  showLinkModal.value = true
+}
+
+
+function showAreaCtx(e: MouseEvent)
+{
+  areaCtx.value = { x: e.clientX, y: e.clientY }
+  window.addEventListener('click', () => { areaCtx.value = null }, { once: true })
+}
+
+
+function areaCtxSort(mode: 'title' | 'date')
+{
+  areaCtx.value = null
+  sortMode.value = mode
+}
+
+
+async function deleteSingle(id: number)
+{
+  const doc = documents.value.find(d => d.id === id)
+  if (!window.confirm(`Delete "${doc?.title ?? id}"? This cannot be undone.`)) return
+  try
+  {
+    await deleteDocument(id)
+    documents.value = documents.value.filter(d => d.id !== id)
+    selectedIds.value = new Set([...selectedIds.value].filter(x => x !== id))
+  }
+  catch { /* ignore */ }
+}
+
+
+async function confirmBulkDelete()
+{
+  deleteLoading.value = true
+  const ids = [...selectedIds.value]
+  try
+  {
+    await Promise.all(ids.map(id => deleteDocument(id)))
+    documents.value = documents.value.filter(d => !ids.includes(d.id))
+    selectedIds.value = new Set()
+    showDeleteConfirm.value = false
+  }
+  catch { /* ignore */ }
+  finally
+  {
+    deleteLoading.value = false
+  }
+}
+
+
+async function onFolderPickerConfirm(fldid: number)
+{
+  showLinkModal.value = false
+  try
+  {
+    if (pickerMode.value === 'link')
+    {
+      await linkDocuments(fldid, linkTargetIds.value)
+    }
+    else
+    {
+      await Promise.all(linkTargetIds.value.map(id => moveDocument(id, fldid)))
+      documents.value = documents.value.filter(d => !linkTargetIds.value.includes(d.id))
+    }
+    selectedIds.value = new Set()
+  }
+  catch { /* ignore */ }
+}
+
+
 async function doSearch()
 {
   if (!query.value.trim()) return
   loading.value = true
   error.value = null
   lastQuery.value = query.value
+  selectedIds.value = new Set()
   try
   {
     const res = await search({ query: query.value, folder: selectedCategory.value })
@@ -171,4 +317,30 @@ async function doSearch()
 }
 
 .results { flex: 1; overflow-y: auto; }
+
+.ctx-menu {
+  position: fixed;
+  z-index: 9999;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  padding: 4px 0;
+  min-width: 130px;
+}
+.ctx-item {
+  display: block;
+  width: 100%;
+  padding: 6px 14px;
+  text-align: left;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: var(--text);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.ctx-item:hover { background: var(--bg-subtle); }
+.ctx-item-active { font-weight: 600; color: var(--accent); }
+.ctx-divider { height: 1px; background: var(--border); margin: 3px 0; }
 </style>

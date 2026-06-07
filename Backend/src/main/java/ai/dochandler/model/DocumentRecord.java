@@ -19,6 +19,8 @@ public class DocumentRecord
     private String text;
     private String title;
     private byte[] content;
+    private boolean isLink;
+    private Long linkId;
 
     private final ArrayList<String> chunks = new ArrayList<>();
     private final ArrayList<String> sections = new ArrayList<>();
@@ -141,6 +143,32 @@ public class DocumentRecord
     public DocumentRecord setContent(byte[] content)
     {
         this.content = content;
+        return(this);
+    }
+
+
+    public boolean isLink()
+    {
+        return(isLink);
+    }
+
+
+    public DocumentRecord setIsLink(boolean isLink)
+    {
+        this.isLink = isLink;
+        return(this);
+    }
+
+
+    public Long getLinkId()
+    {
+        return(linkId);
+    }
+
+
+    public DocumentRecord setLinkId(Long linkId)
+    {
+        this.linkId = linkId;
         return(this);
     }
 
