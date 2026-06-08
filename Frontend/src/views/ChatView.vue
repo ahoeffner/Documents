@@ -429,7 +429,7 @@ function selectHistory(h: string)
   word-break: break-word;
 }
 
-.sources { margin-top: 7px; padding-top: 7px; border-top: 1px solid var(--border); }
+.sources { margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--border); }
 .sources-label {
   font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--text-faint); margin-bottom: 4px;

@@ -33,10 +33,10 @@ CREATE TABLE documents.links
 
 
 ALTER TABLE documents.links ADD CONSTRAINT fldkey
-    FOREIGN KEY (fldid) REFERENCES documents.folders (id);
+    FOREIGN KEY (fldid) REFERENCES documents.folders (id) ON DELETE CASCADE;;
 
 ALTER TABLE documents.links ADD CONSTRAINT dockey
-    FOREIGN KEY (docid) REFERENCES documents.documents (id);
+    FOREIGN KEY (docid) REFERENCES documents.documents (id) ON DELETE CASCADE;;
 
 
 CREATE TABLE documents.documents

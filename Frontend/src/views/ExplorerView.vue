@@ -62,10 +62,9 @@
           :can-link="auth.isAdmin"
           :is-link="doc.isLink"
           :link-id="doc.linkId"
-          :selectable="auth.isAdmin"
           :checked="selectedIds.has(doc.id)"
           :selected-count="selectedIds.size"
-          :all-selected="selectedIds.size === docs.length && docs.length > 0"
+          :all-selected="selectedIds.size > 0"
           :active-sort="sortMode"
           @edit="openEdit"
           @delete="deleteDoc"
@@ -362,6 +361,7 @@ const docsLoading = ref(false)
 const docsError = ref<string | null>(null)
 const sortMode = ref<'title' | 'date'>('title')
 const selectedIds = ref(new Set<number>())
+const lastCheckedId = ref<number | null>(null)
 
 const sortedDocs = computed(() =>
 {
@@ -380,6 +380,7 @@ async function selectFolder(id: number)
   docsError.value = null
   docsLoading.value = true
   selectedIds.value = new Set()
+  lastCheckedId.value = null
   try
   {
     const res = await getFolderDocuments(id)
@@ -655,15 +656,23 @@ function openNew()
 }
 
 
+async function deleteOne(id: number): Promise<void>
+{
+  const doc = docs.value.find(d => d.id === id)
+  if (doc?.isLink && doc.linkId) await deleteLink(doc.linkId)
+  else await deleteDocument(id)
+}
+
+
 async function deleteDoc(id: number)
 {
   const idsToDelete = selectedIds.value.size > 1 ? [...selectedIds.value] : [id]
   if (idsToDelete.length > 1)
   {
-    if (!window.confirm(`Delete ${idsToDelete.length} documents? This cannot be undone.`)) return
+    if (!window.confirm(`Delete ${idsToDelete.length} items? This cannot be undone.`)) return
     try
     {
-      await Promise.all(idsToDelete.map(d => deleteDocument(d)))
+      await Promise.all(idsToDelete.map(d => deleteOne(d)))
       selectedIds.value = new Set()
       await reloadDocs()
     }
@@ -672,10 +681,11 @@ async function deleteDoc(id: number)
   else
   {
     const doc = docs.value.find(d => d.id === id)
-    if (!window.confirm(`Delete "${doc?.title ?? id}"? This cannot be undone.`)) return
+    const label = doc?.isLink ? `link to "${doc.title ?? id}"` : `"${doc?.title ?? id}"`
+    if (!window.confirm(`Delete ${label}? This cannot be undone.`)) return
     try
     {
-      await deleteDocument(id)
+      await deleteOne(id)
       await reloadDocs()
     }
     catch { /* ignore */ }
@@ -722,21 +732,41 @@ async function onFolderPickerConfirm(fldid: number)
 }
 
 
-function toggleCheck(id: number)
+function toggleCheck(id: number, shift: boolean, ctrl: boolean)
 {
-  const next = new Set(selectedIds.value)
-  if (next.has(id)) next.delete(id)
-  else next.add(id)
-  selectedIds.value = next
+  if (shift && lastCheckedId.value !== null)
+  {
+    const list = sortedDocs.value
+    const from = list.findIndex(d => d.id === lastCheckedId.value)
+    const to = list.findIndex(d => d.id === id)
+    if (from !== -1 && to !== -1)
+    {
+      const [lo, hi] = from < to ? [from, to] : [to, from]
+      selectedIds.value = new Set(list.slice(lo, hi + 1).map(d => d.id))
+      return
+    }
+  }
+  if (ctrl)
+  {
+    const next = new Set(selectedIds.value)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    selectedIds.value = next
+  }
+  else
+  {
+    selectedIds.value = new Set([id])
+  }
+  lastCheckedId.value = id
 }
 
 
 function toggleAll()
 {
-  if (selectedIds.value.size === docs.value.length)
+  if (selectedIds.value.size > 0)
     selectedIds.value = new Set()
   else
-    selectedIds.value = new Set(docs.value.map(d => d.id))
+    selectedIds.value = new Set(sortedDocs.value.map(d => d.id))
 }
 
 

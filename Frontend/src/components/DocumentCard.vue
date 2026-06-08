@@ -1,6 +1,23 @@
 <template>
-  <div class="doc-row" :class="{ 'doc-row-checked': checked }" @dblclick="openContent" @contextmenu.prevent.stop="showCtxMenu">
-    <input v-if="selectable" type="checkbox" class="doc-check" :checked="checked" @click.stop @change="$emit('check', doc.id)" />
+  <div class="doc-row" :class="{ 'doc-row-checked': checked }" @click="onRowClick" @dblclick="openContent" @contextmenu.prevent.stop="showCtxMenu">
+
+    <svg v-if="!doc.hasFile && !doc.isLink" class="doc-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 2h6.5L13 5.5V14H3V2z"/>
+      <polyline points="9.5 2 9.5 5.5 13 5.5"/>
+      <line x1="5" y1="8" x2="11" y2="8"/>
+      <line x1="5" y1="10" x2="11" y2="10"/>
+      <line x1="5" y1="12" x2="9" y2="12"/>
+    </svg>
+    <svg v-else-if="doc.isLink" class="doc-icon doc-icon-link" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <path d="M7 4H5a4 4 0 0 0 0 8h2"/>
+      <path d="M9 12h2a4 4 0 0 0 0-8H9"/>
+      <line x1="6" y1="8" x2="10" y2="8"/>
+    </svg>
+    <svg v-else class="doc-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 2h6.5L13 5.5V14H3V2z"/>
+      <polyline points="9.5 2 9.5 5.5 13 5.5"/>
+    </svg>
+
     <span class="doc-date">{{ formatDate(doc.date) }}</span>
     <div class="doc-main">
       <span class="doc-title">{{ doc.title || 'Untitled' }}</span><span v-if="doc.description" class="doc-desc"> — {{ doc.description }}</span>
@@ -31,16 +48,15 @@
         <div v-if="canEdit && canCreate !== false" class="ctx-divider"></div>
         <button v-if="canEdit && canCreate !== false" class="ctx-item" @click="ctxNewFolder">New Folder</button>
         <button v-if="canEdit && canCreate !== false" class="ctx-item" @click="ctxNewDoc">New Document</button>
-        <div v-if="selectable" class="ctx-divider"></div>
-        <button v-if="selectable" class="ctx-item" @click="ctxSelectAll">{{ allSelected ? 'Deselect All' : 'Select All' }}</button>
+        <div v-if="canEdit" class="ctx-divider"></div>
+        <button v-if="canEdit" class="ctx-item" @click="ctxSelectAll">{{ (selectedCount ?? 0) > 0 ? 'Deselect All' : 'Select All' }}</button>
         <div class="ctx-divider"></div>
         <button class="ctx-item" :class="{ 'ctx-item-active': activeSort === 'title' }" @click="ctxSort('title')">Sort by Title</button>
         <button class="ctx-item" :class="{ 'ctx-item-active': activeSort === 'date' }" @click="ctxSort('date')">Sort by Date</button>
         <div v-if="canEdit" class="ctx-divider"></div>
-        <button v-if="canEdit && !isLink" class="ctx-item ctx-item-danger" @click="ctxDelete">
-          {{ selectedCount && selectedCount > 1 ? `Delete Documents (${selectedCount})` : 'Delete Document' }}
-        </button>
-        <button v-if="isLink && linkId" class="ctx-item ctx-item-danger" @click="ctxRemoveLink">Remove Link</button>
+        <button v-if="canEdit && selectedCount && selectedCount > 1" class="ctx-item ctx-item-danger" @click="ctxDelete">Delete Documents ({{ selectedCount }})</button>
+        <button v-else-if="canEdit && isLink && linkId" class="ctx-item ctx-item-danger" @click="ctxRemoveLink">Remove Link</button>
+        <button v-else-if="canEdit" class="ctx-item ctx-item-danger" @click="ctxDelete">Delete Document</button>
       </div>
     </Teleport>
   </div>
@@ -51,11 +67,16 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import type { DocumentResult } from '../types'
 
 
-const props = defineProps<{ doc: DocumentResult; canEdit?: boolean; canLink?: boolean; canCreate?: boolean; selectable?: boolean; checked?: boolean; selectedCount?: number; allSelected?: boolean; activeSort?: 'title' | 'date'; isLink?: boolean; linkId?: number | null }>()
-const emit = defineEmits<{ edit: [id: number]; delete: [id: number]; move: [id: number]; 'new-doc': []; 'new-folder': []; sort: ['title' | 'date']; check: [id: number]; link: [id: number]; 'select-all': []; 'remove-link': [linkId: number] }>()
+const props = defineProps<{ doc: DocumentResult; canEdit?: boolean; canLink?: boolean; canCreate?: boolean; checked?: boolean; selectedCount?: number; allSelected?: boolean; activeSort?: 'title' | 'date'; isLink?: boolean; linkId?: number | null }>()
+const emit = defineEmits<{ edit: [id: number]; delete: [id: number]; move: [id: number]; 'new-doc': []; 'new-folder': []; sort: ['title' | 'date']; check: [id: number, shift: boolean, ctrl: boolean]; link: [id: number]; 'select-all': []; 'remove-link': [linkId: number] }>()
 
 const showText = ref(false)
 const ctxMenu = ref<{ x: number; y: number } | null>(null)
+
+function onRowClick(e: MouseEvent)
+{
+  emit('check', props.doc.id, e.shiftKey, e.ctrlKey || e.metaKey)
+}
 
 
 function openContent()
@@ -192,7 +213,8 @@ function formatDate(d: string): string
 .doc-row:hover { background: var(--bg-subtle); }
 .doc-row-checked { background: var(--accent-ring); }
 .doc-row-checked:hover { background: var(--accent-ring); }
-.doc-check { flex-shrink: 0; cursor: pointer; accent-color: var(--accent); }
+.doc-icon { width: 16px; height: 16px; flex-shrink: 0; color: var(--text); opacity: 0.55; }
+.doc-icon-link { color: var(--accent); opacity: 1; }
 
 .doc-date {
   color: var(--text);

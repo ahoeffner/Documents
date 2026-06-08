@@ -110,13 +110,15 @@ public class Application
     }
 
 
-    private static String cfg(String envKey, String propKey, Map<String, Object> yaml)
+    private static String cfg(String envKey, String propKey, Map<String, Object> appYaml, Map<String, Object> configYaml)
     {
         String v = System.getenv(envKey);
         if (v != null && !v.isBlank()) return(v);
         v = System.getProperty(propKey);
         if (v != null && !v.isBlank()) return(v);
-        return(yamlGet(yaml, propKey.split("\\.")));
+        v = yamlGet(configYaml, propKey.split("\\."));
+        if (v != null) return(v);
+        return(yamlGet(appYaml, propKey.split("\\.")));
     }
 
 
@@ -135,16 +137,26 @@ public class Application
 
     private static void runCli(String[] args) throws Exception
     {
-        Map<String, Object> yaml = new java.util.HashMap<>();
+        Map<String, Object> appYaml = new java.util.HashMap<>();
         try (InputStream is = Application.class.getResourceAsStream("/application.yml"))
         {
-            if (is != null) yaml = new org.yaml.snakeyaml.Yaml().load(is);
+            if (is != null) appYaml = new org.yaml.snakeyaml.Yaml().load(is);
+        }
+
+        Map<String, Object> configYaml = new java.util.HashMap<>();
+        java.io.File configFile = new java.io.File("config.yaml");
+        if (configFile.exists())
+        {
+            try (java.io.FileInputStream fis = new java.io.FileInputStream(configFile))
+            {
+                configYaml = new org.yaml.snakeyaml.Yaml().load(fis);
+            }
         }
 
         HikariDataSource ds = new HikariDataSource();
-        ds.setJdbcUrl(cfg("SPRING_DATASOURCE_URL", "spring.datasource.url", yaml));
-        ds.setUsername(cfg("SPRING_DATASOURCE_USERNAME", "spring.datasource.username", yaml));
-        ds.setPassword(cfg("SPRING_DATASOURCE_PASSWORD", "spring.datasource.password", yaml));
+        ds.setJdbcUrl(cfg("DATABASE_URL", "database.url", appYaml, configYaml));
+        ds.setUsername(cfg("DATABASE_USERNAME", "database.username", appYaml, configYaml));
+        ds.setPassword(cfg("DATABASE_PASSWORD", "database.password", appYaml, configYaml));
         ds.setMaximumPoolSize(1);
 
         try

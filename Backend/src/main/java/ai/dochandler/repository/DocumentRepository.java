@@ -234,26 +234,18 @@ public class DocumentRepository
     public List<DocumentRecord> hybridSearch(String semantic, String[] lexical, long fldid, double threshold, GeminiService geminiService)
     {
         Float[] embedding = geminiService.computeEmbedding(semantic, true);
-        String vecStr = toVectorLiteral(embedding);
+        boolean hasEmbedding = embedding != null && embedding.length > 0;
+        String vecStr = hasEmbedding ? toVectorLiteral(embedding) : null;
         String wordlist = String.join(" ", lexical);
+        boolean hasLexical = !wordlist.isBlank();
 
-        log.debug("Hybrid search: threshold={}, lexical='{}', semantic='{}'", threshold, wordlist, semantic);
+        log.debug("Hybrid search: threshold={}, lexical='{}', semantic='{}', hasEmbedding={}", threshold, wordlist, semantic, hasEmbedding);
+
+        if (!hasEmbedding && !hasLexical) return(List.of());
 
         List<Long> docids;
 
-        if (wordlist.isBlank())
-        {
-            docids = jdbc.query(
-                "SELECT DISTINCT(docid) FROM " + chunks() + " WHERE (embedding <=> ?::vector) < ?",
-                ps ->
-                {
-                    ps.setObject(1, vecStr, Types.OTHER);
-                    ps.setDouble(2, threshold);
-                },
-                (rs, i) -> rs.getLong("docid")
-            );
-        }
-        else
+        if (hasEmbedding && hasLexical)
         {
             String sql =
                 "SELECT DISTINCT(docid) FROM " + chunks() + " WHERE (embedding <=> ?::vector) < ? " +
@@ -267,6 +259,26 @@ public class DocumentRepository
                     ps.setString(3, wordlist);
                 },
                 (rs, i) -> rs.getLong("docid")
+            );
+        }
+        else if (hasEmbedding)
+        {
+            docids = jdbc.query(
+                "SELECT DISTINCT(docid) FROM " + chunks() + " WHERE (embedding <=> ?::vector) < ?",
+                ps ->
+                {
+                    ps.setObject(1, vecStr, Types.OTHER);
+                    ps.setDouble(2, threshold);
+                },
+                (rs, i) -> rs.getLong("docid")
+            );
+        }
+        else
+        {
+            docids = jdbc.query(
+                "SELECT DISTINCT(docid) FROM " + chunks() + " WHERE lexvector @@ plainto_tsquery(lang::regconfig,?)",
+                (rs, i) -> rs.getLong("docid"),
+                wordlist
             );
         }
 

@@ -44,10 +44,9 @@
           :can-edit="auth.isAdmin"
           :can-link="auth.isAdmin"
           :can-create="false"
-          :selectable="auth.isAdmin"
           :checked="selectedIds.has(doc.id)"
           :selected-count="selectedIds.size"
-          :all-selected="selectedIds.size === documents.length && documents.length > 0"
+          :all-selected="selectedIds.size > 0"
           :active-sort="sortMode"
           @edit="editRequestStore.request($event)"
           @sort="sortMode = $event"
@@ -113,6 +112,7 @@ const selectedCategory = ref(0)
 const documents = ref<DocumentResult[]>([])
 const sortMode = ref<'title' | 'date'>('title')
 const selectedIds = ref(new Set<number>())
+const lastCheckedId = ref<number | null>(null)
 const showLinkModal = ref(false)
 const pickerMode = ref<'link' | 'move'>('link')
 const linkTargetIds = ref<(number | string)[]>([])
@@ -136,21 +136,41 @@ onMounted(() => categoriesStore.load())
 defineExpose({ focus: () => searchInputEl.value?.focus() })
 
 
-function toggleCheck(id: number)
+function toggleCheck(id: number, shift: boolean, ctrl: boolean)
 {
-  const next = new Set(selectedIds.value)
-  if (next.has(id)) next.delete(id)
-  else next.add(id)
-  selectedIds.value = next
+  if (shift && lastCheckedId.value !== null)
+  {
+    const list = sortedDocuments.value
+    const from = list.findIndex(d => d.id === lastCheckedId.value)
+    const to = list.findIndex(d => d.id === id)
+    if (from !== -1 && to !== -1)
+    {
+      const [lo, hi] = from < to ? [from, to] : [to, from]
+      selectedIds.value = new Set(list.slice(lo, hi + 1).map(d => d.id))
+      return
+    }
+  }
+  if (ctrl)
+  {
+    const next = new Set(selectedIds.value)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    selectedIds.value = next
+  }
+  else
+  {
+    selectedIds.value = new Set([id])
+  }
+  lastCheckedId.value = id
 }
 
 
 function toggleAll()
 {
-  if (selectedIds.value.size === documents.value.length)
+  if (selectedIds.value.size > 0)
     selectedIds.value = new Set()
   else
-    selectedIds.value = new Set(documents.value.map(d => d.id))
+    selectedIds.value = new Set(sortedDocuments.value.map(d => d.id))
 }
 
 
@@ -186,6 +206,11 @@ function areaCtxSort(mode: 'title' | 'date')
 
 async function deleteSingle(id: number)
 {
+  if (selectedIds.value.size > 1)
+  {
+    showDeleteConfirm.value = true
+    return
+  }
   const doc = documents.value.find(d => d.id === id)
   if (!window.confirm(`Delete "${doc?.title ?? id}"? This cannot be undone.`)) return
   try
@@ -244,6 +269,7 @@ async function doSearch()
   error.value = null
   lastQuery.value = query.value
   selectedIds.value = new Set()
+  lastCheckedId.value = null
   try
   {
     const res = await search({ query: query.value, folder: selectedCategory.value })

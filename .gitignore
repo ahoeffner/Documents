@@ -16,5 +16,6 @@
 .DS_Store
 Thumbs.db
 Backend/documents.tar
+**/config.yaml
 /.agents
 skills-lock.json

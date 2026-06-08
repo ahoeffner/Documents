@@ -1,2 +1,2 @@
 docker save -o documents.tar documents:latest
-scp documents.tar home:/home/alex/Docker/ai/documents
+scp documents.tar home:/home/alex/Docker/documents
