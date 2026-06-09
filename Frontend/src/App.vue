@@ -5,7 +5,7 @@
 
     <template v-else>
       <header class="tab-bar">
-        <div class="brand">Documents</div>
+        <div class="brand">{{ brand }}</div>
         <nav class="tabs">
           <button
             v-for="t in tabs"
@@ -86,6 +86,8 @@ import ExplorerView from './views/ExplorerView.vue'
 
 const auth = useAuthStore()
 const showHelp = ref(false)
+const _host = window.location.hostname.split('.')[0]
+const brand = _host.charAt(0).toUpperCase() + _host.slice(1)
 
 
 const activeTab = ref<'browse' | 'search' | 'chat'>('browse')
@@ -170,7 +172,6 @@ a { text-decoration: none; }
   text-transform: uppercase;
   color: var(--text-muted);
   padding-right: 16px;
-  padding-bottom: 7px;
   border-right: 1px solid var(--tab-border);
   margin-right: 6px;
   white-space: nowrap;

@@ -399,7 +399,7 @@ function selectHistory(h: string)
   display: flex;
   flex-direction: column;
   gap: 2px;
-  background: var(--bg-subtle);
+  background: var(--bg);
 }
 
 .msg {
@@ -446,7 +446,7 @@ function selectHistory(h: string)
   user-select: none;
 }
 .source-row:last-child { border-bottom: none; }
-.source-row:hover { background: var(--bg-muted); }
+.source-row:hover { background: var(--select-bg); }
 .source-date {
   font-family: 'SFMono-Regular', Consolas, monospace;
   font-size: 10px;

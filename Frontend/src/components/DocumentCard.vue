@@ -45,9 +45,9 @@
         <button v-if="canEdit" class="ctx-item" @click="ctxEdit">Edit Document</button>
         <button v-if="canLink" class="ctx-item" @click="ctxLink">{{ selectedCount && selectedCount > 1 ? 'Link Documents' : 'Link Document' }}</button>
         <button v-if="canLink && !isLink" class="ctx-item" @click="ctxMove">{{ selectedCount && selectedCount > 1 ? 'Move Documents' : 'Move Document' }}</button>
-        <div v-if="canEdit && canCreate !== false" class="ctx-divider"></div>
-        <button v-if="canEdit && canCreate !== false" class="ctx-item" @click="ctxNewFolder">New Folder</button>
-        <button v-if="canEdit && canCreate !== false" class="ctx-item" @click="ctxNewDoc">New Document</button>
+        <div v-if="canEdit && canCreate" class="ctx-divider"></div>
+        <button v-if="canEdit && canCreate" class="ctx-item" @click="ctxNewFolder">New Folder</button>
+        <button v-if="canEdit && canCreate" class="ctx-item" @click="ctxNewDoc">New Document</button>
         <div v-if="canEdit" class="ctx-divider"></div>
         <button v-if="canEdit" class="ctx-item" @click="ctxSelectAll">{{ (selectedCount ?? 0) > 0 ? 'Deselect All' : 'Select All' }}</button>
         <div class="ctx-divider"></div>
@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import type { DocumentResult } from '../types'
 
 
@@ -72,6 +72,8 @@ const emit = defineEmits<{ edit: [id: number]; delete: [id: number]; move: [id: 
 
 const showText = ref(false)
 const ctxMenu = ref<{ x: number; y: number } | null>(null)
+let selfOpening = false
+const onCloseAllCtx = () => { if (!selfOpening) ctxMenu.value = null }
 
 function onRowClick(e: MouseEvent)
 {
@@ -88,7 +90,13 @@ function openContent()
 
 function showCtxMenu(e: MouseEvent)
 {
-  ctxMenu.value = { x: e.clientX, y: e.clientY }
+  selfOpening = true
+  window.dispatchEvent(new Event('close-all-ctx'))
+  selfOpening = false
+  const x = Math.min(e.clientX, window.innerWidth - 210)
+  const y = Math.min(e.clientY, window.innerHeight - 380)
+  ctxMenu.value = { x: Math.max(4, x), y: Math.max(4, y) }
+  window.addEventListener('click', () => { ctxMenu.value = null }, { once: true })
 }
 
 
@@ -162,14 +170,6 @@ function ctxSort(mode: 'title' | 'date')
 }
 
 
-watch(ctxMenu, val =>
-{
-  if (val)
-  {
-    const close = () => { ctxMenu.value = null }
-    window.addEventListener('click', close, { once: true })
-  }
-})
 
 
 function onKeydown(e: KeyboardEvent)
@@ -181,8 +181,16 @@ function onKeydown(e: KeyboardEvent)
   }
 }
 
-onMounted(() => window.addEventListener('keydown', onKeydown))
-onUnmounted(() => window.removeEventListener('keydown', onKeydown))
+onMounted(() =>
+{
+  window.addEventListener('keydown', onKeydown)
+  window.addEventListener('close-all-ctx', onCloseAllCtx)
+})
+onUnmounted(() =>
+{
+  window.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('close-all-ctx', onCloseAllCtx)
+})
 
 
 function formatDate(d: string): string
@@ -204,15 +212,20 @@ function formatDate(d: string): string
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 7px 14px;
+  padding: 9px 14px;
   border-bottom: 1px solid var(--bg-subtle);
   font-size: 12px;
   cursor: pointer;
   user-select: none;
+  position: relative;
 }
-.doc-row:hover { background: var(--bg-subtle); }
-.doc-row-checked { background: var(--accent-ring); }
-.doc-row-checked:hover { background: var(--accent-ring); }
+.doc-row:hover { background: var(--select-bg); }
+.doc-row-checked {
+  background: var(--select-bg);
+  box-shadow: inset 0 0 0 2px var(--select-border);
+  z-index: 1;
+}
+.doc-row-checked:hover { background: var(--select-bg); }
 .doc-icon { width: 16px; height: 16px; flex-shrink: 0; color: var(--text); opacity: 0.55; }
 .doc-icon-link { color: var(--accent); opacity: 1; }
 

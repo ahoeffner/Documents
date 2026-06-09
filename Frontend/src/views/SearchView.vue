@@ -92,7 +92,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { DocumentResult } from '../types'
 import { search, linkDocuments, moveDocument, deleteDocument } from '../api/documents'
 import { useCategoriesStore } from '../stores/categories'
@@ -119,6 +119,8 @@ const linkTargetIds = ref<(number | string)[]>([])
 const showDeleteConfirm = ref(false)
 const deleteLoading = ref(false)
 const areaCtx = ref<{ x: number; y: number } | null>(null)
+let selfOpeningCtx = false
+const onCloseAllCtx = () => { if (!selfOpeningCtx) areaCtx.value = null }
 
 const sortedDocuments = computed(() =>
 {
@@ -131,7 +133,12 @@ const sortedDocuments = computed(() =>
 const loading = ref(false)
 const error = ref<string | null>(null)
 const searched = ref(false)
-onMounted(() => categoriesStore.load())
+onMounted(() =>
+{
+  categoriesStore.load()
+  window.addEventListener('close-all-ctx', onCloseAllCtx)
+})
+onUnmounted(() => window.removeEventListener('close-all-ctx', onCloseAllCtx))
 
 defineExpose({ focus: () => searchInputEl.value?.focus() })
 
@@ -192,7 +199,12 @@ function onMove(docId: string | number)
 
 function showAreaCtx(e: MouseEvent)
 {
-  areaCtx.value = { x: e.clientX, y: e.clientY }
+  selfOpeningCtx = true
+  window.dispatchEvent(new Event('close-all-ctx'))
+  selfOpeningCtx = false
+  const x = Math.min(e.clientX, window.innerWidth - 210)
+  const y = Math.min(e.clientY, window.innerHeight - 80)
+  areaCtx.value = { x: Math.max(4, x), y: Math.max(4, y) }
   window.addEventListener('click', () => { areaCtx.value = null }, { once: true })
 }
 
@@ -202,6 +214,8 @@ function areaCtxSort(mode: 'title' | 'date')
   areaCtx.value = null
   sortMode.value = mode
 }
+
+
 
 
 async function deleteSingle(id: number)
@@ -300,31 +314,29 @@ async function doSearch()
   align-items: center;
   gap: 10px;
   padding: 0 14px;
-  height: 54px;
+  height: 46px;
   background: var(--bg-muted);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
-.folder-select { width: auto; height: 38px; }
+.folder-select { width: auto; height: 32px; }
 
 .search-form {
-  flex: 1;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-/* Larger / more prominent search input */
 .search-input {
-  flex: 1;
-  height: 42px;
-  padding: 0 14px;
+  width: 40ch;
+  height: 32px;
+  padding: 0 12px;
   border: 1.5px solid var(--border-input);
   border-radius: 6px;
   background: var(--bg);
   color: var(--text);
-  font-size: 15px;
+  font-size: 13px;
   font-family: inherit;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;

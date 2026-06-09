@@ -60,6 +60,7 @@
           :doc="doc"
           :can-edit="auth.isAdmin"
           :can-link="auth.isAdmin"
+          :can-create="auth.isAdmin"
           :is-link="doc.isLink"
           :link-id="doc.linkId"
           :checked="selectedIds.has(doc.id)"
@@ -142,6 +143,25 @@
       </div>
     </Teleport>
 
+    <!-- ── No text warning ── -->
+    <Teleport to="body">
+      <div v-if="showNoTextWarning" class="modal-backdrop">
+        <div class="modal-popup modal-popup-sm">
+          <div class="modal-header">
+            <span class="modal-header-title">Could not extract text</span>
+            <button type="button" class="modal-close" @click="showNoTextWarning = false">✕</button>
+          </div>
+          <div class="modal-body">
+            <p class="modal-text">{{ noTextWarningMsg }}</p>
+          </div>
+          <div class="modal-actions">
+            <button class="btn btn-ghost btn-sm" @click="showNoTextWarning = false">Continue Editing</button>
+            <button class="btn btn-primary btn-sm" @click="saveAnyway">Save Anyway</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
     <!-- ── Context menu ── -->
     <Teleport to="body">
       <div v-if="ctxMenu" class="ctx-menu" :style="{ top: ctxMenu.y + 'px', left: ctxMenu.x + 'px' }" @click.stop>
@@ -149,6 +169,7 @@
           <button class="ctx-item" @click="ctxAction(() => openNewFolder(null))">New Root Folder</button>
         </template>
         <template v-if="ctxMenu.type === 'folder'">
+          <button class="ctx-item" @click="ctxAction(openNew)">New Document</button>
           <button class="ctx-item" @click="ctxAction(() => openNewFolder(ctxMenu!.folderId ?? null))">New Subfolder</button>
           <button class="ctx-item" @click="ctxRenameFolder">Rename</button>
           <div class="ctx-divider"></div>
@@ -267,7 +288,7 @@
           <div class="modal-actions">
             <div class="spacer"></div>
             <span v-if="editFormLoading" class="saving-hint">
-              <span class="spinner spinner-sm"></span> Saving…
+              <span class="spinner spinner-md"></span> Saving…
             </span>
             <button v-if="!editIsNew" class="btn btn-primary btn-sm" :disabled="editFormLoading" @click="confirmDelete">
               Delete
@@ -441,17 +462,31 @@ function openNewFolder(pid: number | null)
 }
 
 
+let selfOpeningCtx = false
+const onCloseAllCtx = () => { if (!selfOpeningCtx) ctxMenu.value = null }
+
+
 function showCtx(e: MouseEvent, type: 'tree' | 'content')
 {
   if (!auth.isAdmin) return
-  ctxMenu.value = { x: e.clientX, y: e.clientY, type }
+  selfOpeningCtx = true
+  window.dispatchEvent(new Event('close-all-ctx'))
+  selfOpeningCtx = false
+  const x = Math.min(e.clientX, window.innerWidth - 210)
+  const y = Math.min(e.clientY, window.innerHeight - 120)
+  ctxMenu.value = { x: Math.max(4, x), y: Math.max(4, y), type }
 }
 
 
 function onFolderCtx(payload: { id: number; e: MouseEvent })
 {
   if (!auth.isAdmin) return
-  ctxMenu.value = { x: payload.e.clientX, y: payload.e.clientY, type: 'folder', folderId: payload.id }
+  selfOpeningCtx = true
+  window.dispatchEvent(new Event('close-all-ctx'))
+  selfOpeningCtx = false
+  const x = Math.min(payload.e.clientX, window.innerWidth - 210)
+  const y = Math.min(payload.e.clientY, window.innerHeight - 200)
+  ctxMenu.value = { x: Math.max(4, x), y: Math.max(4, y), type: 'folder', folderId: payload.id }
 }
 
 
@@ -460,6 +495,8 @@ function ctxAction(fn: () => void)
   ctxMenu.value = null
   fn()
 }
+
+
 
 
 function ctxRenameFolder()
@@ -606,6 +643,8 @@ const editCurrentFilename = ref<string | null>(null)
 const editFileInputRef = ref<HTMLInputElement | null>(null)
 const pasteArea = ref<HTMLElement | null>(null)
 
+const showNoTextWarning = ref(false)
+const noTextWarningMsg = ref('')
 const editFormLoading = ref(false)
 const ocrLoading = ref(false)
 const editErrorMsg = ref<string | null>(null)
@@ -899,11 +938,16 @@ async function submitEdit()
     if (editIsNew.value)
     {
       const res = await storeDocument(fd)
-      const data = res.data as { success: boolean; id?: number }
+      const data = res.data as { success: boolean; id?: number; warning?: string }
       if (data.success)
       {
         closeEditModal()
         await reloadDocs()
+      }
+      else if (data.warning)
+      {
+        noTextWarningMsg.value = data.warning
+        showNoTextWarning.value = true
       }
       else
       {
@@ -922,6 +966,51 @@ async function submitEdit()
       {
         editErrorMsg.value = 'Server reported an error.'
       }
+    }
+  }
+  catch (err: unknown)
+  {
+    const axiosErr = err as { response?: { data?: { warning?: string } } }
+    if (axiosErr?.response?.data?.warning)
+    {
+      noTextWarningMsg.value = axiosErr.response.data.warning
+      showNoTextWarning.value = true
+    }
+    else
+      editErrorMsg.value = 'Failed — check the connection.'
+  }
+  finally
+  {
+    editFormLoading.value = false
+  }
+}
+
+
+async function saveAnyway()
+{
+  showNoTextWarning.value = false
+  const fd = new FormData()
+  fd.append('date', editDate.value)
+  fd.append('fldid', String(editFldid.value ?? 0))
+  fd.append('title', editTitleField.value)
+  fd.append('language', editLanguage.value)
+  if (editText.value) fd.append('text', editText.value)
+  if (editSelectedFile.value) fd.append('file', editSelectedFile.value)
+  else if (editPastedFile.value) fd.append('file', editPastedFile.value, 'pasted-image.png')
+  if (editUrl.value) fd.append('url', editUrl.value)
+  fd.append('noExtract', 'true')
+  editFormLoading.value = true
+  try
+  {
+    const res = await storeDocument(fd)
+    if ((res.data as { success: boolean }).success)
+    {
+      closeEditModal()
+      await reloadDocs()
+    }
+    else
+    {
+      editErrorMsg.value = 'Server reported an error.'
     }
   }
   catch
@@ -977,11 +1066,13 @@ onMounted(() =>
 {
   window.addEventListener('keydown', onKeydown)
   window.addEventListener('click', onGlobalClick)
+  window.addEventListener('close-all-ctx', onCloseAllCtx)
 })
 onUnmounted(() =>
 {
   window.removeEventListener('keydown', onKeydown)
   window.removeEventListener('click', onGlobalClick)
+  window.removeEventListener('close-all-ctx', onCloseAllCtx)
 })
 </script>
 
@@ -1140,8 +1231,10 @@ onUnmounted(() =>
 .saving-hint {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 12px;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   color: var(--text-faint);
 }
 

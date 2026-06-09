@@ -42,6 +42,7 @@ public class StoreController
         @RequestParam String language,
         @RequestParam(required = false) MultipartFile file,
         @RequestParam(required = false) String url,
+        @RequestParam(required = false, defaultValue = "false") boolean noExtract,
         HttpSession session
     )
     {
@@ -50,9 +51,13 @@ public class StoreController
 
         try
         {
-            DocumentRecord record = processor.process(date, fldid, title, text, language, file, url);
+            DocumentRecord record = processor.process(date, fldid, title, text, language, file, url, noExtract);
             long id = documentRepo.create(record, geminiService);
             return(ResponseEntity.ok(new CreateResponse(true, id)));
+        }
+        catch (IllegalStateException e)
+        {
+            return(ResponseEntity.badRequest().body(new CreateResponse(false, null, e.getMessage())));
         }
         catch (Exception e)
         {

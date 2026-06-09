@@ -31,6 +31,10 @@
   --warn:         #f59e0b;
   --warn-bg:      #fffbeb;
 
+  /* Selection (row highlight) */
+  --select-bg:     rgba(26, 115, 232, 0.10);
+  --select-border: #1a73e8;
+
   /* Tab bar */
   --tab-bar-bg:   #e0e5ec;
   --tab-bg:       #cdd4dc;

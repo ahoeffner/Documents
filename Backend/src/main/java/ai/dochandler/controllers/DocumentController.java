@@ -86,7 +86,7 @@ public class DocumentController
             if (reprocess)
             {
                 String effectiveText = text != null ? text : existing.getText();
-                record = processor.process(effectiveDate, effectiveFldid, effectiveTitle, effectiveText, effectiveLang, file, url);
+                record = processor.process(effectiveDate, effectiveFldid, effectiveTitle, effectiveText, effectiveLang, file, url, false);
             }
             else
             {

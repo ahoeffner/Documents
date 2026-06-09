@@ -1,6 +1,7 @@
 package ai.dochandler.services;
 
 import java.net.URI;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URLConnection;
@@ -54,16 +55,19 @@ public class DocumentLoaderService
 
     private static Document parsePdf(byte[] content) throws Exception
     {
-        Process proc = new ProcessBuilder("pdftotext", "-", "-").start();
-
-        try (OutputStream out = proc.getOutputStream())
+        try
         {
-            out.write(content);
+            Process proc = new ProcessBuilder("pdftotext", "-", "-").start();
+            try (OutputStream out = proc.getOutputStream()) { out.write(content); }
+            String text = new String(proc.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            proc.waitFor();
+            if (text.isBlank())
+                throw new IllegalStateException("No text could be extracted from this PDF. Please provide a detailed description of the document.");
+            return(Document.from(text));
         }
-
-        String text = new String(proc.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-
-        proc.waitFor();
-        return(Document.from(text));
+        catch (IOException e)
+        {
+            return(new ApacheTikaDocumentParser().parse(new ByteArrayInputStream(content)));
+        }
     }
 }

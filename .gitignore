@@ -19,3 +19,4 @@ Backend/documents.tar
 **/config.yaml
 /.agents
 skills-lock.json
+Backend/config.yaml

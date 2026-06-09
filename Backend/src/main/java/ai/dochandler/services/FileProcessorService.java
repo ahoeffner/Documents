@@ -22,7 +22,7 @@ public class FileProcessorService
     }
 
 
-    public DocumentRecord process(String date, String fldidStr, String title, String text, String language, MultipartFile file, String url) throws Exception
+    public DocumentRecord process(String date, String fldidStr, String title, String text, String language, MultipartFile file, String url, boolean noExtract) throws Exception
     {
         DocumentRecord doc = new DocumentRecord();
 
@@ -56,7 +56,7 @@ public class FileProcessorService
                     doc.setText(ocrText);
                 }
             }
-            else
+            else if (!noExtract)
             {
                 Document parsed = loader.load(bytes);
                 doc.addTextChunks("Content", chunker.split(parsed));
