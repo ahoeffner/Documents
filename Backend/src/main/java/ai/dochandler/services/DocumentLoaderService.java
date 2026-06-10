@@ -1,11 +1,16 @@
 package ai.dochandler.services;
 
 import java.net.URI;
+import java.util.List;
+import java.nio.file.Path;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URLConnection;
+import java.util.stream.Stream;
 import java.io.ByteArrayInputStream;
+import java.util.stream.Collectors;
 import java.nio.charset.StandardCharsets;
 import dev.langchain4j.data.document.Document;
 import org.springframework.stereotype.Service;
@@ -15,6 +20,16 @@ import dev.langchain4j.data.document.parser.apache.tika.ApacheTikaDocumentParser
 @Service
 public class DocumentLoaderService
 {
+    private final OCRService ocr;
+
+
+    public DocumentLoaderService(OCRService ocr)
+    {
+        this.ocr = ocr;
+    }
+
+
+
     public static class URLDocumentResult
     {
         public final byte[] content;
@@ -53,7 +68,7 @@ public class DocumentLoaderService
     }
 
 
-    private static Document parsePdf(byte[] content) throws Exception
+    private Document parsePdf(byte[] content) throws Exception
     {
         try
         {
@@ -61,13 +76,51 @@ public class DocumentLoaderService
             try (OutputStream out = proc.getOutputStream()) { out.write(content); }
             String text = new String(proc.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
             proc.waitFor();
-            if (text.isBlank())
-                throw new IllegalStateException("No text could be extracted from this PDF. Please provide a detailed description of the document.");
+            if (text.isBlank()) return(Document.from(ocrPdf(content)));
             return(Document.from(text));
         }
         catch (IOException e)
         {
             return(new ApacheTikaDocumentParser().parse(new ByteArrayInputStream(content)));
+        }
+    }
+
+
+    private String ocrPdf(byte[] content) throws Exception
+    {
+        Path pdfFile = Files.createTempFile("ocr-", ".pdf");
+        Path pageDir = Files.createTempDirectory("ocr-pages-");
+
+        try
+        {
+            Files.write(pdfFile, content);
+
+            Process proc = new ProcessBuilder("pdftoppm", "-png", "-r", "150", pdfFile.toString(), pageDir.resolve("page").toString()).start();
+            proc.waitFor();
+
+            List<Path> pages;
+            try (Stream<Path> files = Files.list(pageDir))
+            {
+                pages = files.sorted().collect(Collectors.toList());
+            }
+
+            StringBuilder text = new StringBuilder();
+            for (Path page : pages)
+                text.append(ocr.scan(Files.readAllBytes(page))).append('\n');
+
+            if (text.toString().isBlank())
+                throw new IllegalStateException("No text could be extracted from this PDF. Please provide a detailed description of the document.");
+
+            return(text.toString());
+        }
+        finally
+        {
+            Files.deleteIfExists(pdfFile);
+            try (Stream<Path> files = Files.list(pageDir))
+            {
+                for (Path page : files.collect(Collectors.toList())) Files.deleteIfExists(page);
+            }
+            Files.deleteIfExists(pageDir);
         }
     }
 }

@@ -129,7 +129,7 @@ watch(() => props.visible, async val =>
     selected.value = null
     filterQuery.value = ''
     loadRecent()
-    if (!categoriesStore.categories.length) categoriesStore.load()
+    categoriesStore.load()
     await nextTick()
     searchEl.value?.focus()
   }
