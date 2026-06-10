@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import java.nio.charset.StandardCharsets;
 import dev.langchain4j.data.document.Document;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 import dev.langchain4j.data.document.parser.apache.tika.ApacheTikaDocumentParser;
 
 
@@ -21,6 +22,9 @@ import dev.langchain4j.data.document.parser.apache.tika.ApacheTikaDocumentParser
 public class DocumentLoaderService
 {
     private final OCRService ocr;
+
+    @Value("${app.tesseract.pdf-dpi}")
+    private int pdfDpi;
 
 
     public DocumentLoaderService(OCRService ocr)
@@ -95,7 +99,7 @@ public class DocumentLoaderService
         {
             Files.write(pdfFile, content);
 
-            Process proc = new ProcessBuilder("pdftoppm", "-png", "-r", "150", pdfFile.toString(), pageDir.resolve("page").toString()).start();
+            Process proc = new ProcessBuilder("pdftoppm", "-png", "-r", String.valueOf(pdfDpi), pdfFile.toString(), pageDir.resolve("page").toString()).start();
             proc.waitFor();
 
             List<Path> pages;

@@ -23,16 +23,21 @@ app:
     timeout-seconds: 300
     embedding-retries: 3
     max-conversations: 64
+
   hosts:
     localhost: documents
     home.hoeffner.net: documents
     private.hoeffner.net: documents
     slotsdalen.hoeffner.net: slotsdalen
+
   tesseract:
+    pdf-dpi: 300
     language: dan
+
   chunker:
     max-tokens: 4096
     overlap-size: 64
+
   vector-search:
     boundary:
       - 0.1
