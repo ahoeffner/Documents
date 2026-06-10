@@ -19,6 +19,9 @@
           </button>
         </nav>
         <div class="spacer" />
+        <select class="lang-select" v-model="theme.theme" @change="theme.setTheme(theme.theme)">
+          <option v-for="th in theme.themes" :key="th.id" :value="th.id">{{ th.name }}</option>
+        </select>
         <select class="lang-select" v-model="i18n.locale" @change="i18n.setLocale(i18n.locale)">
           <option v-for="l in i18n.locales" :key="l.id" :value="l.id">{{ l.name }}</option>
         </select>
@@ -82,6 +85,7 @@
 import { ref, watch, computed, nextTick, h, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from './stores/auth'
 import { useI18nStore } from './stores/i18n'
+import { useThemeStore } from './stores/theme'
 import ChatView from './views/ChatView.vue'
 import LoginView from './views/LoginView.vue'
 import SearchView from './views/SearchView.vue'
@@ -90,6 +94,8 @@ import ExplorerView from './views/ExplorerView.vue'
 
 const auth = useAuthStore()
 const i18n = useI18nStore()
+const theme = useThemeStore()
+theme.init()
 const showHelp = ref(false)
 const _host = window.location.hostname.split('.')[0]
 const brand = _host.charAt(0).toUpperCase() + _host.slice(1)
@@ -146,7 +152,7 @@ const tabs = computed(() => [
 
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); }
 a { text-decoration: none; }
 
 #app {
@@ -239,11 +245,16 @@ a { text-decoration: none; }
   height: 26px;
   padding: 0 4px;
   font-size: 12px;
+  font-weight: 600;
   border: 1px solid var(--tab-border);
   border-radius: 4px;
   background: var(--tab-bg);
   color: var(--text);
   cursor: pointer;
+  margin-right: 6px;
+}
+.lang-select:last-of-type {
+  margin-right: 32px;
 }
 
 </style>

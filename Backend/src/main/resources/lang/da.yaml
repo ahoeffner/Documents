@@ -4,7 +4,7 @@ app:
   tabs:
     browse: "Gennemse"
     search: "Søg"
-    chat: "AI-chat"
+    chat: "Spørg"
   helpModal:
     documentsTitle: "Dokumenter"
     documentsIntro: 'Organiser dine dokumenter i mapper. Brug <strong>højreklik</strong> til at styre alt — ingen værktøjslinjeknapper.'

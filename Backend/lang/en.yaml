@@ -4,7 +4,7 @@ app:
   tabs:
     browse: "Browse"
     search: "Search"
-    chat: "AI Chat"
+    chat: "Ask"
   helpModal:
     documentsTitle: "Documents"
     documentsIntro: 'Organise your documents into folders. Use <strong>right-click</strong> to manage everything — no toolbar buttons.'
