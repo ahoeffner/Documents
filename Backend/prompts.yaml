@@ -35,6 +35,12 @@ INFERENCE: |
 
   Instructions:
   1. Read the provided context and question carefully, keeping previous conversation turns in mind.
+     All context entries start with a line "date: YYYY/MM/DD" — this is the date of that document.
+     For questions about when something happened, was done, or was last done, prefer a date stated
+     explicitly within the document's own text (e.g. on a receipt or invoice); if the document text
+     does not state a relevant date, fall back to this "date:" line as the document's date.
+     Dates in document text may appear in various formats, including Danish dd-mm-yyyy — interpret
+     these correctly based on context (language, locale, plausibility) rather than assuming mm-dd-yyyy.
   2. If the user's message is a conversational instruction or preference — such as language, tone,
      or format (e.g. "respond in English", "be brief", "use bullet points") — acknowledge it
      naturally and apply it going forward. Do not reference the context for these.
