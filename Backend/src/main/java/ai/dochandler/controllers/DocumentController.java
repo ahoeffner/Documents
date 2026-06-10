@@ -2,6 +2,8 @@ package ai.dochandler.controllers;
 
 import java.util.Map;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ai.dochandler.entities.Document;
 import jakarta.servlet.http.HttpSession;
 import ai.dochandler.model.DocumentRecord;
@@ -19,6 +21,8 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/documents")
 public class DocumentController
 {
+    private static final Logger logger = LoggerFactory.getLogger(DocumentController.class);
+
     private final FileProcessorService processor;
     private final DocumentRepository documentRepo;
     private final GeminiService geminiService;
@@ -104,6 +108,7 @@ public class DocumentController
         }
         catch (Exception e)
         {
+            logger.error("Failed to update document {}", id, e);
             return(ResponseEntity.internalServerError().body(new CreateResponse(false, null)));
         }
     }

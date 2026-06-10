@@ -1,0 +1,4 @@
+docker compose down -v
+docker image rm documents
+docker load -i documents.tar
+docker compose up -d

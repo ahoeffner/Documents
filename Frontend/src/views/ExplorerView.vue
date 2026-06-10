@@ -145,7 +145,7 @@
 
     <!-- ── No text warning ── -->
     <Teleport to="body">
-      <div v-if="showNoTextWarning" class="modal-backdrop">
+      <div v-if="showNoTextWarning" class="modal-backdrop" style="z-index: 10000;">
         <div class="modal-popup modal-popup-sm">
           <div class="modal-header">
             <span class="modal-header-title">Could not extract text</span>
