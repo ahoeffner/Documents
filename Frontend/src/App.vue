@@ -19,47 +19,50 @@
           </button>
         </nav>
         <div class="spacer" />
-        <button class="btn btn-ghost btn-sm" style="align-self:center" @click="showHelp = true">Help</button>
-        <button class="btn btn-ghost btn-sm" style="align-self:center" @click="auth.logout()">Sign out</button>
+        <select class="lang-select" v-model="i18n.locale" @change="i18n.setLocale(i18n.locale)">
+          <option v-for="l in i18n.locales" :key="l.id" :value="l.id">{{ l.name }}</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" style="align-self:center" @click="showHelp = true">{{ i18n.t('app.help') }}</button>
+        <button class="btn btn-ghost btn-sm" style="align-self:center" @click="auth.logout()">{{ i18n.t('app.signOut') }}</button>
       </header>
 
       <Teleport to="body">
         <div v-if="showHelp" class="modal-backdrop" @click.self="showHelp = false">
           <div class="modal-popup">
             <div class="modal-header">
-              <span class="modal-header-title">Help</span>
+              <span class="modal-header-title">{{ i18n.t('app.help') }}</span>
               <button type="button" class="modal-close" @click="showHelp = false">✕</button>
             </div>
             <div class="modal-body help-body">
 
-              <h4>Documents</h4>
-              <p>Organise your documents into folders. Use <strong>right-click</strong> to manage everything — no toolbar buttons.</p>
+              <h4>{{ i18n.t('app.helpModal.documentsTitle') }}</h4>
+              <p v-html="i18n.t('app.helpModal.documentsIntro')"></p>
               <ul>
-                <li>Right-click a <strong>folder</strong> in the sidebar → New Subfolder, Rename, Delete</li>
-                <li>Right-click <strong>empty sidebar space</strong> → New Root Folder</li>
-                <li>Right-click <strong>content area</strong> → New Document, New Folder</li>
-                <li>Right-click a <strong>document row</strong> → Text, File, Edit</li>
-                <li>Double-click a <strong>document row</strong> → open file, or show text if no file</li>
+                <li v-html="i18n.t('app.helpModal.documentsItem1')"></li>
+                <li v-html="i18n.t('app.helpModal.documentsItem2')"></li>
+                <li v-html="i18n.t('app.helpModal.documentsItem3')"></li>
+                <li v-html="i18n.t('app.helpModal.documentsItem4')"></li>
+                <li v-html="i18n.t('app.helpModal.documentsItem5')"></li>
               </ul>
 
-              <h4>Search</h4>
-              <p>Uses <strong>BM25 full-text matching</strong> — finds documents containing the exact words you type. No semantic expansion, no fuzzy matching.</p>
+              <h4>{{ i18n.t('app.helpModal.searchTitle') }}</h4>
+              <p v-html="i18n.t('app.helpModal.searchIntro')"></p>
               <ul>
-                <li>Use the most distinctive words from what you are looking for.</li>
-                <li>Add <strong>*</strong> to a word for prefix search — <em>VVS*</em> matches VVS, VVS-rør, VVSfirma, etc.</li>
-                <li>Use <strong>Folder</strong> to narrow results to a specific category.</li>
-                <li>Right-click or double-click a result row to open it.</li>
+                <li v-html="i18n.t('app.helpModal.searchItem1')"></li>
+                <li v-html="i18n.t('app.helpModal.searchItem2')"></li>
+                <li v-html="i18n.t('app.helpModal.searchItem3')"></li>
+                <li v-html="i18n.t('app.helpModal.searchItem4')"></li>
               </ul>
-              <p class="help-tip-accent">For meaning-based queries, use <strong>AI Chat</strong> instead.</p>
+              <p class="help-tip-accent" v-html="i18n.t('app.helpModal.searchTip')"></p>
 
-              <h4>AI Chat</h4>
-              <p>Uses <strong>RAG (Retrieval-Augmented Generation)</strong> — answers exclusively from your uploaded documents, not the internet.</p>
+              <h4>{{ i18n.t('app.helpModal.chatTitle') }}</h4>
+              <p v-html="i18n.t('app.helpModal.chatIntro')"></p>
               <ul>
-                <li>Sources below each answer show which documents were used.</li>
-                <li>Right-click or double-click a source row to open its file or text.</li>
-                <li><strong>Precision</strong> (Advanced) controls how strictly documents must match.</li>
-                <li>Use <strong>Folder</strong> to narrow the search to a specific category.</li>
-                <li>Use the history button to recall and reuse previous questions.</li>
+                <li v-html="i18n.t('app.helpModal.chatItem1')"></li>
+                <li v-html="i18n.t('app.helpModal.chatItem2')"></li>
+                <li v-html="i18n.t('app.helpModal.chatItem3')"></li>
+                <li v-html="i18n.t('app.helpModal.chatItem4')"></li>
+                <li v-html="i18n.t('app.helpModal.chatItem5')"></li>
               </ul>
 
             </div>
@@ -76,8 +79,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, h, onMounted, onUnmounted } from 'vue'
+import { ref, watch, computed, nextTick, h, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from './stores/auth'
+import { useI18nStore } from './stores/i18n'
 import ChatView from './views/ChatView.vue'
 import LoginView from './views/LoginView.vue'
 import SearchView from './views/SearchView.vue'
@@ -85,6 +89,7 @@ import ExplorerView from './views/ExplorerView.vue'
 
 
 const auth = useAuthStore()
+const i18n = useI18nStore()
 const showHelp = ref(false)
 const _host = window.location.hostname.split('.')[0]
 const brand = _host.charAt(0).toUpperCase() + _host.slice(1)
@@ -132,11 +137,11 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
 onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 
-const tabs = [
-  { id: 'browse' as const, label: 'Browse', icon: IconBrowse },
-  { id: 'search' as const, label: 'Search', icon: IconSearch },
-  { id: 'chat' as const, label: 'AI Chat', icon: IconChat },
-]
+const tabs = computed(() => [
+  { id: 'browse' as const, label: i18n.t('app.tabs.browse'), icon: IconBrowse },
+  { id: 'search' as const, label: i18n.t('app.tabs.search'), icon: IconSearch },
+  { id: 'chat' as const, label: i18n.t('app.tabs.chat'), icon: IconChat },
+])
 </script>
 
 <style>
@@ -228,5 +233,17 @@ a { text-decoration: none; }
   opacity: 0.65;
 }
 .tab.active .tab-icon { opacity: 1; color: var(--accent); }
+
+.lang-select {
+  align-self: center;
+  height: 26px;
+  padding: 0 4px;
+  font-size: 12px;
+  border: 1px solid var(--tab-border);
+  border-radius: 4px;
+  background: var(--tab-bg);
+  color: var(--text);
+  cursor: pointer;
+}
 
 </style>

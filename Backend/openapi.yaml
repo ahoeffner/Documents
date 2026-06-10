@@ -15,6 +15,7 @@ tags:
   - name: content
   - name: documents
   - name: languages
+  - name: i18n
 
 paths:
 
@@ -610,6 +611,52 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Language"
+
+  /api/i18n/locales:
+    get:
+      tags: [i18n]
+      summary: List available UI locales
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  locales:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Language"
+
+  /api/i18n/{locale}:
+    get:
+      tags: [i18n]
+      summary: Get UI translation messages for a locale
+      parameters:
+        - name: locale
+          in: path
+          required: true
+          schema:
+            type: string
+            example: en
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  locale:
+                    type: string
+                  messages:
+                    type: object
+                    description: Nested translation key/value map
 
 components:
 

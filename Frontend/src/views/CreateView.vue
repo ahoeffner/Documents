@@ -3,16 +3,16 @@
 
     <!-- Toolbar -->
     <div class="toolbar">
-      <span class="section-label">New Document</span>
+      <span class="section-label">{{ i18n.t('create.newDocument') }}</span>
       <div class="spacer"></div>
-      <button type="button" @click="resetForm" class="btn btn-ghost">Reset</button>
+      <button type="button" @click="resetForm" class="btn btn-ghost">{{ i18n.t('common.reset') }}</button>
       <button type="button" @click="submit" :disabled="loading" class="btn btn-primary">
-        {{ loading ? 'Saving…' : 'Save Document' }}
+        {{ loading ? i18n.t('create.saving') : i18n.t('create.saveDocument') }}
       </button>
     </div>
 
     <!-- Notices -->
-    <div v-if="successMsg" class="notice notice-success">Document saved — ID {{ savedId }}</div>
+    <div v-if="successMsg" class="notice notice-success">{{ i18n.t('create.savedNotice', { id: String(savedId) }) }}</div>
     <div v-if="error" class="notice notice-error">{{ error }}</div>
     <div v-if="validationError" class="notice notice-warn">{{ validationError }}</div>
 
@@ -22,17 +22,17 @@
       <!-- Left: metadata -->
       <div class="pane">
         <div class="pane-header">
-          <span class="pane-title">Metadata</span>
+          <span class="pane-title">{{ i18n.t('common.metadata') }}</span>
         </div>
         <div class="pane-body">
 
           <div class="field-row">
             <div class="field">
-              <label class="field-label">Date</label>
+              <label class="field-label">{{ i18n.t('common.date') }}</label>
               <input type="date" v-model="date" required class="input" />
             </div>
             <div class="field">
-              <label class="field-label">Language</label>
+              <label class="field-label">{{ i18n.t('common.language') }}</label>
               <select v-model="language" class="input">
                 <option v-for="lang in languages" :key="lang.id" :value="lang.name">{{ lang.name }}</option>
               </select>
@@ -40,21 +40,21 @@
           </div>
 
           <div class="field">
-            <label class="field-label">Category</label>
+            <label class="field-label">{{ i18n.t('common.category') }}</label>
             <select v-model="catid" class="input">
-              <option value="">— none —</option>
+              <option value="">{{ i18n.t('common.none') }}</option>
               <option v-for="cat in categoriesStore.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
             </select>
           </div>
 
           <div class="field">
-            <label class="field-label">Title <span class="req">*</span></label>
-            <input type="text" v-model="title" placeholder="Document title" class="input" />
+            <label class="field-label">{{ i18n.t('common.title') }} <span class="req">*</span></label>
+            <input type="text" v-model="title" :placeholder="i18n.t('create.titlePlaceholder')" class="input" />
           </div>
 
           <div class="field field-grow">
-            <label class="field-label">Description / Text</label>
-            <textarea v-model="text" rows="8" placeholder="Enter description or paste OCR result here…" class="input textarea"></textarea>
+            <label class="field-label">{{ i18n.t('create.descriptionText') }}</label>
+            <textarea v-model="text" rows="8" :placeholder="i18n.t('create.descriptionPlaceholder')" class="input textarea"></textarea>
           </div>
 
         </div>
@@ -63,37 +63,37 @@
       <!-- Right: source -->
       <div class="pane">
         <div class="pane-header">
-          <span class="pane-title">Source</span>
+          <span class="pane-title">{{ i18n.t('common.source') }}</span>
         </div>
         <div class="pane-body">
 
           <div class="field">
-            <label class="field-label">File</label>
+            <label class="field-label">{{ i18n.t('common.file') }}</label>
             <div class="file-row">
               <input ref="fileInputRef" type="file" @change="onFileChange" class="file-input" />
               <button type="button" @click="runOcr" :disabled="!ocrEnabled || ocrLoading" class="btn btn-accent">
-                {{ ocrLoading ? '…' : 'OCR' }}
+                {{ ocrLoading ? '…' : i18n.t('create.ocr') }}
               </button>
             </div>
           </div>
 
           <div class="field">
-            <label class="field-label">Paste Image</label>
+            <label class="field-label">{{ i18n.t('create.pasteImage') }}</label>
             <div
               ref="pasteArea" tabindex="0"
               @paste="onPaste"
               class="paste-zone"
               :class="{ 'paste-zone-active': !!pastedFile }"
             >
-              {{ pastedFile ? `Pasted: ${pastedFile.name || 'image'}` : 'Click here, then Ctrl+V / Cmd+V' }}
+              {{ pastedFile ? i18n.t('create.pasted', { name: pastedFile.name || i18n.t('create.pastedImageDefault') }) : i18n.t('create.pasteHint') }}
             </div>
           </div>
 
-          <div class="divider"><span>or</span></div>
+          <div class="divider"><span>{{ i18n.t('common.or') }}</span></div>
 
           <div class="field">
-            <label class="field-label">URL</label>
-            <input type="url" v-model="url" placeholder="https://example.com/document.pdf" class="input"
+            <label class="field-label">{{ i18n.t('common.url') }}</label>
+            <input type="url" v-model="url" :placeholder="i18n.t('create.urlPlaceholder')" class="input"
               :disabled="!!(selectedFile || pastedFile)" />
           </div>
 
@@ -111,6 +111,7 @@ import { scanOcr } from '../api/ocr'
 import { storeDocument } from '../api/store'
 import { listLanguages } from '../api/languages'
 import { useCategoriesStore } from '../stores/categories'
+import { useI18nStore } from '../stores/i18n'
 
 
 const props = withDefaults(defineProps<{ initialFldid?: number | null }>(), { initialFldid: null })
@@ -118,6 +119,7 @@ const emit = defineEmits<{ saved: [] }>()
 
 
 const categoriesStore = useCategoriesStore()
+const i18n = useI18nStore()
 
 
 const date = ref(todayIso())
@@ -211,7 +213,7 @@ async function runOcr()
   }
   catch
   {
-    error.value = 'OCR failed.'
+    error.value = i18n.t('create.ocrFailed')
   }
   finally
   {
@@ -241,13 +243,13 @@ async function submit()
   validationError.value = null
   error.value = null
   successMsg.value = false
-  if (!title.value.trim()) { validationError.value = 'Title is required.'; return }
-  if (!language.value) { validationError.value = 'Language is required.'; return }
+  if (!title.value.trim()) { validationError.value = i18n.t('create.titleRequired'); return }
+  if (!language.value) { validationError.value = i18n.t('create.languageRequired'); return }
   const hasFile = !!(selectedFile.value || pastedFile.value)
   const hasUrl = !!url.value.trim()
   const hasText = !!text.value.trim()
-  if (hasFile && hasUrl) { validationError.value = 'Provide a file or a URL, not both.'; return }
-  if (!hasFile && !hasUrl && !hasText) { validationError.value = 'Provide at least a file, URL, or description text.'; return }
+  if (hasFile && hasUrl) { validationError.value = i18n.t('create.fileOrUrlNotBoth'); return }
+  if (!hasFile && !hasUrl && !hasText) { validationError.value = i18n.t('create.provideAtLeastOne'); return }
 
   const fd = new FormData()
   fd.append('date', date.value)
@@ -273,12 +275,12 @@ async function submit()
     }
     else
     {
-      error.value = 'Server reported an error saving the document.'
+      error.value = i18n.t('create.serverError')
     }
   }
   catch
   {
-    error.value = 'Failed to save document — check the connection.'
+    error.value = i18n.t('create.saveFailed')
   }
   finally
   {

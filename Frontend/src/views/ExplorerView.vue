@@ -4,14 +4,14 @@
     <!-- ── Sidebar ── -->
     <div class="sidebar" :style="{ width: sidebarWidth + 'px' }" @contextmenu.prevent="showCtx($event, 'tree')">
       <div class="sidebar-header">
-        <span class="section-label">Folders</span>
+        <span class="section-label">{{ i18n.t('explorer.folders') }}</span>
       </div>
 
       <div v-if="foldersStore.loading" class="tree-empty">
         <span class="spinner spinner-md"></span>
       </div>
       <div v-else-if="foldersStore.error" class="tree-empty tree-error">{{ foldersStore.error }}</div>
-      <div v-else-if="!foldersStore.tree.length" class="tree-empty">No folders yet</div>
+      <div v-else-if="!foldersStore.tree.length" class="tree-empty">{{ i18n.t('explorer.noFoldersYet') }}</div>
       <div v-else class="tree-body">
         <FolderTreeItem
           v-for="folder in foldersStore.tree"
@@ -32,7 +32,7 @@
     <div class="main-panel" @contextmenu.prevent="showCtx($event, 'content')">
       <div class="panel-header">
         <span class="panel-title">
-          {{ selectedFolder ? selectedFolder.path : 'Select a folder' }}
+          {{ selectedFolder ? selectedFolder.path : i18n.t('explorer.selectFolder') }}
         </span>
       </div>
 
@@ -40,7 +40,7 @@
         <svg width="32" height="32" viewBox="0 0 20 20" fill="currentColor" style="color:var(--border-input)">
           <path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/>
         </svg>
-        <span>Select a folder to view its documents</span>
+        <span>{{ i18n.t('explorer.selectFolderHint') }}</span>
       </div>
 
       <div v-else-if="docsLoading" class="empty-state">
@@ -50,7 +50,7 @@
       <div v-else-if="docsError" class="notice notice-error" style="margin:12px">{{ docsError }}</div>
 
       <div v-else-if="!docs.length" class="empty-state">
-        <span>No documents in this folder</span>
+        <span>{{ i18n.t('explorer.noDocsInFolder') }}</span>
       </div>
 
       <div v-else class="doc-list">
@@ -86,27 +86,27 @@
       <div v-if="showNewFolder" class="modal-backdrop" @click.self="showNewFolder = false">
         <div class="modal-popup modal-popup-sm">
           <div class="modal-header">
-            <span class="modal-header-title">New Folder</span>
+            <span class="modal-header-title">{{ i18n.t('edit.newFolder') }}</span>
             <button type="button" class="modal-close" @click="showNewFolder = false">✕</button>
           </div>
           <div class="modal-body">
             <div class="field">
-              <label class="field-label">Name</label>
+              <label class="field-label">{{ i18n.t('common.name') }}</label>
               <input
                 ref="newFolderInputEl"
                 v-model="newFolderName"
                 type="text"
                 class="input"
-                placeholder="Folder name"
+                :placeholder="i18n.t('edit.folderNamePlaceholder')"
                 @keydown.enter.prevent="addFolder"
               />
             </div>
           </div>
           <div class="modal-actions">
-            <button type="button" class="btn btn-ghost btn-sm" @click="showNewFolder = false">Cancel</button>
+            <button type="button" class="btn btn-ghost btn-sm" @click="showNewFolder = false">{{ i18n.t('common.cancel') }}</button>
             <button type="button" class="btn btn-primary btn-sm"
               :disabled="!newFolderName.trim() || newFolderLoading" @click="addFolder">
-              {{ newFolderLoading ? 'Saving…' : 'Save' }}
+              {{ newFolderLoading ? i18n.t('create.saving') : i18n.t('common.save') }}
             </button>
           </div>
         </div>
@@ -116,27 +116,27 @@
       <div v-if="showRenameFolder" class="modal-backdrop" @click.self="showRenameFolder = false">
         <div class="modal-popup modal-popup-sm">
           <div class="modal-header">
-            <span class="modal-header-title">Rename Folder</span>
+            <span class="modal-header-title">{{ i18n.t('explorer.renameFolder') }}</span>
             <button type="button" class="modal-close" @click="showRenameFolder = false">✕</button>
           </div>
           <div class="modal-body">
             <div class="field">
-              <label class="field-label">New name</label>
+              <label class="field-label">{{ i18n.t('explorer.newName') }}</label>
               <input
                 ref="renameFolderInputEl"
                 v-model="renameFolderName"
                 type="text"
                 class="input"
-                placeholder="Folder name"
+                :placeholder="i18n.t('edit.folderNamePlaceholder')"
                 @keydown.enter.prevent="doRenameFolder"
               />
             </div>
           </div>
           <div class="modal-actions">
-            <button type="button" class="btn btn-ghost btn-sm" @click="showRenameFolder = false">Cancel</button>
+            <button type="button" class="btn btn-ghost btn-sm" @click="showRenameFolder = false">{{ i18n.t('common.cancel') }}</button>
             <button type="button" class="btn btn-primary btn-sm"
               :disabled="!renameFolderName.trim() || renameFolderLoading" @click="doRenameFolder">
-              {{ renameFolderLoading ? 'Saving…' : 'Rename' }}
+              {{ renameFolderLoading ? i18n.t('create.saving') : i18n.t('explorer.rename') }}
             </button>
           </div>
         </div>
@@ -148,15 +148,15 @@
       <div v-if="showNoTextWarning" class="modal-backdrop" style="z-index: 10000;">
         <div class="modal-popup modal-popup-sm">
           <div class="modal-header">
-            <span class="modal-header-title">Could not extract text</span>
+            <span class="modal-header-title">{{ i18n.t('explorer.noTextTitle') }}</span>
             <button type="button" class="modal-close" @click="showNoTextWarning = false">✕</button>
           </div>
           <div class="modal-body">
             <p class="modal-text">{{ noTextWarningMsg }}</p>
           </div>
           <div class="modal-actions">
-            <button class="btn btn-ghost btn-sm" @click="showNoTextWarning = false">Continue Editing</button>
-            <button class="btn btn-primary btn-sm" @click="saveAnyway">Save Anyway</button>
+            <button class="btn btn-ghost btn-sm" @click="showNoTextWarning = false">{{ i18n.t('explorer.continueEditing') }}</button>
+            <button class="btn btn-primary btn-sm" @click="saveAnyway">{{ i18n.t('explorer.saveAnyway') }}</button>
           </div>
         </div>
       </div>
@@ -166,18 +166,18 @@
     <Teleport to="body">
       <div v-if="ctxMenu" class="ctx-menu" :style="{ top: ctxMenu.y + 'px', left: ctxMenu.x + 'px' }" @click.stop>
         <template v-if="ctxMenu.type === 'tree'">
-          <button class="ctx-item" @click="ctxAction(() => openNewFolder(null))">New Root Folder</button>
+          <button class="ctx-item" @click="ctxAction(() => openNewFolder(null))">{{ i18n.t('explorer.newRootFolder') }}</button>
         </template>
         <template v-if="ctxMenu.type === 'folder'">
-          <button class="ctx-item" @click="ctxAction(openNew)">New Document</button>
-          <button class="ctx-item" @click="ctxAction(() => openNewFolder(ctxMenu!.folderId ?? null))">New Subfolder</button>
-          <button class="ctx-item" @click="ctxRenameFolder">Rename</button>
+          <button class="ctx-item" @click="ctxAction(openNew)">{{ i18n.t('create.newDocument') }}</button>
+          <button class="ctx-item" @click="ctxAction(() => openNewFolder(ctxMenu!.folderId ?? null))">{{ i18n.t('explorer.newSubfolder') }}</button>
+          <button class="ctx-item" @click="ctxRenameFolder">{{ i18n.t('explorer.rename') }}</button>
           <div class="ctx-divider"></div>
-          <button class="ctx-item ctx-item-danger" @click="ctxDeleteFolder">Delete</button>
+          <button class="ctx-item ctx-item-danger" @click="ctxDeleteFolder">{{ i18n.t('common.delete') }}</button>
         </template>
         <template v-if="ctxMenu.type === 'content'">
-          <button class="ctx-item" @click="ctxAction(openNew)">New Document</button>
-          <button class="ctx-item" @click="ctxAction(() => openNewFolder(selectedFolderId))">New Folder</button>
+          <button class="ctx-item" @click="ctxAction(openNew)">{{ i18n.t('create.newDocument') }}</button>
+          <button class="ctx-item" @click="ctxAction(() => openNewFolder(selectedFolderId))">{{ i18n.t('edit.newFolder') }}</button>
         </template>
       </div>
     </Teleport>
@@ -188,7 +188,7 @@
         <div class="modal-popup modal-popup-lg">
 
           <div class="modal-header">
-            <span class="modal-header-title">{{ editIsNew ? 'New Document' : editTitle }}</span>
+            <span class="modal-header-title">{{ editIsNew ? i18n.t('create.newDocument') : editTitle }}</span>
             <button type="button" class="modal-close" @click="closeEditModal">✕</button>
           </div>
 
@@ -199,16 +199,16 @@
 
             <!-- Metadata column -->
             <div class="edit-col">
-              <div class="edit-col-header">Metadata</div>
+              <div class="edit-col-header">{{ i18n.t('common.metadata') }}</div>
               <div class="edit-col-body">
 
                 <div class="field-row">
                   <div class="field">
-                    <label class="field-label">Date</label>
+                    <label class="field-label">{{ i18n.t('common.date') }}</label>
                     <input type="date" v-model="editDate" class="input" />
                   </div>
                   <div class="field">
-                    <label class="field-label">Language</label>
+                    <label class="field-label">{{ i18n.t('common.language') }}</label>
                     <select v-model="editLanguage" class="select">
                       <option v-for="lang in languages" :key="lang.id" :value="lang.name">{{ lang.name }}</option>
                     </select>
@@ -216,22 +216,22 @@
                 </div>
 
                 <div class="field">
-                  <label class="field-label">Folder</label>
+                  <label class="field-label">{{ i18n.t('common.folder') }}</label>
                   <select v-model="editFldid" class="select">
-                    <option :value="null">— none —</option>
+                    <option :value="null">{{ i18n.t('common.none') }}</option>
                     <option v-for="f in flatFolders" :key="f.id" :value="f.id">{{ f.path }}</option>
                   </select>
                 </div>
 
                 <div class="field">
-                  <label class="field-label">Title <span class="req">*</span></label>
-                  <input type="text" v-model="editTitleField" placeholder="Document title" class="input"
+                  <label class="field-label">{{ i18n.t('common.title') }} <span class="req">*</span></label>
+                  <input type="text" v-model="editTitleField" :placeholder="i18n.t('create.titlePlaceholder')" class="input"
                     @input="editValidationError = null" />
                 </div>
 
                 <div class="field edit-field-grow">
-                  <label class="field-label">Description / Text</label>
-                  <textarea v-model="editText" rows="6" placeholder="Enter description or paste OCR result here…"
+                  <label class="field-label">{{ i18n.t('create.descriptionText') }}</label>
+                  <textarea v-model="editText" rows="6" :placeholder="i18n.t('create.descriptionPlaceholder')"
                     class="input textarea"></textarea>
                 </div>
 
@@ -240,44 +240,44 @@
 
             <!-- Source column -->
             <div class="edit-col">
-              <div class="edit-col-header">Source</div>
+              <div class="edit-col-header">{{ i18n.t('common.source') }}</div>
               <div class="edit-col-body">
 
                 <div v-if="!editIsNew && editCurrentFilename" class="field">
-                  <label class="field-label">Current File</label>
+                  <label class="field-label">{{ i18n.t('edit.currentFile') }}</label>
                   <div class="current-file">
                     <a :href="`/api/content/${editId}/file`" target="_blank" class="file-link">{{ editCurrentFilename }}</a>
                   </div>
                 </div>
 
                 <div class="field">
-                  <label class="field-label">Choose File</label>
+                  <label class="field-label">{{ i18n.t('edit.chooseFile') }}</label>
                   <div class="file-row">
                     <button type="button" class="btn btn-grey btn-sm" @click="editFileInputRef?.click()">
-                      Choose File
+                      {{ i18n.t('edit.chooseFile') }}
                     </button>
-                    <span class="file-chosen">{{ editSelectedFile ? editSelectedFile.name : 'No file chosen' }}</span>
+                    <span class="file-chosen">{{ editSelectedFile ? editSelectedFile.name : i18n.t('edit.noFileChosen') }}</span>
                     <button type="button" class="btn btn-grey btn-sm"
                       :disabled="!ocrEnabled || ocrLoading" @click="runOcr">
-                      {{ ocrLoading ? '…' : 'OCR' }}
+                      {{ ocrLoading ? '…' : i18n.t('create.ocr') }}
                     </button>
                     <input ref="editFileInputRef" type="file" @change="onFileChange" style="display:none" />
                   </div>
                 </div>
 
                 <div class="field">
-                  <label class="field-label">Paste Image</label>
+                  <label class="field-label">{{ i18n.t('create.pasteImage') }}</label>
                   <div ref="pasteArea" tabindex="0" @paste="onPaste" class="paste-zone"
                     :class="{ 'paste-active': !!editPastedFile }">
-                    {{ editPastedFile ? `Pasted: ${editPastedFile.name || 'image'}` : 'Click here, then Ctrl+V / Cmd+V' }}
+                    {{ editPastedFile ? i18n.t('create.pasted', { name: editPastedFile.name || i18n.t('create.pastedImageDefault') }) : i18n.t('create.pasteHint') }}
                   </div>
                 </div>
 
-                <div class="divider"><span>or</span></div>
+                <div class="divider"><span>{{ i18n.t('common.or') }}</span></div>
 
                 <div class="field">
-                  <label class="field-label">URL</label>
-                  <input type="url" v-model="editUrl" placeholder="https://example.com/document.pdf" class="input"
+                  <label class="field-label">{{ i18n.t('common.url') }}</label>
+                  <input type="url" v-model="editUrl" :placeholder="i18n.t('create.urlPlaceholder')" class="input"
                     :disabled="!!(editSelectedFile || editPastedFile)" />
                 </div>
 
@@ -288,14 +288,14 @@
           <div class="modal-actions">
             <div class="spacer"></div>
             <span v-if="editFormLoading" class="saving-hint">
-              <span class="spinner spinner-md"></span> Saving…
+              <span class="spinner spinner-md"></span> {{ i18n.t('create.saving') }}
             </span>
             <button v-if="!editIsNew" class="btn btn-primary btn-sm" :disabled="editFormLoading" @click="confirmDelete">
-              Delete
+              {{ i18n.t('common.delete') }}
             </button>
-            <button class="btn btn-ghost btn-sm" @click="resetEditForm">Reset</button>
+            <button class="btn btn-ghost btn-sm" @click="resetEditForm">{{ i18n.t('common.reset') }}</button>
             <button class="btn btn-primary btn-sm" :disabled="editFormLoading" @click="submitEdit">
-              {{ editIsNew ? 'Save' : 'Update' }}
+              {{ editIsNew ? i18n.t('common.save') : i18n.t('common.update') }}
             </button>
           </div>
 
@@ -305,7 +305,7 @@
 
     <LinkFolderModal
       :visible="showFolderPicker"
-      :title="folderPickerMode === 'move' ? 'Move to Folder' : 'Link to Folder'"
+      :title="folderPickerMode === 'move' ? i18n.t('explorer.moveToFolder') : i18n.t('explorer.linkToFolder')"
       @close="showFolderPicker = false"
       @confirm="onFolderPickerConfirm"
     />
@@ -325,6 +325,7 @@ import { useFoldersStore } from '../stores/folders'
 import { useAuthStore } from '../stores/auth'
 import { useResize } from '../composables/useResize'
 import { useEditRequestStore } from '../stores/editRequest'
+import { useI18nStore } from '../stores/i18n'
 import DocumentCard from '../components/DocumentCard.vue'
 import FolderTreeItem from '../components/FolderTreeItem.vue'
 import LinkFolderModal from '../components/LinkFolderModal.vue'
@@ -333,6 +334,7 @@ import LinkFolderModal from '../components/LinkFolderModal.vue'
 const { width: sidebarWidth, startResize } = useResize(280, 140, 520)
 const auth = useAuthStore()
 const editRequestStore = useEditRequestStore()
+const i18n = useI18nStore()
 
 watch(() => editRequestStore.pendingId, id =>
 {
@@ -409,7 +411,7 @@ async function selectFolder(id: number)
   }
   catch
   {
-    docsError.value = 'Failed to load documents.'
+    docsError.value = i18n.t('explorer.loadDocsFailed')
   }
   finally
   {
@@ -517,7 +519,7 @@ async function ctxDeleteFolder()
   ctxMenu.value = null
   if (!id) return
   const folder = flatFolders.value.find(f => f.id === id)
-  if (!window.confirm(`Delete folder "${folder?.path}"?`)) return
+  if (!window.confirm(i18n.t('explorer.deleteFolderConfirm', { path: folder?.path ?? '' }))) return
   deleteFolderLoading.value = true
   try
   {
@@ -527,7 +529,7 @@ async function ctxDeleteFolder()
   }
   catch
   {
-    docsError.value = 'Failed to delete folder.'
+    docsError.value = i18n.t('explorer.deleteFolderFailed')
   }
   finally
   {
@@ -586,7 +588,7 @@ async function doRenameFolder()
 async function deleteSelectedFolder()
 {
   if (!selectedFolderId.value || docs.value.length) return
-  if (!window.confirm(`Delete folder "${selectedFolder.value?.path}"?`)) return
+  if (!window.confirm(i18n.t('explorer.deleteFolderConfirm', { path: selectedFolder.value?.path ?? '' }))) return
   deleteFolderLoading.value = true
   try
   {
@@ -597,7 +599,7 @@ async function deleteSelectedFolder()
   }
   catch
   {
-    docsError.value = 'Failed to delete folder.'
+    docsError.value = i18n.t('explorer.deleteFolderFailed')
   }
   finally
   {
@@ -689,7 +691,7 @@ function openNew()
 {
   editIsNew.value = true
   editId.value = null
-  editTitle.value = 'New Document'
+  editTitle.value = i18n.t('create.newDocument')
   clearEditForm()
   showEditModal.value = true
 }
@@ -708,7 +710,7 @@ async function deleteDoc(id: number)
   const idsToDelete = selectedIds.value.size > 1 ? [...selectedIds.value] : [id]
   if (idsToDelete.length > 1)
   {
-    if (!window.confirm(`Delete ${idsToDelete.length} items? This cannot be undone.`)) return
+    if (!window.confirm(i18n.t('explorer.deleteItemsConfirm', { count: String(idsToDelete.length) }))) return
     try
     {
       await Promise.all(idsToDelete.map(d => deleteOne(d)))
@@ -720,8 +722,8 @@ async function deleteDoc(id: number)
   else
   {
     const doc = docs.value.find(d => d.id === id)
-    const label = doc?.isLink ? `link to "${doc.title ?? id}"` : `"${doc?.title ?? id}"`
-    if (!window.confirm(`Delete ${label}? This cannot be undone.`)) return
+    const label = doc?.isLink ? i18n.t('explorer.deleteLinkLabel', { title: String(doc.title ?? id) }) : `"${doc?.title ?? id}"`
+    if (!window.confirm(i18n.t('explorer.deleteSingleConfirm', { label }))) return
     try
     {
       await deleteOne(id)
@@ -841,7 +843,7 @@ async function openEdit(id: number)
   }
   catch
   {
-    editErrorMsg.value = 'Failed to load document details.'
+    editErrorMsg.value = i18n.t('edit.loadDetailFailed')
   }
   finally
   {
@@ -904,7 +906,7 @@ async function runOcr()
   catch (err)
   {
     console.error('OCR error:', err)
-    editErrorMsg.value = 'OCR failed.'
+    editErrorMsg.value = i18n.t('create.ocrFailed')
   }
   finally
   {
@@ -917,10 +919,10 @@ async function submitEdit()
 {
   editValidationError.value = null
   editErrorMsg.value = null
-  if (!editTitleField.value.trim()) { editValidationError.value = 'Title is required.'; return }
+  if (!editTitleField.value.trim()) { editValidationError.value = i18n.t('create.titleRequired'); return }
   const hasFile = !!(editSelectedFile.value || editPastedFile.value)
   const hasUrl = !!editUrl.value.trim()
-  if (hasFile && hasUrl) { editValidationError.value = 'Provide a file or a URL, not both.'; return }
+  if (hasFile && hasUrl) { editValidationError.value = i18n.t('create.fileOrUrlNotBoth'); return }
 
   const fd = new FormData()
   fd.append('date', editDate.value)
@@ -951,7 +953,7 @@ async function submitEdit()
       }
       else
       {
-        editErrorMsg.value = 'Server reported an error.'
+        editErrorMsg.value = i18n.t('edit.serverError')
       }
     }
     else if (editId.value !== null)
@@ -964,7 +966,7 @@ async function submitEdit()
       }
       else
       {
-        editErrorMsg.value = 'Server reported an error.'
+        editErrorMsg.value = i18n.t('edit.serverError')
       }
     }
   }
@@ -977,7 +979,7 @@ async function submitEdit()
       showNoTextWarning.value = true
     }
     else
-      editErrorMsg.value = 'Failed — check the connection.'
+      editErrorMsg.value = i18n.t('edit.failedConnection')
   }
   finally
   {
@@ -1010,12 +1012,12 @@ async function saveAnyway()
     }
     else
     {
-      editErrorMsg.value = 'Server reported an error.'
+      editErrorMsg.value = i18n.t('edit.serverError')
     }
   }
   catch
   {
-    editErrorMsg.value = 'Failed — check the connection.'
+    editErrorMsg.value = i18n.t('edit.failedConnection')
   }
   finally
   {
@@ -1026,7 +1028,7 @@ async function saveAnyway()
 
 async function confirmDelete()
 {
-  if (editId.value === null || !window.confirm(`Delete "${editTitleField.value}"?`)) return
+  if (editId.value === null || !window.confirm(i18n.t('edit.deleteConfirm', { title: editTitleField.value }))) return
   editFormLoading.value = true
   try
   {
@@ -1036,7 +1038,7 @@ async function confirmDelete()
   }
   catch
   {
-    editErrorMsg.value = 'Delete failed.'
+    editErrorMsg.value = i18n.t('edit.deleteFailed')
   }
   finally
   {

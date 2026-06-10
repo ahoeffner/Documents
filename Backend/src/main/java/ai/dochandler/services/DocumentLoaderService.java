@@ -12,7 +12,12 @@ import java.util.stream.Stream;
 import java.io.ByteArrayInputStream;
 import java.util.stream.Collectors;
 import java.nio.charset.StandardCharsets;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParserDecorator;
 import dev.langchain4j.data.document.Document;
+import org.apache.tika.parser.image.ImageParser;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 import dev.langchain4j.data.document.parser.apache.tika.ApacheTikaDocumentParser;
@@ -21,6 +26,14 @@ import dev.langchain4j.data.document.parser.apache.tika.ApacheTikaDocumentParser
 @Service
 public class DocumentLoaderService
 {
+    /*
+     * GraalVM native image has no AWT/libawt.so, so Tika's ImageParser
+     * (used for embedded images) crashes with UnsatisfiedLinkError.
+     * Strip image types from the parser so embedded images are skipped.
+     */
+    private static final Parser TIKA_PARSER = ParserDecorator.withoutTypes(new AutoDetectParser(), new ImageParser().getSupportedTypes(new ParseContext()));
+
+
     private final OCRService ocr;
 
     @Value("${app.tesseract.pdf-dpi}")
@@ -30,6 +43,21 @@ public class DocumentLoaderService
     public DocumentLoaderService(OCRService ocr)
     {
         this.ocr = ocr;
+    }
+
+
+    private static ApacheTikaDocumentParser tikaParser()
+    {
+        return(new ApacheTikaDocumentParser(
+            () -> TIKA_PARSER,
+            ApacheTikaDocumentParser.DEFAULT_CONTENT_HANDLER_SUPPLIER,
+            ApacheTikaDocumentParser.DEFAULT_METADATA_SUPPLIER,
+            () ->
+            {
+                ParseContext context = new ParseContext();
+                context.set(Parser.class, TIKA_PARSER);
+                return(context);
+            }));
     }
 
 
@@ -51,7 +79,7 @@ public class DocumentLoaderService
     public Document load(byte[] content) throws Exception
     {
         if (isPdf(content)) return(parsePdf(content));
-        return(new ApacheTikaDocumentParser().parse(new ByteArrayInputStream(content)));
+        return(tikaParser().parse(new ByteArrayInputStream(content)));
     }
 
 
@@ -61,7 +89,7 @@ public class DocumentLoaderService
         URLConnection conn = uri.toURL().openConnection();
         InputStream in = conn.getInputStream();
         byte[] content = in.readAllBytes();
-        Document doc = isPdf(content) ? parsePdf(content) : new ApacheTikaDocumentParser().parse(new ByteArrayInputStream(content));
+        Document doc = isPdf(content) ? parsePdf(content) : tikaParser().parse(new ByteArrayInputStream(content));
         return(new URLDocumentResult(content, doc));
     }
 
@@ -85,7 +113,7 @@ public class DocumentLoaderService
         }
         catch (IOException e)
         {
-            return(new ApacheTikaDocumentParser().parse(new ByteArrayInputStream(content)));
+            return(tikaParser().parse(new ByteArrayInputStream(content)));
         }
     }
 

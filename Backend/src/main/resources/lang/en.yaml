@@ -1,0 +1,186 @@
+app:
+  help: "Help"
+  signOut: "Sign out"
+  tabs:
+    browse: "Browse"
+    search: "Search"
+    chat: "AI Chat"
+  helpModal:
+    documentsTitle: "Documents"
+    documentsIntro: 'Organise your documents into folders. Use <strong>right-click</strong> to manage everything — no toolbar buttons.'
+    documentsItem1: 'Right-click a <strong>folder</strong> in the sidebar → New Subfolder, Rename, Delete'
+    documentsItem2: 'Right-click <strong>empty sidebar space</strong> → New Root Folder'
+    documentsItem3: 'Right-click <strong>content area</strong> → New Document, New Folder'
+    documentsItem4: 'Right-click a <strong>document row</strong> → Text, File, Edit'
+    documentsItem5: 'Double-click a <strong>document row</strong> → open file, or show text if no file'
+    searchTitle: "Search"
+    searchIntro: 'Uses <strong>BM25 full-text matching</strong> — finds documents containing the exact words you type. No semantic expansion, no fuzzy matching.'
+    searchItem1: "Use the most distinctive words from what you are looking for."
+    searchItem2: 'Add <strong>*</strong> to a word for prefix search — <em>VVS*</em> matches VVS, VVS-rør, VVSfirma, etc.'
+    searchItem3: 'Use <strong>Folder</strong> to narrow results to a specific category.'
+    searchItem4: "Right-click or double-click a result row to open it."
+    searchTip: 'For meaning-based queries, use <strong>AI Chat</strong> instead.'
+    chatTitle: "AI Chat"
+    chatIntro: 'Uses <strong>RAG (Retrieval-Augmented Generation)</strong> — answers exclusively from your uploaded documents, not the internet.'
+    chatItem1: "Sources below each answer show which documents were used."
+    chatItem2: "Right-click or double-click a source row to open its file or text."
+    chatItem3: '<strong>Precision</strong> (Advanced) controls how strictly documents must match.'
+    chatItem4: 'Use <strong>Folder</strong> to narrow the search to a specific category.'
+    chatItem5: "Use the history button to recall and reuse previous questions."
+
+common:
+  all: "All"
+  cancel: "Cancel"
+  category: "Category"
+  date: "Date"
+  delete: "Delete"
+  file: "File"
+  folder: "Folder"
+  language: "Language"
+  metadata: "Metadata"
+  name: "Name"
+  none: "— none —"
+  or: "or"
+  reset: "Reset"
+  save: "Save"
+  source: "Source"
+  title: "Title"
+  update: "Update"
+  url: "URL"
+
+login:
+  brand: "Documents"
+  noTenants: "No tenants available for this account."
+  password: "Password"
+  selectTenant: "Select a tenant"
+  signIn: "Sign in"
+  signingIn: "Signing in…"
+  switchFailed: "Could not switch tenant."
+  unreachable: "Could not reach the server."
+  username: "Username"
+
+chat:
+  advanced: "Advanced"
+  assistant: "Assistant"
+  clear: "Clear"
+  connectionError: "Connection error"
+  editDocument: "Edit Document"
+  error: "Error: {message}"
+  placeholder: "Ask a question about your documents… (Enter to send, Shift+Enter for new line)"
+  precision: "Precision"
+  precisionHint: "Controls how closely documents must match before being used as relevant documents."
+  relevantDocuments: "Relevant Documents"
+  requestFailed: "Request failed."
+  send: "Send"
+  showFile: "Show File"
+  showText: "Show Text"
+  stillThinking: "Still thinking…"
+  stillThinkingBody: "The AI is taking longer than expected. Keep waiting?"
+  thinking: "Thinking…"
+  waitMore: "Wait 30 more seconds"
+  welcome: "I am your personal assistant. Ask me anything about your documents."
+  you: "You"
+
+create:
+  descriptionPlaceholder: "Enter description or paste OCR result here…"
+  descriptionText: "Description / Text"
+  fileOrUrlNotBoth: "Provide a file or a URL, not both."
+  languageRequired: "Language is required."
+  newDocument: "New Document"
+  ocr: "OCR"
+  ocrFailed: "OCR failed."
+  pasteHint: "Click here, then Ctrl+V / Cmd+V"
+  pasteImage: "Paste Image"
+  pasted: "Pasted: {name}"
+  pastedImageDefault: "image"
+  provideAtLeastOne: "Provide at least a file, URL, or description text."
+  saveDocument: "Save Document"
+  saveFailed: "Failed to save document — check the connection."
+  savedNotice: "Document saved — ID {id}"
+  saving: "Saving…"
+  serverError: "Server reported an error saving the document."
+  titlePlaceholder: "Document title"
+  titleRequired: "Title is required."
+  urlPlaceholder: "https://example.com/document.pdf"
+
+documentCard:
+  deleteDocument: "Delete Document"
+  deleteDocumentsCount: "Delete Documents ({count})"
+  deselectAll: "Deselect All"
+  linkDocument: "Link Document"
+  linkDocuments: "Link Documents"
+  moveDocument: "Move Document"
+  moveDocuments: "Move Documents"
+  removeLink: "Remove Link"
+  selectAll: "Select All"
+  untitled: "Untitled"
+
+edit:
+  addFolder: "Add Folder"
+  adding: "Adding…"
+  allFolders: "All folders"
+  chooseFile: "Choose File"
+  currentFile: "Current File"
+  deleteConfirm: 'Delete "{title}"?'
+  deleteFailed: "Delete failed."
+  documents: "Documents"
+  failedConnection: "Failed — check the connection."
+  filterPlaceholder: "Filter…"
+  folderNamePlaceholder: "Folder name"
+  loadDetailFailed: "Failed to load document details."
+  loadFailed: "Failed to load."
+  new: "+ New"
+  newDocumentBtn: "+ New Document"
+  newFolder: "New Folder"
+  noDocuments: "No documents"
+  noFileChosen: "No file chosen"
+  parentFolder: "Parent Folder"
+  root: "— root —"
+  savedId: "Saved — ID {id}"
+  selectOrCreate: "Select a document to edit or create a new one"
+  serverError: "Server reported an error."
+  updated: "Updated."
+
+explorer:
+  continueEditing: "Continue Editing"
+  deleteFolderConfirm: 'Delete folder "{path}"?'
+  deleteFolderFailed: "Failed to delete folder."
+  deleteItemsConfirm: "Delete {count} items? This cannot be undone."
+  deleteLinkLabel: 'link to "{title}"'
+  deleteSingleConfirm: "Delete {label}? This cannot be undone."
+  folders: "Folders"
+  linkToFolder: "Link to Folder"
+  loadDocsFailed: "Failed to load documents."
+  moveToFolder: "Move to Folder"
+  newName: "New name"
+  newRootFolder: "New Root Folder"
+  newSubfolder: "New Subfolder"
+  noDocsInFolder: "No documents in this folder"
+  noFoldersYet: "No folders yet"
+  noTextTitle: "Could not extract text"
+  rename: "Rename"
+  renameFolder: "Rename Folder"
+  saveAnyway: "Save Anyway"
+  selectFolder: "Select a folder"
+  selectFolderHint: "Select a folder to view its documents"
+
+linkFolderModal:
+  allFolders: "All Folders"
+  filterPlaceholder: "Filter folders…"
+  link: "Link"
+  noMatch: "No folders match"
+  recent: "Recent"
+  results: "Results"
+
+search:
+  deleteCountBody: "This will permanently delete {count} documents. This cannot be undone."
+  deleteCountTitle: "Delete {count} documents?"
+  deleting: "Deleting…"
+  enterQuery: "Enter a query to search documents"
+  failed: "Search failed — could not reach the server."
+  noMatch: 'No documents matched "{query}"'
+  placeholder: "Search documents…"
+  search: "Search"
+  searching: "Searching…"
+  sortByDate: "Sort by Date"
+  sortByTitle: "Sort by Title"

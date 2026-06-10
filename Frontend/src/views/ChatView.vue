@@ -3,9 +3,9 @@
 
     <!-- Main toolbar -->
     <div class="toolbar">
-      <span class="section-label">Folder</span>
+      <span class="section-label">{{ i18n.t('common.folder') }}</span>
       <select v-model="selectedCategory" class="select folder-select">
-        <option value="0">All</option>
+        <option value="0">{{ i18n.t('common.all') }}</option>
         <option v-for="cat in categoriesStore.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
       </select>
 
@@ -15,7 +15,7 @@
         <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
         </svg>
-        Advanced
+        {{ i18n.t('chat.advanced') }}
         <svg width="10" height="10" viewBox="0 0 20 20" fill="currentColor"
           :style="{ transform: showAdvanced ? 'rotate(180deg)' : '' }"
           style="transition:transform 0.15s">
@@ -23,31 +23,31 @@
         </svg>
       </button>
 
-      <button type="button" @click="chatStore.clear()" class="btn btn-primary btn-sm">Clear</button>
+      <button type="button" @click="chatStore.clear()" class="btn btn-primary btn-sm">{{ i18n.t('chat.clear') }}</button>
     </div>
 
     <!-- Advanced row -->
     <div v-show="showAdvanced" class="advanced-row">
-      <span class="section-label">Precision</span>
+      <span class="section-label">{{ i18n.t('chat.precision') }}</span>
       <input type="range" min="0" max="100" step="5" v-model.number="matchValue" class="slider" />
       <span class="precision-val">{{ matchValue }}%</span>
-      <span class="adv-hint">Controls how closely documents must match before being used as relevant documents.</span>
+      <span class="adv-hint">{{ i18n.t('chat.precisionHint') }}</span>
     </div>
 
     <!-- Messages -->
     <div class="messages" ref="messagesEl">
       <div class="msg msg-ai">
-        <span class="msg-sender">Assistant</span>
-        <span class="msg-text">I am your personal assistant. Ask me anything about your documents.</span>
+        <span class="msg-sender">{{ i18n.t('chat.assistant') }}</span>
+        <span class="msg-text">{{ i18n.t('chat.welcome') }}</span>
       </div>
 
       <template v-for="msg in chatStore.messages" :key="msg.id">
         <div class="msg" :class="msg.role === 'user' ? 'msg-user' : 'msg-ai'">
-          <span class="msg-sender">{{ msg.role === 'user' ? 'You' : 'Assistant' }}</span>
+          <span class="msg-sender">{{ msg.role === 'user' ? i18n.t('chat.you') : i18n.t('chat.assistant') }}</span>
           <span class="msg-text">{{ msg.text }}</span>
 
           <div v-if="msg.documents && msg.documents.length" class="sources">
-            <div class="sources-label">Relevant Documents</div>
+            <div class="sources-label">{{ i18n.t('chat.relevantDocuments') }}</div>
             <div
               v-for="d in msg.documents"
               :key="d.id"
@@ -64,10 +64,10 @@
 
       <!-- Thinking indicator -->
       <div v-if="loading" class="msg msg-ai msg-thinking">
-        <span class="msg-sender">Assistant</span>
+        <span class="msg-sender">{{ i18n.t('chat.assistant') }}</span>
         <span class="thinking-dots">
           <span class="td"></span><span class="td"></span><span class="td"></span>
-          <span class="thinking-label">Thinking…</span>
+          <span class="thinking-label">{{ i18n.t('chat.thinking') }}</span>
         </span>
       </div>
     </div>
@@ -81,14 +81,14 @@
       <div v-if="showWaitPrompt" class="modal-backdrop">
         <div class="modal-popup modal-popup-sm">
           <div class="modal-header">
-            <span class="modal-header-title">Still thinking…</span>
+            <span class="modal-header-title">{{ i18n.t('chat.stillThinking') }}</span>
           </div>
           <div class="modal-body" style="font-size:13px;color:var(--text-muted)">
-            The AI is taking longer than expected. Keep waiting?
+            {{ i18n.t('chat.stillThinkingBody') }}
           </div>
           <div class="modal-actions">
-            <button class="btn btn-ghost btn-sm" @click="cancelRequest">Cancel</button>
-            <button class="btn btn-primary btn-sm" @click="keepWaiting">Wait 30 more seconds</button>
+            <button class="btn btn-ghost btn-sm" @click="cancelRequest">{{ i18n.t('common.cancel') }}</button>
+            <button class="btn btn-primary btn-sm" @click="keepWaiting">{{ i18n.t('chat.waitMore') }}</button>
           </div>
         </div>
       </div>
@@ -112,10 +112,10 @@
     <!-- Source row context menu -->
     <Teleport to="body">
       <div v-if="srcCtxMenu" class="src-ctx-menu" :style="{ top: srcCtxMenu.y + 'px', left: srcCtxMenu.x + 'px' }" @click.stop>
-        <button v-if="srcCtxMenu.doc.description" class="src-ctx-item" @click="srcCtxText">Show Text</button>
-        <a v-if="srcCtxMenu.doc.hasFile" :href="`/api/content/${srcCtxMenu.doc.id}/file`" target="_blank" class="src-ctx-item" @click="srcCtxMenu = null">Show File</a>
+        <button v-if="srcCtxMenu.doc.description" class="src-ctx-item" @click="srcCtxText">{{ i18n.t('chat.showText') }}</button>
+        <a v-if="srcCtxMenu.doc.hasFile" :href="`/api/content/${srcCtxMenu.doc.id}/file`" target="_blank" class="src-ctx-item" @click="srcCtxMenu = null">{{ i18n.t('chat.showFile') }}</a>
         <div v-if="auth.isAdmin" class="src-ctx-divider"></div>
-        <button v-if="auth.isAdmin" class="src-ctx-item" @click="srcCtxEdit">Edit Document</button>
+        <button v-if="auth.isAdmin" class="src-ctx-item" @click="srcCtxEdit">{{ i18n.t('chat.editDocument') }}</button>
       </div>
     </Teleport>
 
@@ -125,7 +125,7 @@
         ref="textareaEl"
         v-model="query"
         :disabled="loading"
-        placeholder="Ask a question about your documents… (Enter to send, Shift+Enter for new line)"
+        :placeholder="i18n.t('chat.placeholder')"
         class="chat-input"
         rows="4"
         @keydown.enter.exact.prevent="sendMessage"
@@ -143,7 +143,7 @@
           </div>
         </div>
         <button type="button" @click="sendMessage"
-          class="btn btn-primary btn-sm btn-send">Send</button>
+          class="btn btn-primary btn-sm btn-send">{{ i18n.t('chat.send') }}</button>
       </div>
     </div>
 
@@ -158,7 +158,11 @@ import { chat } from '../api/chat'
 import { useChatStore } from '../stores/chat'
 import { useCategoriesStore } from '../stores/categories'
 import { useAuthStore } from '../stores/auth'
+import { useI18nStore } from '../stores/i18n'
 import { useEditRequestStore } from '../stores/editRequest'
+
+
+const i18n = useI18nStore()
 
 
 const srcTextDoc = ref<DocumentResult | null>(null)
@@ -309,7 +313,7 @@ async function sendMessage()
     }
     else
     {
-      chatStore.addMessage('ai', data.response || 'Request failed.')
+      chatStore.addMessage('ai', data.response || i18n.t('chat.requestFailed'))
     }
   }
   catch (err)
@@ -318,7 +322,7 @@ async function sendMessage()
     {
       const e = err as AxiosError<string>
       const msg = e.response?.data
-      chatStore.addMessage('ai', `Error: ${typeof msg === 'string' ? msg : (e.message || 'Connection error')}`)
+      chatStore.addMessage('ai', i18n.t('chat.error', { message: typeof msg === 'string' ? msg : (e.message || i18n.t('chat.connectionError')) }))
     }
   }
   finally

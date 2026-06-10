@@ -3,8 +3,8 @@
     <!-- Tenant picker shown after login when user has multiple tenants -->
     <div v-if="tenants.length > 1" class="login-card">
       <div class="login-header">
-        <span class="login-brand">Documents</span>
-        <span class="login-subtitle">Select a tenant</span>
+        <span class="login-brand">{{ i18n.t('login.brand') }}</span>
+        <span class="login-subtitle">{{ i18n.t('login.selectTenant') }}</span>
       </div>
       <div class="tenant-list">
         <button
@@ -24,13 +24,13 @@
     <!-- Login form -->
     <div v-else class="login-card">
       <div class="login-header">
-        <span class="login-brand">Documents</span>
+        <span class="login-brand">{{ i18n.t('login.brand') }}</span>
         <span v-if="tenant" class="login-tenant">{{ tenant }}</span>
       </div>
 
       <form class="login-form" @submit.prevent="submit">
         <div class="login-field">
-          <label class="field-label" for="username">Username</label>
+          <label class="field-label" for="username">{{ i18n.t('login.username') }}</label>
           <input
             id="username"
             ref="usernameInput"
@@ -38,21 +38,21 @@
             class="input"
             type="text"
             autocomplete="username"
-            placeholder="Username"
+            :placeholder="i18n.t('login.username')"
             :disabled="loading"
             required
           />
         </div>
 
         <div class="login-field">
-          <label class="field-label" for="password">Password</label>
+          <label class="field-label" for="password">{{ i18n.t('login.password') }}</label>
           <input
             id="password"
             v-model="password"
             class="input"
             type="password"
             autocomplete="current-password"
-            placeholder="Password"
+            :placeholder="i18n.t('login.password')"
             :disabled="loading"
             required
           />
@@ -62,7 +62,7 @@
 
         <button class="btn btn-primary btn-lg login-btn" type="submit" :disabled="loading">
           <span v-if="loading" class="spinner spinner-sm"></span>
-          {{ loading ? 'Signing in…' : 'Sign in' }}
+          {{ loading ? i18n.t('login.signingIn') : i18n.t('login.signIn') }}
         </button>
       </form>
     </div>
@@ -73,9 +73,11 @@
 import { ref, onMounted } from 'vue'
 import { login, getTenants, switchTenant } from '../api/auth'
 import { useAuthStore } from '../stores/auth'
+import { useI18nStore } from '../stores/i18n'
 
 
 const auth = useAuthStore()
+const i18n = useI18nStore()
 
 
 const tenant = ref('')
@@ -131,12 +133,12 @@ async function submit()
     }
     else
     {
-      error.value = 'No tenants available for this account.'
+      error.value = i18n.t('login.noTenants')
     }
   }
   catch
   {
-    error.value = 'Could not reach the server.'
+    error.value = i18n.t('login.unreachable')
   }
   finally
   {
@@ -159,12 +161,12 @@ async function selectTenant(t: string)
     }
     else
     {
-      error.value = res.message ?? 'Could not switch tenant.'
+      error.value = res.message ?? i18n.t('login.switchFailed')
     }
   }
   catch
   {
-    error.value = 'Could not reach the server.'
+    error.value = i18n.t('login.unreachable')
   }
   finally
   {

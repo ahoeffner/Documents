@@ -4,8 +4,8 @@
     <!-- ── Left pane: document list ── -->
     <div class="list-pane" :style="{ width: listWidth + 'px' }">
       <div class="pane-header">
-        <span class="section-label">Documents</span>
-        <button class="btn-icon" title="New folder" @click="showNewFolder = true">
+        <span class="section-label">{{ i18n.t('edit.documents') }}</span>
+        <button class="btn-icon" :title="i18n.t('edit.newFolder')" @click="showNewFolder = true">
           <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
             <path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/>
             <path d="M10 9v4M8 11h4"/>
@@ -15,13 +15,13 @@
 
       <div class="list-filters">
         <select v-model="filterCatid" class="select filter-select" @change="loadList">
-          <option :value="null">All folders</option>
+          <option :value="null">{{ i18n.t('edit.allFolders') }}</option>
           <option v-for="f in flatFolders" :key="f.id" :value="f.id">{{ f.path }}</option>
         </select>
         <input
           v-model="filterQ"
           type="text"
-          placeholder="Filter…"
+          :placeholder="i18n.t('edit.filterPlaceholder')"
           class="input filter-input"
           @input="onFilterInput"
         />
@@ -31,7 +31,7 @@
         <span class="spinner spinner-md"></span>
       </div>
       <div v-else-if="listError" class="list-error">{{ listError }}</div>
-      <div v-else-if="!docList.length" class="list-empty">No documents</div>
+      <div v-else-if="!docList.length" class="list-empty">{{ i18n.t('edit.noDocuments') }}</div>
       <div v-else class="list-body">
         <div
           v-for="doc in docList"
@@ -55,24 +55,24 @@
         <svg width="36" height="36" viewBox="0 0 20 20" fill="currentColor" style="color:var(--border-input)">
           <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
         </svg>
-        <span>Select a document to edit or create a new one</span>
-        <button class="btn btn-primary btn-sm" @click="startNew">+ New Document</button>
+        <span>{{ i18n.t('edit.selectOrCreate') }}</span>
+        <button class="btn btn-primary btn-sm" @click="startNew">{{ i18n.t('edit.newDocumentBtn') }}</button>
       </div>
 
       <template v-else>
 
         <!-- Form toolbar -->
         <div class="form-toolbar">
-          <span class="mode-label">{{ isNew ? 'New Document' : title }}</span>
+          <span class="mode-label">{{ isNew ? i18n.t('create.newDocument') : title }}</span>
           <div class="spacer"></div>
           <span v-if="formLoading" class="saving-hint">
-            <span class="spinner spinner-sm"></span> Saving…
+            <span class="spinner spinner-sm"></span> {{ i18n.t('create.saving') }}
           </span>
-          <button class="btn btn-primary btn-sm" @click="startNew">+ New</button>
-          <button v-if="!isNew" class="btn btn-primary btn-sm" :disabled="formLoading" @click="confirmDelete">Delete</button>
-          <button class="btn btn-primary btn-sm" @click="resetForm">Reset</button>
+          <button class="btn btn-primary btn-sm" @click="startNew">{{ i18n.t('edit.new') }}</button>
+          <button v-if="!isNew" class="btn btn-primary btn-sm" :disabled="formLoading" @click="confirmDelete">{{ i18n.t('common.delete') }}</button>
+          <button class="btn btn-primary btn-sm" @click="resetForm">{{ i18n.t('common.reset') }}</button>
           <button class="btn btn-primary btn-sm" :disabled="formLoading" @click="submit">
-            {{ isNew ? 'Save' : 'Update' }}
+            {{ isNew ? i18n.t('common.save') : i18n.t('common.update') }}
           </button>
         </div>
 
@@ -86,16 +86,16 @@
 
           <!-- Left: metadata -->
           <div class="form-col">
-            <div class="col-header">Metadata</div>
+            <div class="col-header">{{ i18n.t('common.metadata') }}</div>
             <div class="col-body">
 
               <div class="field-row">
                 <div class="field">
-                  <label class="field-label">Date</label>
+                  <label class="field-label">{{ i18n.t('common.date') }}</label>
                   <input type="date" v-model="date" class="input" />
                 </div>
                 <div class="field">
-                  <label class="field-label">Language</label>
+                  <label class="field-label">{{ i18n.t('common.language') }}</label>
                   <select v-model="language" class="select">
                     <option v-for="lang in languages" :key="lang.id" :value="lang.name">{{ lang.name }}</option>
                   </select>
@@ -103,22 +103,22 @@
               </div>
 
               <div class="field">
-                <label class="field-label">Folder</label>
+                <label class="field-label">{{ i18n.t('common.folder') }}</label>
                 <select v-model="catid" class="select">
-                  <option :value="null">— none —</option>
+                  <option :value="null">{{ i18n.t('common.none') }}</option>
                   <option v-for="f in flatFolders" :key="f.id" :value="f.id">{{ f.path }}</option>
                 </select>
               </div>
 
               <div class="field">
-                <label class="field-label">Title <span class="req">*</span></label>
-                <input type="text" v-model="title" placeholder="Document title" class="input"
+                <label class="field-label">{{ i18n.t('common.title') }} <span class="req">*</span></label>
+                <input type="text" v-model="title" :placeholder="i18n.t('create.titlePlaceholder')" class="input"
                   @input="validationError = null" />
               </div>
 
               <div class="field field-grow">
-                <label class="field-label">Description / Text</label>
-                <textarea v-model="text" rows="8" placeholder="Enter description or paste OCR result here…"
+                <label class="field-label">{{ i18n.t('create.descriptionText') }}</label>
+                <textarea v-model="text" rows="8" :placeholder="i18n.t('create.descriptionPlaceholder')"
                   class="input textarea"></textarea>
               </div>
 
@@ -127,44 +127,44 @@
 
           <!-- Right: source -->
           <div class="form-col">
-            <div class="col-header">Source</div>
+            <div class="col-header">{{ i18n.t('common.source') }}</div>
             <div class="col-body">
 
               <div v-if="!isNew && currentFilename" class="field">
-                <label class="field-label">Current File</label>
+                <label class="field-label">{{ i18n.t('edit.currentFile') }}</label>
                 <div class="current-file">
                   <a :href="`/api/content/${editId}/file`" target="_blank" class="file-link">{{ currentFilename }}</a>
                 </div>
               </div>
 
               <div class="field">
-                <label class="field-label">Choose File</label>
+                <label class="field-label">{{ i18n.t('edit.chooseFile') }}</label>
                 <div class="file-row">
                   <button type="button" class="btn btn-grey btn-sm" @click="fileInputRef?.click()">
-                    Choose File
+                    {{ i18n.t('edit.chooseFile') }}
                   </button>
-                  <span class="file-chosen">{{ selectedFile ? selectedFile.name : 'No file chosen' }}</span>
+                  <span class="file-chosen">{{ selectedFile ? selectedFile.name : i18n.t('edit.noFileChosen') }}</span>
                   <button type="button" @click="runOcr" :disabled="!ocrEnabled || ocrLoading"
                     class="btn btn-grey btn-sm">
-                    {{ ocrLoading ? '…' : 'OCR' }}
+                    {{ ocrLoading ? '…' : i18n.t('create.ocr') }}
                   </button>
                   <input ref="fileInputRef" type="file" @change="onFileChange" style="display:none" />
                 </div>
               </div>
 
               <div class="field">
-                <label class="field-label">Paste Image</label>
+                <label class="field-label">{{ i18n.t('create.pasteImage') }}</label>
                 <div ref="pasteArea" tabindex="0" @paste="onPaste" class="paste-zone"
                   :class="{ 'paste-active': !!pastedFile }">
-                  {{ pastedFile ? `Pasted: ${pastedFile.name || 'image'}` : 'Click here, then Ctrl+V / Cmd+V' }}
+                  {{ pastedFile ? i18n.t('create.pasted', { name: pastedFile.name || i18n.t('create.pastedImageDefault') }) : i18n.t('create.pasteHint') }}
                 </div>
               </div>
 
-              <div class="divider"><span>or</span></div>
+              <div class="divider"><span>{{ i18n.t('common.or') }}</span></div>
 
               <div class="field">
-                <label class="field-label">URL</label>
-                <input type="url" v-model="url" placeholder="https://example.com/document.pdf" class="input"
+                <label class="field-label">{{ i18n.t('common.url') }}</label>
+                <input type="url" v-model="url" :placeholder="i18n.t('create.urlPlaceholder')" class="input"
                   :disabled="!!(selectedFile || pastedFile)" />
               </div>
 
@@ -180,35 +180,35 @@
     <div v-if="showNewFolder" class="modal-backdrop" @click.self="showNewFolder = false">
       <div class="modal-popup modal-popup-sm">
         <div class="modal-header">
-          <span class="modal-header-title">New Folder</span>
+          <span class="modal-header-title">{{ i18n.t('edit.newFolder') }}</span>
           <button type="button" class="modal-close" @click="showNewFolder = false">✕</button>
         </div>
         <div class="modal-body">
           <div class="field">
-            <label class="field-label">Name</label>
+            <label class="field-label">{{ i18n.t('common.name') }}</label>
             <input
               ref="newFolderInputEl"
               v-model="newFolderName"
               type="text"
               class="input"
-              placeholder="Folder name"
+              :placeholder="i18n.t('edit.folderNamePlaceholder')"
               @keydown.esc="showNewFolder = false"
               @keydown.enter.prevent="addFolder"
             />
           </div>
           <div class="field">
-            <label class="field-label">Parent Folder</label>
+            <label class="field-label">{{ i18n.t('edit.parentFolder') }}</label>
             <select v-model="newFolderPid" class="select">
-              <option :value="null">— root —</option>
+              <option :value="null">{{ i18n.t('edit.root') }}</option>
               <option v-for="f in flatFolders" :key="f.id" :value="f.id">{{ f.path }}</option>
             </select>
           </div>
         </div>
         <div class="modal-actions">
-          <button type="button" class="btn btn-ghost btn-sm" @click="showNewFolder = false">Cancel</button>
+          <button type="button" class="btn btn-ghost btn-sm" @click="showNewFolder = false">{{ i18n.t('common.cancel') }}</button>
           <button type="button" class="btn btn-primary btn-sm"
             :disabled="!newFolderName.trim() || newFolderLoading" @click="addFolder">
-            {{ newFolderLoading ? 'Adding…' : 'Add Folder' }}
+            {{ newFolderLoading ? i18n.t('edit.adding') : i18n.t('edit.addFolder') }}
           </button>
         </div>
       </div>
@@ -226,9 +226,11 @@ import { createFolder } from '../api/folders'
 import { listLanguages } from '../api/languages'
 import { listDocuments, getDocument, updateDocument, deleteDocument } from '../api/documents'
 import { useFoldersStore } from '../stores/folders'
+import { useI18nStore } from '../stores/i18n'
 import { useResize } from '../composables/useResize'
 
 
+const i18n = useI18nStore()
 const { width: listWidth, startResize } = useResize(320, 160, 600)
 
 
@@ -273,7 +275,7 @@ async function loadList()
   }
   catch
   {
-    listError.value = 'Failed to load.'
+    listError.value = i18n.t('edit.loadFailed')
   }
   finally
   {
@@ -322,7 +324,7 @@ async function selectDoc(id: number)
   }
   catch
   {
-    errorMsg.value = 'Failed to load document details.'
+    errorMsg.value = i18n.t('edit.loadDetailFailed')
   }
   finally
   {
@@ -450,7 +452,7 @@ async function runOcr()
   }
   catch
   {
-    errorMsg.value = 'OCR failed.'
+    errorMsg.value = i18n.t('create.ocrFailed')
   }
   finally
   {
@@ -465,10 +467,10 @@ async function submit()
   validationError.value = null
   errorMsg.value = null
   successMsg.value = null
-  if (!title.value.trim()) { validationError.value = 'Title is required.'; return }
+  if (!title.value.trim()) { validationError.value = i18n.t('create.titleRequired'); return }
   const hasFile = !!(selectedFile.value || pastedFile.value)
   const hasUrl = !!url.value.trim()
-  if (hasFile && hasUrl) { validationError.value = 'Provide a file or a URL, not both.'; return }
+  if (hasFile && hasUrl) { validationError.value = i18n.t('create.fileOrUrlNotBoth'); return }
 
   const fd = new FormData()
   fd.append('date', date.value)
@@ -489,14 +491,14 @@ async function submit()
       const data = res.data as { success: boolean; id?: number }
       if (data.success)
       {
-        successMsg.value = `Saved — ID ${data.id}`
+        successMsg.value = i18n.t('edit.savedId', { id: String(data.id) })
         isNew.value = false
         editId.value = data.id ?? null
         await loadList()
       }
       else
       {
-        errorMsg.value = 'Server reported an error.'
+        errorMsg.value = i18n.t('edit.serverError')
       }
     }
     else if (editId.value !== null)
@@ -504,18 +506,18 @@ async function submit()
       const res = await updateDocument(editId.value, fd)
       if ((res.data as { success: boolean }).success)
       {
-        successMsg.value = 'Updated.'
+        successMsg.value = i18n.t('edit.updated')
         await loadList()
       }
       else
       {
-        errorMsg.value = 'Server reported an error.'
+        errorMsg.value = i18n.t('edit.serverError')
       }
     }
   }
   catch
   {
-    errorMsg.value = 'Failed — check the connection.'
+    errorMsg.value = i18n.t('edit.failedConnection')
   }
   finally
   {
@@ -527,7 +529,7 @@ async function submit()
 // ── Delete ────────────────────────────────────────────────────────
 async function confirmDelete()
 {
-  if (editId.value === null || !window.confirm(`Delete "${title.value}"?`)) return
+  if (editId.value === null || !window.confirm(i18n.t('edit.deleteConfirm', { title: title.value }))) return
   formLoading.value = true
   try
   {
@@ -539,7 +541,7 @@ async function confirmDelete()
   }
   catch
   {
-    errorMsg.value = 'Delete failed.'
+    errorMsg.value = i18n.t('edit.deleteFailed')
   }
   finally
   {

@@ -3,7 +3,7 @@
     <div v-if="visible" class="modal-backdrop" @click.self="$emit('close')">
       <div class="modal-popup link-modal">
         <div class="modal-header">
-          <span class="modal-header-title">{{ title ?? 'Link to Folder' }}</span>
+          <span class="modal-header-title">{{ title ?? i18n.t('explorer.linkToFolder') }}</span>
           <button type="button" class="modal-close" @click="$emit('close')">✕</button>
         </div>
 
@@ -13,13 +13,13 @@
             v-model="filterQuery"
             type="text"
             class="link-search-input"
-            placeholder="Filter folders…"
+            :placeholder="i18n.t('linkFolderModal.filterPlaceholder')"
             @keydown.enter.prevent="pickFirst"
           />
         </div>
 
         <template v-if="!filterQuery && recentFolders.length">
-          <div class="link-section-label">Recent</div>
+          <div class="link-section-label">{{ i18n.t('linkFolderModal.recent') }}</div>
           <div class="chip-row">
             <button
               v-for="f in recentFolders"
@@ -31,7 +31,7 @@
           </div>
         </template>
 
-        <div class="link-section-label">{{ filterQuery ? 'Results' : 'All Folders' }}</div>
+        <div class="link-section-label">{{ filterQuery ? i18n.t('linkFolderModal.results') : i18n.t('linkFolderModal.allFolders') }}</div>
         <div class="folder-list">
           <button
             v-for="f in filteredFolders"
@@ -40,12 +40,12 @@
             :class="{ active: selected === f.id }"
             @click="selected = f.id"
           >{{ f.name }}</button>
-          <div v-if="!filteredFolders.length" class="folder-list-empty">No folders match</div>
+          <div v-if="!filteredFolders.length" class="folder-list-empty">{{ i18n.t('linkFolderModal.noMatch') }}</div>
         </div>
 
         <div class="modal-actions">
-          <button class="btn btn-ghost btn-sm" @click="$emit('close')">Cancel</button>
-          <button class="btn btn-primary btn-sm" :disabled="!selected" @click="confirm">Link</button>
+          <button class="btn btn-ghost btn-sm" @click="$emit('close')">{{ i18n.t('common.cancel') }}</button>
+          <button class="btn btn-primary btn-sm" :disabled="!selected" @click="confirm">{{ i18n.t('linkFolderModal.link') }}</button>
         </div>
       </div>
     </div>
@@ -55,11 +55,13 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useCategoriesStore } from '../stores/categories'
+import { useI18nStore } from '../stores/i18n'
 
 const props = defineProps<{ visible: boolean; title?: string }>()
 const emit = defineEmits<{ close: []; confirm: [fldid: number] }>()
 
 const categoriesStore = useCategoriesStore()
+const i18n = useI18nStore()
 const selected = ref<number | null>(null)
 const filterQuery = ref('')
 const recentFolders = ref<{ id: number; name: string }[]>([])

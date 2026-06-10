@@ -2,9 +2,9 @@
   <div class="search-view" @contextmenu.prevent="showAreaCtx">
 
     <div class="toolbar">
-      <span class="section-label">Folder</span>
+      <span class="section-label">{{ i18n.t('common.folder') }}</span>
       <select v-model="selectedCategory" class="select folder-select">
-        <option value="0">All</option>
+        <option value="0">{{ i18n.t('common.all') }}</option>
         <option v-for="cat in categoriesStore.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
       </select>
 
@@ -13,11 +13,11 @@
           ref="searchInputEl"
           v-model="query"
           type="text"
-          placeholder="Search documents…"
+          :placeholder="i18n.t('search.placeholder')"
           class="search-input"
         />
         <button type="submit" class="btn btn-primary btn-sm">
-          {{ loading ? 'Searching…' : 'Search' }}
+          {{ loading ? i18n.t('search.searching') : i18n.t('search.search') }}
         </button>
       </form>
 
@@ -30,10 +30,10 @@
         <span class="spinner spinner-lg"></span>
       </div>
 
-      <div v-else-if="!searched" class="empty-state">Enter a query to search documents</div>
+      <div v-else-if="!searched" class="empty-state">{{ i18n.t('search.enterQuery') }}</div>
 
       <div v-else-if="documents.length === 0" class="empty-state">
-        No documents matched <em>"{{ lastQuery }}"</em>
+        {{ i18n.t('search.noMatch', { query: lastQuery }) }}
       </div>
 
       <template v-else>
@@ -59,12 +59,12 @@
       </template>
     </div>
 
-    <LinkFolderModal :visible="showLinkModal" :title="pickerMode === 'move' ? 'Move to Folder' : 'Link to Folder'" @close="showLinkModal = false" @confirm="onFolderPickerConfirm" />
+    <LinkFolderModal :visible="showLinkModal" :title="pickerMode === 'move' ? i18n.t('explorer.moveToFolder') : i18n.t('explorer.linkToFolder')" @close="showLinkModal = false" @confirm="onFolderPickerConfirm" />
 
     <Teleport to="body">
       <div v-if="areaCtx" class="ctx-menu" :style="{ top: areaCtx.y + 'px', left: areaCtx.x + 'px' }" @click.stop>
-        <button class="ctx-item" :class="{ 'ctx-item-active': sortMode === 'title' }" @click="areaCtxSort('title')">Sort by Title</button>
-        <button class="ctx-item" :class="{ 'ctx-item-active': sortMode === 'date' }" @click="areaCtxSort('date')">Sort by Date</button>
+        <button class="ctx-item" :class="{ 'ctx-item-active': sortMode === 'title' }" @click="areaCtxSort('title')">{{ i18n.t('search.sortByTitle') }}</button>
+        <button class="ctx-item" :class="{ 'ctx-item-active': sortMode === 'date' }" @click="areaCtxSort('date')">{{ i18n.t('search.sortByDate') }}</button>
       </div>
     </Teleport>
 
@@ -72,16 +72,16 @@
       <div v-if="showDeleteConfirm" class="modal-backdrop" @click.self="showDeleteConfirm = false">
         <div class="modal-popup modal-popup-sm">
           <div class="modal-header">
-            <span class="modal-header-title">Delete {{ selectedIds.size }} documents?</span>
+            <span class="modal-header-title">{{ i18n.t('search.deleteCountTitle', { count: String(selectedIds.size) }) }}</span>
             <button type="button" class="modal-close" @click="showDeleteConfirm = false">✕</button>
           </div>
           <div class="modal-body">
-            <p class="modal-text">This will permanently delete {{ selectedIds.size }} documents. This cannot be undone.</p>
+            <p class="modal-text">{{ i18n.t('search.deleteCountBody', { count: String(selectedIds.size) }) }}</p>
           </div>
           <div class="modal-actions">
-            <button class="btn btn-ghost btn-sm" @click="showDeleteConfirm = false">Cancel</button>
+            <button class="btn btn-ghost btn-sm" @click="showDeleteConfirm = false">{{ i18n.t('common.cancel') }}</button>
             <button class="btn btn-danger btn-sm" :disabled="deleteLoading" @click="confirmBulkDelete">
-              {{ deleteLoading ? 'Deleting…' : 'Delete' }}
+              {{ deleteLoading ? i18n.t('search.deleting') : i18n.t('common.delete') }}
             </button>
           </div>
         </div>
@@ -98,6 +98,7 @@ import { search, linkDocuments, moveDocument, deleteDocument } from '../api/docu
 import { useCategoriesStore } from '../stores/categories'
 import { useAuthStore } from '../stores/auth'
 import { useEditRequestStore } from '../stores/editRequest'
+import { useI18nStore } from '../stores/i18n'
 import DocumentCard from '../components/DocumentCard.vue'
 import LinkFolderModal from '../components/LinkFolderModal.vue'
 
@@ -105,6 +106,7 @@ import LinkFolderModal from '../components/LinkFolderModal.vue'
 const categoriesStore = useCategoriesStore()
 const auth = useAuthStore()
 const editRequestStore = useEditRequestStore()
+const i18n = useI18nStore()
 const searchInputEl = ref<HTMLInputElement | null>(null)
 const query = ref('')
 const lastQuery = ref('')
@@ -226,7 +228,7 @@ async function deleteSingle(id: number)
     return
   }
   const doc = documents.value.find(d => d.id === id)
-  if (!window.confirm(`Delete "${doc?.title ?? id}"? This cannot be undone.`)) return
+  if (!window.confirm(i18n.t('explorer.deleteSingleConfirm', { label: `"${doc?.title ?? id}"` }))) return
   try
   {
     await deleteDocument(id)
@@ -292,7 +294,7 @@ async function doSearch()
   }
   catch
   {
-    error.value = 'Search failed — could not reach the server.'
+    error.value = i18n.t('search.failed')
   }
   finally
   {

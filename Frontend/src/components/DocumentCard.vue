@@ -20,7 +20,7 @@
 
     <span class="doc-date">{{ formatDate(doc.date) }}</span>
     <div class="doc-main">
-      <span class="doc-title">{{ doc.title || 'Untitled' }}</span><span v-if="doc.description" class="doc-desc"> — {{ doc.description }}</span>
+      <span class="doc-title">{{ doc.title || i18n.t('documentCard.untitled') }}</span><span v-if="doc.description" class="doc-desc"> — {{ doc.description }}</span>
     </div>
 
     <Teleport to="body">
@@ -39,24 +39,24 @@
 
     <Teleport to="body">
       <div v-if="ctxMenu" class="ctx-menu" :style="{ top: ctxMenu.y + 'px', left: ctxMenu.x + 'px' }" @click.stop>
-        <button v-if="doc.description" class="ctx-item" @click="ctxText">Show Text</button>
-        <a v-if="doc.hasFile" :href="`/api/content/${doc.id}/file`" target="_blank" class="ctx-item" @click="ctxMenu = null">Show File</a>
+        <button v-if="doc.description" class="ctx-item" @click="ctxText">{{ i18n.t('chat.showText') }}</button>
+        <a v-if="doc.hasFile" :href="`/api/content/${doc.id}/file`" target="_blank" class="ctx-item" @click="ctxMenu = null">{{ i18n.t('chat.showFile') }}</a>
         <div v-if="(doc.description || doc.hasFile) && canEdit" class="ctx-divider"></div>
-        <button v-if="canEdit" class="ctx-item" @click="ctxEdit">Edit Document</button>
-        <button v-if="canLink" class="ctx-item" @click="ctxLink">{{ selectedCount && selectedCount > 1 ? 'Link Documents' : 'Link Document' }}</button>
-        <button v-if="canLink && !isLink" class="ctx-item" @click="ctxMove">{{ selectedCount && selectedCount > 1 ? 'Move Documents' : 'Move Document' }}</button>
+        <button v-if="canEdit" class="ctx-item" @click="ctxEdit">{{ i18n.t('chat.editDocument') }}</button>
+        <button v-if="canLink" class="ctx-item" @click="ctxLink">{{ selectedCount && selectedCount > 1 ? i18n.t('documentCard.linkDocuments') : i18n.t('documentCard.linkDocument') }}</button>
+        <button v-if="canLink && !isLink" class="ctx-item" @click="ctxMove">{{ selectedCount && selectedCount > 1 ? i18n.t('documentCard.moveDocuments') : i18n.t('documentCard.moveDocument') }}</button>
         <div v-if="canEdit && canCreate" class="ctx-divider"></div>
-        <button v-if="canEdit && canCreate" class="ctx-item" @click="ctxNewFolder">New Folder</button>
-        <button v-if="canEdit && canCreate" class="ctx-item" @click="ctxNewDoc">New Document</button>
+        <button v-if="canEdit && canCreate" class="ctx-item" @click="ctxNewFolder">{{ i18n.t('edit.newFolder') }}</button>
+        <button v-if="canEdit && canCreate" class="ctx-item" @click="ctxNewDoc">{{ i18n.t('create.newDocument') }}</button>
         <div v-if="canEdit" class="ctx-divider"></div>
-        <button v-if="canEdit" class="ctx-item" @click="ctxSelectAll">{{ (selectedCount ?? 0) > 0 ? 'Deselect All' : 'Select All' }}</button>
+        <button v-if="canEdit" class="ctx-item" @click="ctxSelectAll">{{ (selectedCount ?? 0) > 0 ? i18n.t('documentCard.deselectAll') : i18n.t('documentCard.selectAll') }}</button>
         <div class="ctx-divider"></div>
-        <button class="ctx-item" :class="{ 'ctx-item-active': activeSort === 'title' }" @click="ctxSort('title')">Sort by Title</button>
-        <button class="ctx-item" :class="{ 'ctx-item-active': activeSort === 'date' }" @click="ctxSort('date')">Sort by Date</button>
+        <button class="ctx-item" :class="{ 'ctx-item-active': activeSort === 'title' }" @click="ctxSort('title')">{{ i18n.t('search.sortByTitle') }}</button>
+        <button class="ctx-item" :class="{ 'ctx-item-active': activeSort === 'date' }" @click="ctxSort('date')">{{ i18n.t('search.sortByDate') }}</button>
         <div v-if="canEdit" class="ctx-divider"></div>
-        <button v-if="canEdit && selectedCount && selectedCount > 1" class="ctx-item ctx-item-danger" @click="ctxDelete">Delete Documents ({{ selectedCount }})</button>
-        <button v-else-if="canEdit && isLink && linkId" class="ctx-item ctx-item-danger" @click="ctxRemoveLink">Remove Link</button>
-        <button v-else-if="canEdit" class="ctx-item ctx-item-danger" @click="ctxDelete">Delete Document</button>
+        <button v-if="canEdit && selectedCount && selectedCount > 1" class="ctx-item ctx-item-danger" @click="ctxDelete">{{ i18n.t('documentCard.deleteDocumentsCount', { count: String(selectedCount) }) }}</button>
+        <button v-else-if="canEdit && isLink && linkId" class="ctx-item ctx-item-danger" @click="ctxRemoveLink">{{ i18n.t('documentCard.removeLink') }}</button>
+        <button v-else-if="canEdit" class="ctx-item ctx-item-danger" @click="ctxDelete">{{ i18n.t('documentCard.deleteDocument') }}</button>
       </div>
     </Teleport>
   </div>
@@ -65,10 +65,13 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import type { DocumentResult } from '../types'
+import { useI18nStore } from '../stores/i18n'
 
 
 const props = defineProps<{ doc: DocumentResult; canEdit?: boolean; canLink?: boolean; canCreate?: boolean; checked?: boolean; selectedCount?: number; allSelected?: boolean; activeSort?: 'title' | 'date'; isLink?: boolean; linkId?: number | null }>()
 const emit = defineEmits<{ edit: [id: number]; delete: [id: number]; move: [id: number]; 'new-doc': []; 'new-folder': []; sort: ['title' | 'date']; check: [id: number, shift: boolean, ctrl: boolean]; link: [id: number]; 'select-all': []; 'remove-link': [linkId: number] }>()
+
+const i18n = useI18nStore()
 
 const showText = ref(false)
 const ctxMenu = ref<{ x: number; y: number } | null>(null)

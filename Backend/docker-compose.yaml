@@ -12,3 +12,4 @@ services:
     volumes:
       - ./config.yaml:/app/config.yaml
       - ./prompts.yaml:/app/prompts.yaml
+      - ./lang:/app/lang

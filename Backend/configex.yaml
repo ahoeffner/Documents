@@ -24,6 +24,9 @@ app:
     embedding-retries: 3
     max-conversations: 64
 
+  i18n:
+    path: ./lang
+
   hosts:
     localhost: documents
     home.hoeffner.net: documents

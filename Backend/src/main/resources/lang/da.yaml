@@ -1,0 +1,186 @@
+app:
+  help: "Hjælp"
+  signOut: "Log ud"
+  tabs:
+    browse: "Gennemse"
+    search: "Søg"
+    chat: "AI-chat"
+  helpModal:
+    documentsTitle: "Dokumenter"
+    documentsIntro: 'Organiser dine dokumenter i mapper. Brug <strong>højreklik</strong> til at styre alt — ingen værktøjslinjeknapper.'
+    documentsItem1: 'Højreklik på en <strong>mappe</strong> i sidepanelet → Ny undermappe, Omdøb, Slet'
+    documentsItem2: 'Højreklik på <strong>tomt sidepanel</strong> → Ny rodmappe'
+    documentsItem3: 'Højreklik på <strong>indholdsområdet</strong> → Nyt dokument, Ny mappe'
+    documentsItem4: 'Højreklik på en <strong>dokumentrække</strong> → Tekst, Fil, Rediger'
+    documentsItem5: 'Dobbeltklik på en <strong>dokumentrække</strong> → åbn fil, eller vis tekst hvis ingen fil'
+    searchTitle: "Søgning"
+    searchIntro: 'Bruger <strong>BM25 fuldtekstsøgning</strong> — finder dokumenter, der indeholder de nøjagtige ord, du skriver. Ingen semantisk udvidelse, ingen fuzzy-søgning.'
+    searchItem1: "Brug de mest karakteristiske ord fra det, du leder efter."
+    searchItem2: 'Tilføj <strong>*</strong> til et ord for præfikssøgning — <em>VVS*</em> matcher VVS, VVS-rør, VVSfirma osv.'
+    searchItem3: 'Brug <strong>Mappe</strong> til at indsnævre resultaterne til en bestemt kategori.'
+    searchItem4: "Højreklik eller dobbeltklik på en resultatrække for at åbne den."
+    searchTip: 'Brug <strong>AI-chat</strong> til betydningsbaserede forespørgsler.'
+    chatTitle: "AI-chat"
+    chatIntro: 'Bruger <strong>RAG (Retrieval-Augmented Generation)</strong> — svarer udelukkende ud fra dine uploadede dokumenter, ikke internettet.'
+    chatItem1: "Kilder under hvert svar viser, hvilke dokumenter der blev brugt."
+    chatItem2: "Højreklik eller dobbeltklik på en kilderække for at åbne dens fil eller tekst."
+    chatItem3: '<strong>Præcision</strong> (Avanceret) styrer, hvor strengt dokumenter skal matche.'
+    chatItem4: 'Brug <strong>Mappe</strong> til at indsnævre søgningen til en bestemt kategori.'
+    chatItem5: "Brug historikknappen til at genkalde og genbruge tidligere spørgsmål."
+
+common:
+  all: "Alle"
+  cancel: "Annuller"
+  category: "Kategori"
+  date: "Dato"
+  delete: "Slet"
+  file: "Fil"
+  folder: "Mappe"
+  language: "Sprog"
+  metadata: "Metadata"
+  name: "Navn"
+  none: "— ingen —"
+  or: "eller"
+  reset: "Nulstil"
+  save: "Gem"
+  source: "Kilde"
+  title: "Titel"
+  update: "Opdater"
+  url: "URL"
+
+login:
+  brand: "Documents"
+  noTenants: "Ingen tenants tilgængelige for denne konto."
+  password: "Adgangskode"
+  selectTenant: "Vælg en tenant"
+  signIn: "Log ind"
+  signingIn: "Logger ind…"
+  switchFailed: "Kunne ikke skifte tenant."
+  unreachable: "Kunne ikke kontakte serveren."
+  username: "Brugernavn"
+
+chat:
+  advanced: "Avanceret"
+  assistant: "Assistent"
+  clear: "Ryd"
+  connectionError: "Forbindelsesfejl"
+  editDocument: "Rediger dokument"
+  error: "Fejl: {message}"
+  placeholder: "Stil et spørgsmål om dine dokumenter… (Enter for at sende, Shift+Enter for ny linje)"
+  precision: "Præcision"
+  precisionHint: "Styrer, hvor tæt dokumenter skal matche, før de bruges som relevante dokumenter."
+  relevantDocuments: "Relevante dokumenter"
+  requestFailed: "Anmodning mislykkedes."
+  send: "Send"
+  showFile: "Vis fil"
+  showText: "Vis tekst"
+  stillThinking: "Tænker stadig…"
+  stillThinkingBody: "AI'en tager længere tid end forventet. Vil du fortsætte med at vente?"
+  thinking: "Tænker…"
+  waitMore: "Vent 30 sekunder mere"
+  welcome: "Jeg er din personlige assistent. Spørg mig om hvad som helst om dine dokumenter."
+  you: "Dig"
+
+create:
+  descriptionPlaceholder: "Indtast beskrivelse eller indsæt OCR-resultat her…"
+  descriptionText: "Beskrivelse / Tekst"
+  fileOrUrlNotBoth: "Angiv enten en fil eller en URL, ikke begge."
+  languageRequired: "Sprog er påkrævet."
+  newDocument: "Nyt dokument"
+  ocr: "OCR"
+  ocrFailed: "OCR mislykkedes."
+  pasteHint: "Klik her, og tryk derefter Ctrl+V / Cmd+V"
+  pasteImage: "Indsæt billede"
+  pasted: "Indsat: {name}"
+  pastedImageDefault: "billede"
+  provideAtLeastOne: "Angiv mindst en fil, URL eller beskrivelsestekst."
+  saveDocument: "Gem dokument"
+  saveFailed: "Kunne ikke gemme dokumentet — tjek forbindelsen."
+  savedNotice: "Dokument gemt — ID {id}"
+  saving: "Gemmer…"
+  serverError: "Serveren rapporterede en fejl ved gemning af dokumentet."
+  titlePlaceholder: "Dokumenttitel"
+  titleRequired: "Titel er påkrævet."
+  urlPlaceholder: "https://example.com/dokument.pdf"
+
+documentCard:
+  deleteDocument: "Slet dokument"
+  deleteDocumentsCount: "Slet dokumenter ({count})"
+  deselectAll: "Fravælg alle"
+  linkDocument: "Link dokument"
+  linkDocuments: "Link dokumenter"
+  moveDocument: "Flyt dokument"
+  moveDocuments: "Flyt dokumenter"
+  removeLink: "Fjern link"
+  selectAll: "Vælg alle"
+  untitled: "Uden titel"
+
+edit:
+  addFolder: "Tilføj mappe"
+  adding: "Tilføjer…"
+  allFolders: "Alle mapper"
+  chooseFile: "Vælg fil"
+  currentFile: "Nuværende fil"
+  deleteConfirm: 'Slet "{title}"?'
+  deleteFailed: "Sletning mislykkedes."
+  documents: "Dokumenter"
+  failedConnection: "Mislykkedes — tjek forbindelsen."
+  filterPlaceholder: "Filtrer…"
+  folderNamePlaceholder: "Mappenavn"
+  loadDetailFailed: "Kunne ikke indlæse dokumentdetaljer."
+  loadFailed: "Kunne ikke indlæse."
+  new: "+ Ny"
+  newDocumentBtn: "+ Nyt dokument"
+  newFolder: "Ny mappe"
+  noDocuments: "Ingen dokumenter"
+  noFileChosen: "Ingen fil valgt"
+  parentFolder: "Overordnet mappe"
+  root: "— rod —"
+  savedId: "Gemt — ID {id}"
+  selectOrCreate: "Vælg et dokument til redigering, eller opret et nyt"
+  serverError: "Serveren rapporterede en fejl."
+  updated: "Opdateret."
+
+explorer:
+  continueEditing: "Fortsæt redigering"
+  deleteFolderConfirm: 'Slet mappen "{path}"?'
+  deleteFolderFailed: "Kunne ikke slette mappen."
+  deleteItemsConfirm: "Slet {count} elementer? Dette kan ikke fortrydes."
+  deleteLinkLabel: 'link til "{title}"'
+  deleteSingleConfirm: "Slet {label}? Dette kan ikke fortrydes."
+  folders: "Mapper"
+  linkToFolder: "Link til mappe"
+  loadDocsFailed: "Kunne ikke indlæse dokumenter."
+  moveToFolder: "Flyt til mappe"
+  newName: "Nyt navn"
+  newRootFolder: "Ny rodmappe"
+  newSubfolder: "Ny undermappe"
+  noDocsInFolder: "Ingen dokumenter i denne mappe"
+  noFoldersYet: "Ingen mapper endnu"
+  noTextTitle: "Kunne ikke udtrække tekst"
+  rename: "Omdøb"
+  renameFolder: "Omdøb mappe"
+  saveAnyway: "Gem alligevel"
+  selectFolder: "Vælg en mappe"
+  selectFolderHint: "Vælg en mappe for at se dens dokumenter"
+
+linkFolderModal:
+  allFolders: "Alle mapper"
+  filterPlaceholder: "Filtrer mapper…"
+  link: "Link"
+  noMatch: "Ingen mapper matcher"
+  recent: "Seneste"
+  results: "Resultater"
+
+search:
+  deleteCountBody: "Dette vil slette {count} dokumenter permanent. Dette kan ikke fortrydes."
+  deleteCountTitle: "Slet {count} dokumenter?"
+  deleting: "Sletter…"
+  enterQuery: "Indtast en søgning for at søge i dokumenter"
+  failed: "Søgning mislykkedes — kunne ikke kontakte serveren."
+  noMatch: 'Ingen dokumenter matchede "{query}"'
+  placeholder: "Søg i dokumenter…"
+  search: "Søg"
+  searching: "Søger…"
+  sortByDate: "Sorter efter dato"
+  sortByTitle: "Sorter efter titel"
