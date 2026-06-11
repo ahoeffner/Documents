@@ -53,12 +53,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import { useCategoriesStore } from '../stores/categories'
 import { useI18nStore } from '../stores/i18n'
+import { useCategoriesStore } from '../stores/categories'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+
 
 const props = defineProps<{ visible: boolean; title?: string }>()
 const emit = defineEmits<{ close: []; confirm: [fldid: number] }>()
+
 
 const categoriesStore = useCategoriesStore()
 const i18n = useI18nStore()
@@ -68,6 +70,7 @@ const recentFolders = ref<{ id: number; name: string }[]>([])
 const searchEl = ref<HTMLInputElement | null>(null)
 
 const RECENT_KEY = 'doc-link-recent-folders'
+
 
 const filteredFolders = computed(() =>
 {
@@ -136,6 +139,7 @@ watch(() => props.visible, async val =>
     searchEl.value?.focus()
   }
 })
+
 
 onMounted(() =>
 {

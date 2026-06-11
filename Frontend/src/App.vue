@@ -82,14 +82,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, nextTick, h, onMounted, onUnmounted } from 'vue'
+import ChatView from './views/ChatView.vue'
 import { useAuthStore } from './stores/auth'
 import { useI18nStore } from './stores/i18n'
-import { useThemeStore } from './stores/theme'
-import ChatView from './views/ChatView.vue'
 import LoginView from './views/LoginView.vue'
+import { useThemeStore } from './stores/theme'
 import SearchView from './views/SearchView.vue'
 import ExplorerView from './views/ExplorerView.vue'
+import { ref, watch, computed, nextTick, h, onMounted, onUnmounted } from 'vue'
 
 
 const auth = useAuthStore()
@@ -138,6 +138,7 @@ function onKeydown(e: KeyboardEvent)
 {
   if (e.key === 'Escape') showHelp.value = false
 }
+
 
 onMounted(() => window.addEventListener('keydown', onKeydown))
 onUnmounted(() => window.removeEventListener('keydown', onKeydown))

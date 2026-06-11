@@ -40,7 +40,7 @@
     <Teleport to="body">
       <div v-if="ctxMenu" class="ctx-menu" :style="{ top: ctxMenu.y + 'px', left: ctxMenu.x + 'px' }" @click.stop>
         <button v-if="doc.description" class="ctx-item" @click="ctxText">{{ i18n.t('chat.showText') }}</button>
-        <a v-if="doc.hasFile" :href="`/api/content/${doc.id}/file`" target="_blank" class="ctx-item" @click="ctxMenu = null">{{ i18n.t('chat.showFile') }}</a>
+        <button v-if="doc.hasFile" class="ctx-item" @click="ctxShowFile">{{ i18n.t('chat.showFile') }}</button>
         <div v-if="(doc.description || doc.hasFile) && canEdit" class="ctx-divider"></div>
         <button v-if="canEdit" class="ctx-item" @click="ctxEdit">{{ i18n.t('chat.editDocument') }}</button>
         <button v-if="canLink" class="ctx-item" @click="ctxLink">{{ selectedCount && selectedCount > 1 ? i18n.t('documentCard.linkDocuments') : i18n.t('documentCard.linkDocument') }}</button>
@@ -63,13 +63,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import type { DocumentResult } from '../types'
 import { useI18nStore } from '../stores/i18n'
+import { openOrDownload } from '../utils/file'
+import type { DocumentResult } from '../types'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 
 const props = defineProps<{ doc: DocumentResult; canEdit?: boolean; canLink?: boolean; canCreate?: boolean; checked?: boolean; selectedCount?: number; allSelected?: boolean; activeSort?: 'title' | 'date'; isLink?: boolean; linkId?: number | null }>()
 const emit = defineEmits<{ edit: [id: number]; delete: [id: number]; move: [id: number]; 'new-doc': []; 'new-folder': []; sort: ['title' | 'date']; check: [id: number, shift: boolean, ctrl: boolean]; link: [id: number]; 'select-all': []; 'remove-link': [linkId: number] }>()
+
 
 const i18n = useI18nStore()
 
@@ -77,6 +79,7 @@ const showText = ref(false)
 const ctxMenu = ref<{ x: number; y: number } | null>(null)
 let selfOpening = false
 const onCloseAllCtx = () => { if (!selfOpening) ctxMenu.value = null }
+
 
 function onRowClick(e: MouseEvent)
 {
@@ -86,7 +89,7 @@ function onRowClick(e: MouseEvent)
 
 function openContent()
 {
-  if (props.doc.hasFile) window.open(`/api/content/${props.doc.id}/file`, '_blank')
+  if (props.doc.hasFile) openOrDownload(props.doc.id, props.doc.filename, i18n.t('chat.cannotDisplayFile'))
   else if (props.doc.description) showText.value = true
 }
 
@@ -107,6 +110,13 @@ function ctxText()
 {
   ctxMenu.value = null
   showText.value = true
+}
+
+
+function ctxShowFile()
+{
+  ctxMenu.value = null
+  openOrDownload(props.doc.id, props.doc.filename, i18n.t('chat.cannotDisplayFile'))
 }
 
 
@@ -173,8 +183,6 @@ function ctxSort(mode: 'title' | 'date')
 }
 
 
-
-
 function onKeydown(e: KeyboardEvent)
 {
   if (e.key === 'Escape')
@@ -183,6 +191,7 @@ function onKeydown(e: KeyboardEvent)
     if (showText.value) showText.value = false
   }
 }
+
 
 onMounted(() =>
 {

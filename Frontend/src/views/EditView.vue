@@ -133,7 +133,7 @@
               <div v-if="!isNew && currentFilename" class="field">
                 <label class="field-label">{{ i18n.t('edit.currentFile') }}</label>
                 <div class="current-file">
-                  <a :href="`/api/content/${editId}/file`" target="_blank" class="file-link">{{ currentFilename }}</a>
+                  <a href="#" class="file-link" @click.prevent="openOrDownload(editId!, currentFilename, i18n.t('chat.cannotDisplayFile'))">{{ currentFilename }}</a>
                 </div>
               </div>
 
@@ -218,16 +218,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
-import type { DocumentResult, DocumentDetail, Language, Folder } from '../types'
 import { scanOcr } from '../api/ocr'
 import { storeDocument } from '../api/store'
 import { createFolder } from '../api/folders'
-import { listLanguages } from '../api/languages'
-import { listDocuments, getDocument, updateDocument, deleteDocument } from '../api/documents'
-import { useFoldersStore } from '../stores/folders'
+import { openOrDownload } from '../utils/file'
 import { useI18nStore } from '../stores/i18n'
+import { listLanguages } from '../api/languages'
+import { useFoldersStore } from '../stores/folders'
 import { useResize } from '../composables/useResize'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import type { DocumentResult, DocumentDetail, Language, Folder } from '../types'
+import { listDocuments, getDocument, updateDocument, deleteDocument } from '../api/documents'
 
 
 const i18n = useI18nStore()
@@ -238,7 +239,9 @@ const { width: listWidth, startResize } = useResize(320, 160, 600)
 const foldersStore = useFoldersStore()
 onMounted(() => { foldersStore.load(); loadList(); loadLanguages() })
 
+
 type FlatFolder = { id: number; path: string }
+
 
 function flattenFolders(nodes: typeof foldersStore.tree, prefix = ''): FlatFolder[]
 {
@@ -251,6 +254,7 @@ function flattenFolders(nodes: typeof foldersStore.tree, prefix = ''): FlatFolde
   }
   return(out)
 }
+
 
 const flatFolders = computed(() => flattenFolders(foldersStore.tree))
 
@@ -335,6 +339,7 @@ async function selectDoc(id: number)
 
 // ── Languages ─────────────────────────────────────────────────────
 const languages = ref<Language[]>([])
+
 
 async function loadLanguages()
 {
@@ -577,7 +582,10 @@ async function addFolder()
     newFolderPid.value = null
     showNewFolder.value = false
   }
-  catch { /* ignore */ }
+  catch
+  {
+    /* ignore */
+  }
   finally
   {
     newFolderLoading.value = false

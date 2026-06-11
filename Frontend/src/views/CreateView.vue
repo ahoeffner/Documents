@@ -105,13 +105,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import type { Language } from '../types'
 import { scanOcr } from '../api/ocr'
+import type { Language } from '../types'
 import { storeDocument } from '../api/store'
+import { useI18nStore } from '../stores/i18n'
+import { ref, computed, onMounted } from 'vue'
 import { listLanguages } from '../api/languages'
 import { useCategoriesStore } from '../stores/categories'
-import { useI18nStore } from '../stores/i18n'
 
 
 const props = withDefaults(defineProps<{ initialFldid?: number | null }>(), { initialFldid: null })

@@ -106,6 +106,108 @@
   --tab-hover-bg: #aecdf6;
 }
 
+/* ── Forest theme ── */
+[data-theme="forest"] {
+  --accent:       #4d8061;
+  --accent-dark:  #3d6b4f;
+  --accent-ring:  rgba(77, 128, 97, 0.2);
+
+  --bg:           #f7faf7;
+  --bg-subtle:    #eaf2ec;
+  --bg-muted:     #dcebe0;
+
+  --border:       #c3dac9;
+  --border-input: #a8c7b1;
+
+  --text:         #1d2b22;
+  --text-muted:   #44574b;
+  --text-faint:   #7a8f80;
+
+  --danger:       #ef4444;
+  --danger-bg:    #fef2f2;
+  --success:      #22c55e;
+  --success-bg:   #f0fdf4;
+  --warn:         #f59e0b;
+  --warn-bg:      #fffbeb;
+
+  --select-bg:     rgba(77, 128, 97, 0.10);
+  --select-border: #3d6b4f;
+
+  --tab-bar-bg:   #dcebe0;
+  --tab-bg:       #c9e0d0;
+  --tab-border:   #a8c7b1;
+  --tab-text:     #1d2b22;
+  --tab-hover-bg: #b7d6c0;
+}
+
+/* ── Sepia theme ── */
+[data-theme="sepia"] {
+  --accent:       #a9824a;
+  --accent-dark:  #8f6b38;
+  --accent-ring:  rgba(169, 130, 74, 0.2);
+
+  --bg:           #faf3e7;
+  --bg-subtle:    #f1e6d4;
+  --bg-muted:     #e8dac3;
+
+  --border:       #ddc9a8;
+  --border-input: #cdb38c;
+
+  --text:         #3a2e1f;
+  --text-muted:   #6b5840;
+  --text-faint:   #998669;
+
+  --danger:       #ef4444;
+  --danger-bg:    #fef2f2;
+  --success:      #22c55e;
+  --success-bg:   #f0fdf4;
+  --warn:         #f59e0b;
+  --warn-bg:      #fffbeb;
+
+  --select-bg:     rgba(169, 130, 74, 0.12);
+  --select-border: #8f6b38;
+
+  --tab-bar-bg:   #ecdfc8;
+  --tab-bg:       #e2d0b3;
+  --tab-border:   #cdb38c;
+  --tab-text:     #3a2e1f;
+  --tab-hover-bg: #d6c19e;
+}
+
+/* ── Purple theme ── */
+[data-theme="purple"] {
+  --accent:       #9d7be0;
+  --accent-dark:  #8362c9;
+  --accent-ring:  rgba(157, 123, 224, 0.25);
+
+  --bg:           #1e1b2e;
+  --bg-subtle:    #262238;
+  --bg-muted:     #312c47;
+
+  --border:       #443d5e;
+  --border-input: #564d77;
+
+  --text:         #ece9f5;
+  --text-muted:   #b3a8d1;
+  --text-faint:   #7c719a;
+
+  --danger:       #f87171;
+  --danger-bg:    #3a2222;
+  --success:      #4ade80;
+  --success-bg:   #1f3326;
+  --warn:         #fbbf24;
+  --warn-bg:      #3a2f14;
+
+  --select-bg:     rgba(157, 123, 224, 0.18);
+  --select-border: #9d7be0;
+
+  --tab-bar-bg:   #181625;
+  --tab-bg:       #2c2740;
+  --tab-border:   #443d5e;
+  --tab-text:     #d6cfeb;
+  --tab-hover-bg: #383152;
+}
+
 /* ════════════════════════════════════════════════════════════════
    Reset & base
    ════════════════════════════════════════════════════════════════ */

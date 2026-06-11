@@ -62,6 +62,7 @@ login:
 chat:
   advanced: "Avanceret"
   assistant: "Assistent"
+  cannotDisplayFile: "Denne filtype kan ikke vises i browseren. Vil du downloade den i stedet?"
   clear: "Ryd"
   connectionError: "Forbindelsesfejl"
   editDocument: "Rediger dokument"

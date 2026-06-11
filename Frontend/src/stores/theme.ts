@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 
+
 export interface ThemeInfo
 {
   id: string
@@ -12,7 +13,10 @@ const STORAGE_KEY = 'theme'
 const THEMES: ThemeInfo[] = [
   { id: 'light', name: 'Light' },
   { id: 'dark', name: 'Dark' },
-  { id: 'blue', name: 'Blue' }
+  { id: 'blue', name: 'Blue' },
+  { id: 'forest', name: 'Forest' },
+  { id: 'sepia', name: 'Sepia' },
+  { id: 'purple', name: 'Purple' }
 ]
 
 

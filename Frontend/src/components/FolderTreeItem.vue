@@ -48,6 +48,7 @@ defineProps<{
   selectedId: number | null
 }>()
 
+
 defineEmits<{
   select: [id: number]
   context: [payload: { id: number; e: MouseEvent }]

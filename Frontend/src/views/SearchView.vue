@@ -92,15 +92,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import type { DocumentResult } from '../types'
-import { search, linkDocuments, moveDocument, deleteDocument } from '../api/documents'
-import { useCategoriesStore } from '../stores/categories'
 import { useAuthStore } from '../stores/auth'
-import { useEditRequestStore } from '../stores/editRequest'
 import { useI18nStore } from '../stores/i18n'
+import type { DocumentResult } from '../types'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useCategoriesStore } from '../stores/categories'
 import DocumentCard from '../components/DocumentCard.vue'
+import { useEditRequestStore } from '../stores/editRequest'
 import LinkFolderModal from '../components/LinkFolderModal.vue'
+import { search, linkDocuments, moveDocument, deleteDocument } from '../api/documents'
 
 
 const categoriesStore = useCategoriesStore()
@@ -123,6 +123,10 @@ const deleteLoading = ref(false)
 const areaCtx = ref<{ x: number; y: number } | null>(null)
 let selfOpeningCtx = false
 const onCloseAllCtx = () => { if (!selfOpeningCtx) areaCtx.value = null }
+const loading = ref(false)
+const error = ref<string | null>(null)
+const searched = ref(false)
+
 
 const sortedDocuments = computed(() =>
 {
@@ -132,15 +136,16 @@ const sortedDocuments = computed(() =>
   return(list.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? '', undefined, { sensitivity: 'base' })))
 })
 
-const loading = ref(false)
-const error = ref<string | null>(null)
-const searched = ref(false)
+
 onMounted(() =>
 {
   categoriesStore.load()
   window.addEventListener('close-all-ctx', onCloseAllCtx)
 })
+
+
 onUnmounted(() => window.removeEventListener('close-all-ctx', onCloseAllCtx))
+
 
 defineExpose({ focus: () => searchInputEl.value?.focus() })
 
@@ -218,8 +223,6 @@ function areaCtxSort(mode: 'title' | 'date')
 }
 
 
-
-
 async function deleteSingle(id: number)
 {
   if (selectedIds.value.size > 1)
@@ -235,7 +238,10 @@ async function deleteSingle(id: number)
     documents.value = documents.value.filter(d => d.id !== id)
     selectedIds.value = new Set([...selectedIds.value].filter(x => x !== id))
   }
-  catch { /* ignore */ }
+  catch
+  {
+    /* ignore */
+  }
 }
 
 
@@ -250,7 +256,10 @@ async function confirmBulkDelete()
     selectedIds.value = new Set()
     showDeleteConfirm.value = false
   }
-  catch { /* ignore */ }
+  catch
+  {
+    /* ignore */
+  }
   finally
   {
     deleteLoading.value = false
@@ -274,7 +283,10 @@ async function onFolderPickerConfirm(fldid: number)
     }
     selectedIds.value = new Set()
   }
-  catch { /* ignore */ }
+  catch
+  {
+    /* ignore */
+  }
 }
 
 

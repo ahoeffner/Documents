@@ -11,13 +11,15 @@ import java.net.URLConnection;
 import java.util.stream.Stream;
 import java.io.ByteArrayInputStream;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.HashMap;
 import java.nio.charset.StandardCharsets;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParserDecorator;
 import dev.langchain4j.data.document.Document;
-import org.apache.tika.parser.image.ImageParser;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 import dev.langchain4j.data.document.parser.apache.tika.ApacheTikaDocumentParser;
@@ -27,11 +29,24 @@ import dev.langchain4j.data.document.parser.apache.tika.ApacheTikaDocumentParser
 public class DocumentLoaderService
 {
     /*
-     * GraalVM native image has no AWT/libawt.so, so Tika's ImageParser
-     * (used for embedded images) crashes with UnsatisfiedLinkError.
-     * Strip image types from the parser so embedded images are skipped.
+     * GraalVM native image has no AWT/libawt.so, so Tika's image parsers
+     * (used for standalone and embedded images) crash with UnsatisfiedLinkError
+     * via java.awt.Toolkit/ImageIO. Route every image/* media type to
+     * EmptyParser so they're skipped, regardless of which (possibly nested
+     * and decorator-wrapped) parser would otherwise handle them.
      */
-    private static final Parser TIKA_PARSER = ParserDecorator.withoutTypes(new AutoDetectParser(), new ImageParser().getSupportedTypes(new ParseContext()));
+    private static final Parser TIKA_PARSER = buildTikaParser();
+
+
+    private static Parser buildTikaParser()
+    {
+        AutoDetectParser parser = new AutoDetectParser();
+        Map<MediaType, Parser> parsers = new HashMap<>(parser.getParsers());
+        for (Map.Entry<MediaType, Parser> e : parsers.entrySet())
+            if (e.getKey().getType().equals("image")) e.setValue(new EmptyParser());
+        parser.setParsers(parsers);
+        return(parser);
+    }
 
 
     private final OCRService ocr;

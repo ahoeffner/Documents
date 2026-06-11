@@ -246,7 +246,7 @@
                 <div v-if="!editIsNew && editCurrentFilename" class="field">
                   <label class="field-label">{{ i18n.t('edit.currentFile') }}</label>
                   <div class="current-file">
-                    <a :href="`/api/content/${editId}/file`" target="_blank" class="file-link">{{ editCurrentFilename }}</a>
+                    <a href="#" class="file-link" @click.prevent="openOrDownload(editId!, editCurrentFilename, i18n.t('chat.cannotDisplayFile'))">{{ editCurrentFilename }}</a>
                   </div>
                 </div>
 
@@ -314,21 +314,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
-import type { DocumentResult, DocumentDetail, Language, Folder } from '../types'
 import { scanOcr } from '../api/ocr'
 import { storeDocument } from '../api/store'
-import { getFolderDocuments, createFolder, renameFolder, deleteFolder } from '../api/folders'
-import { listLanguages } from '../api/languages'
-import { getDocument, updateDocument, deleteDocument, deleteLink, linkDocuments, moveDocument } from '../api/documents'
-import { useFoldersStore } from '../stores/folders'
 import { useAuthStore } from '../stores/auth'
-import { useResize } from '../composables/useResize'
-import { useEditRequestStore } from '../stores/editRequest'
 import { useI18nStore } from '../stores/i18n'
+import { openOrDownload } from '../utils/file'
+import { listLanguages } from '../api/languages'
+import { useFoldersStore } from '../stores/folders'
+import { useResize } from '../composables/useResize'
 import DocumentCard from '../components/DocumentCard.vue'
+import { useEditRequestStore } from '../stores/editRequest'
 import FolderTreeItem from '../components/FolderTreeItem.vue'
 import LinkFolderModal from '../components/LinkFolderModal.vue'
+import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
+import type { DocumentResult, DocumentDetail, Language, Folder } from '../types'
+import { getFolderDocuments, createFolder, renameFolder, deleteFolder } from '../api/folders'
+import { getDocument, updateDocument, deleteDocument, deleteLink, linkDocuments, moveDocument } from '../api/documents'
 
 
 const { width: sidebarWidth, startResize } = useResize(280, 140, 520)
@@ -344,6 +345,7 @@ watch(() => editRequestStore.pendingId, id =>
     editRequestStore.clear()
   }
 })
+
 
 watch(() => editRequestStore.pendingNew, val =>
 {
@@ -428,7 +430,10 @@ async function reloadDocs()
     const res = await getFolderDocuments(selectedFolderId.value)
     docs.value = (res.data.documents || []) as DocumentResult[]
   }
-  catch { /* ignore */ }
+  catch
+  {
+    /* ignore */
+  }
 }
 
 
@@ -499,8 +504,6 @@ function ctxAction(fn: () => void)
 }
 
 
-
-
 function ctxRenameFolder()
 {
   const id = ctxMenu.value?.folderId
@@ -550,7 +553,10 @@ async function addFolder()
     newFolderName.value = ''
     showNewFolder.value = false
   }
-  catch { /* ignore */ }
+  catch
+  {
+    /* ignore */
+  }
   finally
   {
     newFolderLoading.value = false
@@ -577,7 +583,10 @@ async function doRenameFolder()
     renameFolderName.value = ''
     showRenameFolder.value = false
   }
-  catch { /* ignore */ }
+  catch
+  {
+    /* ignore */
+  }
   finally
   {
     renameFolderLoading.value = false
@@ -611,6 +620,7 @@ async function deleteSelectedFolder()
 // ── Languages ─────────────────────────────────────────────────────
 const languages = ref<Language[]>([])
 
+
 async function loadLanguages()
 {
   try
@@ -623,6 +633,7 @@ async function loadLanguages()
     languages.value = [{ id: 'DA', name: 'danish' }, { id: 'EN', name: 'english' }]
   }
 }
+
 
 onMounted(loadLanguages)
 
@@ -717,7 +728,10 @@ async function deleteDoc(id: number)
       selectedIds.value = new Set()
       await reloadDocs()
     }
-    catch { /* ignore */ }
+    catch
+    {
+      /* ignore */
+    }
   }
   else
   {
@@ -729,7 +743,10 @@ async function deleteDoc(id: number)
       await deleteOne(id)
       await reloadDocs()
     }
-    catch { /* ignore */ }
+    catch
+    {
+      /* ignore */
+    }
   }
 }
 
@@ -769,7 +786,10 @@ async function onFolderPickerConfirm(fldid: number)
       await reloadDocs()
     }
   }
-  catch { /* ignore */ }
+  catch
+  {
+    /* ignore */
+  }
 }
 
 
@@ -818,7 +838,10 @@ async function removeLink(linkId: number)
     await deleteLink(linkId)
     await reloadDocs()
   }
-  catch { /* ignore */ }
+  catch
+  {
+    /* ignore */
+  }
 }
 
 
@@ -1059,10 +1082,12 @@ function onKeydown(e: KeyboardEvent)
   }
 }
 
+
 function onGlobalClick()
 {
   ctxMenu.value = null
 }
+
 
 onMounted(() =>
 {
@@ -1070,6 +1095,8 @@ onMounted(() =>
   window.addEventListener('click', onGlobalClick)
   window.addEventListener('close-all-ctx', onCloseAllCtx)
 })
+
+
 onUnmounted(() =>
 {
   window.removeEventListener('keydown', onKeydown)

@@ -113,7 +113,7 @@
     <Teleport to="body">
       <div v-if="srcCtxMenu" class="src-ctx-menu" :style="{ top: srcCtxMenu.y + 'px', left: srcCtxMenu.x + 'px' }" @click.stop>
         <button v-if="srcCtxMenu.doc.description" class="src-ctx-item" @click="srcCtxText">{{ i18n.t('chat.showText') }}</button>
-        <a v-if="srcCtxMenu.doc.hasFile" :href="`/api/content/${srcCtxMenu.doc.id}/file`" target="_blank" class="src-ctx-item" @click="srcCtxMenu = null">{{ i18n.t('chat.showFile') }}</a>
+        <button v-if="srcCtxMenu.doc.hasFile" class="src-ctx-item" @click="srcCtxShowFile">{{ i18n.t('chat.showFile') }}</button>
         <div v-if="auth.isAdmin" class="src-ctx-divider"></div>
         <button v-if="auth.isAdmin" class="src-ctx-item" @click="srcCtxEdit">{{ i18n.t('chat.editDocument') }}</button>
       </div>
@@ -151,15 +151,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import axios, { type AxiosError } from 'axios'
-import type { DocumentResult } from '../types'
 import { chat } from '../api/chat'
 import { useChatStore } from '../stores/chat'
-import { useCategoriesStore } from '../stores/categories'
 import { useAuthStore } from '../stores/auth'
 import { useI18nStore } from '../stores/i18n'
+import { openOrDownload } from '../utils/file'
+import type { DocumentResult } from '../types'
+import axios, { type AxiosError } from 'axios'
+import { useCategoriesStore } from '../stores/categories'
 import { useEditRequestStore } from '../stores/editRequest'
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 
 
 const i18n = useI18nStore()
@@ -173,7 +174,7 @@ const editRequestStore = useEditRequestStore()
 
 function openSourceContent(d: DocumentResult)
 {
-  if (d.hasFile) window.open(`/api/content/${d.id}/file`, '_blank')
+  if (d.hasFile) openOrDownload(d.id, d.filename, i18n.t('chat.cannotDisplayFile'))
   else if (d.description) srcTextDoc.value = d
 }
 
@@ -190,6 +191,14 @@ function srcCtxText()
   const doc = srcCtxMenu.value?.doc ?? null
   srcCtxMenu.value = null
   if (doc) srcTextDoc.value = doc
+}
+
+
+function srcCtxShowFile()
+{
+  const doc = srcCtxMenu.value?.doc ?? null
+  srcCtxMenu.value = null
+  if (doc) openOrDownload(doc.id, doc.filename, i18n.t('chat.cannotDisplayFile'))
 }
 
 
@@ -222,8 +231,10 @@ const showAdvanced = ref(false)
 const showHistory = ref(false)
 const showWaitPrompt = ref(false)
 
+
 let waitTimer: ReturnType<typeof setTimeout> | null = null
 let abortController: AbortController | null = null
+
 
 function startWaitTimer()
 {
@@ -267,6 +278,7 @@ function onKeydown(e: KeyboardEvent)
     showHistory.value = false
   }
 }
+
 
 onMounted(() =>
 {

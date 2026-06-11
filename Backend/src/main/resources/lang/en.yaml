@@ -62,6 +62,7 @@ login:
 chat:
   advanced: "Advanced"
   assistant: "Assistant"
+  cannotDisplayFile: "This file type cannot be displayed in the browser. Download it instead?"
   clear: "Clear"
   connectionError: "Connection error"
   editDocument: "Edit Document"

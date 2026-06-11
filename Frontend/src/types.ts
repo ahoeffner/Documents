@@ -1,16 +1,21 @@
-export interface Category {
+export interface Category
+{
   id: number
   name: string
 }
 
-export interface Folder {
+
+export interface Folder
+{
   id: number
   name: string
   pid: number | null
   children: Folder[]
 }
 
-export interface DocumentResult {
+
+export interface DocumentResult
+{
   id: number
   title: string
   filename?: string
@@ -22,12 +27,16 @@ export interface DocumentResult {
   linkId?: number | null
 }
 
-export interface Language {
+
+export interface Language
+{
   id: string
   name: string
 }
 
-export interface ChatMessage {
+
+export interface ChatMessage
+{
   id: string
   role: 'user' | 'ai'
   text: string
@@ -35,7 +44,9 @@ export interface ChatMessage {
   timestamp: Date
 }
 
-export interface DocumentDetail {
+
+export interface DocumentDetail
+{
   id: number
   date: string
   title: string
@@ -46,12 +57,16 @@ export interface DocumentDetail {
   url?: string | null
 }
 
-export interface SearchPayload {
+
+export interface SearchPayload
+{
   query: string
   folder: number
 }
 
-export interface ChatPayload {
+
+export interface ChatPayload
+{
   id: string
   query: string
   folder: number

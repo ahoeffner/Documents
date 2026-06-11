@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { listLocales, getLocale } from '../api/i18n'
 
+
 interface LocaleInfo
 {
   id: string
