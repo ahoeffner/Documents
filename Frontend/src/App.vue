@@ -78,6 +78,7 @@
       <ChatView     ref="chatRef"   v-show="activeTab === 'chat'" />
     </template>
 
+    <ConfirmDialog />
   </div>
 </template>
 
@@ -89,6 +90,7 @@ import LoginView from './views/LoginView.vue'
 import { useThemeStore } from './stores/theme'
 import SearchView from './views/SearchView.vue'
 import ExplorerView from './views/ExplorerView.vue'
+import ConfirmDialog from './components/ConfirmDialog.vue'
 import { ref, watch, computed, nextTick, h, onMounted, onUnmounted } from 'vue'
 
 

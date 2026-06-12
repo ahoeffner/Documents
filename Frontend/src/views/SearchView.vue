@@ -59,7 +59,7 @@
       </template>
     </div>
 
-    <LinkFolderModal :visible="showLinkModal" :title="pickerMode === 'move' ? i18n.t('explorer.moveToFolder') : i18n.t('explorer.linkToFolder')" @close="showLinkModal = false" @confirm="onFolderPickerConfirm" />
+    <LinkFolderModal :visible="showLinkModal" :title="pickerMode === 'move' ? i18n.t('explorer.moveToFolder') : i18n.t('explorer.linkToFolder')" :confirm-label="pickerMode === 'move' ? i18n.t('linkFolderModal.move') : i18n.t('linkFolderModal.link')" @close="showLinkModal = false" @confirm="onFolderPickerConfirm" />
 
     <Teleport to="body">
       <div v-if="areaCtx" class="ctx-menu" :style="{ top: areaCtx.y + 'px', left: areaCtx.x + 'px' }" @click.stop>
@@ -95,6 +95,7 @@
 import { useAuthStore } from '../stores/auth'
 import { useI18nStore } from '../stores/i18n'
 import type { DocumentResult } from '../types'
+import { useConfirmStore } from '../stores/confirm'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useCategoriesStore } from '../stores/categories'
 import DocumentCard from '../components/DocumentCard.vue'
@@ -107,6 +108,7 @@ const categoriesStore = useCategoriesStore()
 const auth = useAuthStore()
 const editRequestStore = useEditRequestStore()
 const i18n = useI18nStore()
+const confirm = useConfirmStore()
 const searchInputEl = ref<HTMLInputElement | null>(null)
 const query = ref('')
 const lastQuery = ref('')
@@ -231,7 +233,7 @@ async function deleteSingle(id: number)
     return
   }
   const doc = documents.value.find(d => d.id === id)
-  if (!window.confirm(i18n.t('explorer.deleteSingleConfirm', { label: `"${doc?.title ?? id}"` }))) return
+  if (!await confirm.ask({ message: i18n.t('explorer.deleteSingleConfirm', { label: `"${doc?.title ?? id}"` }), confirmLabel: i18n.t('common.delete'), danger: true })) return
   try
   {
     await deleteDocument(id)

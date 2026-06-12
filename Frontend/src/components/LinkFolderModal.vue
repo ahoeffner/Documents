@@ -45,7 +45,7 @@
 
         <div class="modal-actions">
           <button class="btn btn-ghost btn-sm" @click="$emit('close')">{{ i18n.t('common.cancel') }}</button>
-          <button class="btn btn-primary btn-sm" :disabled="!selected" @click="confirm">{{ i18n.t('linkFolderModal.link') }}</button>
+          <button class="btn btn-primary btn-sm" :disabled="!selected" @click="confirm">{{ props.confirmLabel ?? i18n.t('linkFolderModal.link') }}</button>
         </div>
       </div>
     </div>
@@ -58,7 +58,7 @@ import { useCategoriesStore } from '../stores/categories'
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 
 
-const props = defineProps<{ visible: boolean; title?: string }>()
+const props = defineProps<{ visible: boolean; title?: string; confirmLabel?: string }>()
 const emit = defineEmits<{ close: []; confirm: [fldid: number] }>()
 
 

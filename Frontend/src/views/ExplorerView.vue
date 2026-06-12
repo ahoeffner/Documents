@@ -306,6 +306,7 @@
     <LinkFolderModal
       :visible="showFolderPicker"
       :title="folderPickerMode === 'move' ? i18n.t('explorer.moveToFolder') : i18n.t('explorer.linkToFolder')"
+      :confirm-label="folderPickerMode === 'move' ? i18n.t('linkFolderModal.move') : i18n.t('linkFolderModal.link')"
       @close="showFolderPicker = false"
       @confirm="onFolderPickerConfirm"
     />
@@ -321,6 +322,7 @@ import { useI18nStore } from '../stores/i18n'
 import { openOrDownload } from '../utils/file'
 import { listLanguages } from '../api/languages'
 import { useFoldersStore } from '../stores/folders'
+import { useConfirmStore } from '../stores/confirm'
 import { useResize } from '../composables/useResize'
 import DocumentCard from '../components/DocumentCard.vue'
 import { useEditRequestStore } from '../stores/editRequest'
@@ -336,6 +338,7 @@ const { width: sidebarWidth, startResize } = useResize(280, 140, 520)
 const auth = useAuthStore()
 const editRequestStore = useEditRequestStore()
 const i18n = useI18nStore()
+const confirm = useConfirmStore()
 
 watch(() => editRequestStore.pendingId, id =>
 {
@@ -522,7 +525,7 @@ async function ctxDeleteFolder()
   ctxMenu.value = null
   if (!id) return
   const folder = flatFolders.value.find(f => f.id === id)
-  if (!window.confirm(i18n.t('explorer.deleteFolderConfirm', { path: folder?.path ?? '' }))) return
+  if (!await confirm.ask({ message: i18n.t('explorer.deleteFolderConfirm', { path: folder?.path ?? '' }), confirmLabel: i18n.t('common.delete'), danger: true })) return
   deleteFolderLoading.value = true
   try
   {
@@ -597,7 +600,7 @@ async function doRenameFolder()
 async function deleteSelectedFolder()
 {
   if (!selectedFolderId.value || docs.value.length) return
-  if (!window.confirm(i18n.t('explorer.deleteFolderConfirm', { path: selectedFolder.value?.path ?? '' }))) return
+  if (!await confirm.ask({ message: i18n.t('explorer.deleteFolderConfirm', { path: selectedFolder.value?.path ?? '' }), confirmLabel: i18n.t('common.delete'), danger: true })) return
   deleteFolderLoading.value = true
   try
   {
@@ -721,7 +724,7 @@ async function deleteDoc(id: number)
   const idsToDelete = selectedIds.value.size > 1 ? [...selectedIds.value] : [id]
   if (idsToDelete.length > 1)
   {
-    if (!window.confirm(i18n.t('explorer.deleteItemsConfirm', { count: String(idsToDelete.length) }))) return
+    if (!await confirm.ask({ message: i18n.t('explorer.deleteItemsConfirm', { count: String(idsToDelete.length) }), confirmLabel: i18n.t('common.delete'), danger: true })) return
     try
     {
       await Promise.all(idsToDelete.map(d => deleteOne(d)))
@@ -737,7 +740,7 @@ async function deleteDoc(id: number)
   {
     const doc = docs.value.find(d => d.id === id)
     const label = doc?.isLink ? i18n.t('explorer.deleteLinkLabel', { title: String(doc.title ?? id) }) : `"${doc?.title ?? id}"`
-    if (!window.confirm(i18n.t('explorer.deleteSingleConfirm', { label }))) return
+    if (!await confirm.ask({ message: i18n.t('explorer.deleteSingleConfirm', { label }), confirmLabel: i18n.t('common.delete'), danger: true })) return
     try
     {
       await deleteOne(id)
@@ -1051,7 +1054,7 @@ async function saveAnyway()
 
 async function confirmDelete()
 {
-  if (editId.value === null || !window.confirm(i18n.t('edit.deleteConfirm', { title: editTitleField.value }))) return
+  if (editId.value === null || !await confirm.ask({ message: i18n.t('edit.deleteConfirm', { title: editTitleField.value }), confirmLabel: i18n.t('common.delete'), danger: true })) return
   editFormLoading.value = true
   try
   {

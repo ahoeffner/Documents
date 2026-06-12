@@ -225,6 +225,7 @@ import { openOrDownload } from '../utils/file'
 import { useI18nStore } from '../stores/i18n'
 import { listLanguages } from '../api/languages'
 import { useFoldersStore } from '../stores/folders'
+import { useConfirmStore } from '../stores/confirm'
 import { useResize } from '../composables/useResize'
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import type { DocumentResult, DocumentDetail, Language, Folder } from '../types'
@@ -232,6 +233,7 @@ import { listDocuments, getDocument, updateDocument, deleteDocument } from '../a
 
 
 const i18n = useI18nStore()
+const confirm = useConfirmStore()
 const { width: listWidth, startResize } = useResize(320, 160, 600)
 
 
@@ -534,7 +536,7 @@ async function submit()
 // ── Delete ────────────────────────────────────────────────────────
 async function confirmDelete()
 {
-  if (editId.value === null || !window.confirm(i18n.t('edit.deleteConfirm', { title: title.value }))) return
+  if (editId.value === null || !await confirm.ask({ message: i18n.t('edit.deleteConfirm', { title: title.value }), confirmLabel: i18n.t('common.delete'), danger: true })) return
   formLoading.value = true
   try
   {
