@@ -72,7 +72,7 @@ const open = ref(true)
   user-select: none;
 }
 .tree-row:hover { background: var(--bg-muted); }
-.tree-row.selected { background: var(--accent-ring); color: var(--accent-dark); font-weight: 500; }
+.tree-row.selected { background: var(--accent-ring); color: var(--text); font-weight: 500; }
 
 .tree-toggle {
   width: 14px;
