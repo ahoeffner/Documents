@@ -77,6 +77,19 @@ public class DocumentRepository
     }
 
 
+    public boolean hasDocuments(long fldid)
+    {
+        String sql =
+            "SELECT COUNT(*) FROM (" +
+                "SELECT id FROM " + docs() + " WHERE fldid = ? " +
+                "UNION ALL " +
+                "SELECT docid FROM " + links() + " WHERE fldid = ?" +
+            ") x";
+        Integer count = jdbc.queryForObject(sql, Integer.class, fldid, fldid);
+        return(count != null && count > 0);
+    }
+
+
     public boolean deleteByTitle(String title)
     {
         return(jdbc.update("DELETE FROM " + docs() + " WHERE upper(title) = upper(?)", title) > 0);

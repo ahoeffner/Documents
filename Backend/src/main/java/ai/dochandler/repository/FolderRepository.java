@@ -67,6 +67,13 @@ public class FolderRepository
     }
 
 
+    public boolean hasChildren(long id)
+    {
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM " + folders() + " WHERE pid = ?", Integer.class, id);
+        return(count != null && count > 0);
+    }
+
+
     public boolean rename(long id, String name)
     {
         return(jdbc.update("UPDATE " + folders() + " SET name = ? WHERE id = ?", name, id) > 0);

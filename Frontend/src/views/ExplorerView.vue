@@ -404,11 +404,17 @@ async function selectFolder(id: number)
 {
   if (selectedFolderId.value === id) return
   selectedFolderId.value = id
+  selectedIds.value = new Set()
+  lastCheckedId.value = null
+  await loadFolderDocs(id)
+}
+
+
+async function loadFolderDocs(id: number)
+{
   docs.value = []
   docsError.value = null
   docsLoading.value = true
-  selectedIds.value = new Set()
-  lastCheckedId.value = null
   try
   {
     const res = await getFolderDocuments(id)
@@ -533,9 +539,10 @@ async function ctxDeleteFolder()
     if (selectedFolderId.value === id) { selectedFolderId.value = null; docs.value = [] }
     await foldersStore.load()
   }
-  catch
+  catch (err)
   {
-    docsError.value = i18n.t('explorer.deleteFolderFailed')
+    const axiosErr = err as { response?: { status?: number } }
+    docsError.value = axiosErr?.response?.status === 409 ? i18n.t('explorer.deleteFolderNotEmpty') : i18n.t('explorer.deleteFolderFailed')
   }
   finally
   {
@@ -1092,11 +1099,19 @@ function onGlobalClick()
 }
 
 
+function onVisibilityChange()
+{
+  if (document.visibilityState === 'visible' && docsError.value && selectedFolderId.value !== null)
+    loadFolderDocs(selectedFolderId.value)
+}
+
+
 onMounted(() =>
 {
   window.addEventListener('keydown', onKeydown)
   window.addEventListener('click', onGlobalClick)
   window.addEventListener('close-all-ctx', onCloseAllCtx)
+  document.addEventListener('visibilitychange', onVisibilityChange)
 })
 
 
@@ -1105,6 +1120,7 @@ onUnmounted(() =>
   window.removeEventListener('keydown', onKeydown)
   window.removeEventListener('click', onGlobalClick)
   window.removeEventListener('close-all-ctx', onCloseAllCtx)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
 })
 </script>
 

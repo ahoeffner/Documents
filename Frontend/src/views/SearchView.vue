@@ -9,13 +9,22 @@
       </select>
 
       <form @submit.prevent="doSearch" class="search-form">
-        <input
-          ref="searchInputEl"
-          v-model="query"
-          type="text"
-          :placeholder="i18n.t('search.placeholder')"
-          class="search-input"
-        />
+        <div class="input-wrap">
+          <input
+            ref="searchInputEl"
+            v-model="query"
+            type="text"
+            :placeholder="i18n.t('search.placeholder')"
+            class="search-input"
+          />
+          <button v-if="query" type="button" class="input-clear" :title="i18n.t('common.clearInput')" @click="query = ''; searchInputEl?.focus()">✕</button>
+        </div>
+        <button type="button" class="btn btn-icon mic-btn" :class="{ 'mic-recording': recorder.recording.value }" :title="i18n.t('search.micTitle')" :disabled="transcribing" @click="toggleMic">
+          <span v-if="transcribing" class="spinner spinner-sm"></span>
+          <svg v-else width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10 12a3 3 0 003-3V5a3 3 0 10-6 0v4a3 3 0 003 3zM5 9a1 1 0 10-2 0 7 7 0 006 6.93V18H7a1 1 0 100 2h6a1 1 0 100-2h-2v-2.07A7 7 0 0017 9a1 1 0 10-2 0 5 5 0 01-10 0z"/>
+          </svg>
+        </button>
         <button type="submit" class="btn btn-primary btn-sm">
           {{ loading ? i18n.t('search.searching') : i18n.t('search.search') }}
         </button>
@@ -95,13 +104,15 @@
 import { useAuthStore } from '../stores/auth'
 import { useI18nStore } from '../stores/i18n'
 import type { DocumentResult } from '../types'
+import { transcribeAudio } from '../api/transcribe'
 import { useConfirmStore } from '../stores/confirm'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useCategoriesStore } from '../stores/categories'
 import DocumentCard from '../components/DocumentCard.vue'
 import { useEditRequestStore } from '../stores/editRequest'
 import LinkFolderModal from '../components/LinkFolderModal.vue'
-import { search, linkDocuments, moveDocument, deleteDocument } from '../api/documents'
+import { useAudioRecorder } from '../composables/useAudioRecorder'
+import { search, linkDocuments, moveDocument, deleteDocument, extractSearchTerms } from '../api/documents'
 
 
 const categoriesStore = useCategoriesStore()
@@ -128,6 +139,8 @@ const onCloseAllCtx = () => { if (!selfOpeningCtx) areaCtx.value = null }
 const loading = ref(false)
 const error = ref<string | null>(null)
 const searched = ref(false)
+const recorder = useAudioRecorder()
+const transcribing = ref(false)
 
 
 const sortedDocuments = computed(() =>
@@ -139,14 +152,26 @@ const sortedDocuments = computed(() =>
 })
 
 
+function onVisibilityChange()
+{
+  if (document.visibilityState === 'visible' && error.value && lastQuery.value)
+    doSearch()
+}
+
+
 onMounted(() =>
 {
   categoriesStore.load()
   window.addEventListener('close-all-ctx', onCloseAllCtx)
+  document.addEventListener('visibilitychange', onVisibilityChange)
 })
 
 
-onUnmounted(() => window.removeEventListener('close-all-ctx', onCloseAllCtx))
+onUnmounted(() =>
+{
+  window.removeEventListener('close-all-ctx', onCloseAllCtx)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
+})
 
 
 defineExpose({ focus: () => searchInputEl.value?.focus() })
@@ -292,6 +317,35 @@ async function onFolderPickerConfirm(fldid: number)
 }
 
 
+async function toggleMic()
+{
+  if (recorder.recording.value)
+  {
+    recorder.stop()
+    return
+  }
+  try
+  {
+    query.value = ''
+    const blob = await recorder.start()
+    transcribing.value = true
+    const res = await transcribeAudio(blob)
+    const transcript = (res.data.text || '').trim()
+    const extracted = await extractSearchTerms(transcript)
+    query.value = (extracted.data.terms || transcript).trim()
+    searchInputEl.value?.focus()
+  }
+  catch
+  {
+    error.value = i18n.t('search.micError')
+  }
+  finally
+  {
+    transcribing.value = false
+  }
+}
+
+
 async function doSearch()
 {
   if (!query.value.trim()) return
@@ -344,10 +398,12 @@ async function doSearch()
   gap: 8px;
 }
 
+.input-wrap { position: relative; display: flex; align-items: center; }
+
 .search-input {
   width: 40ch;
   height: 32px;
-  padding: 0 12px;
+  padding: 0 28px 0 12px;
   border: 1.5px solid var(--border-input);
   border-radius: 6px;
   background: var(--bg);
@@ -362,6 +418,27 @@ async function doSearch()
   box-shadow: 0 0 0 3px var(--accent-ring);
 }
 .search-input::placeholder { color: var(--text-faint); }
+
+.input-clear {
+  position: absolute;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+}
+.input-clear:hover { background: var(--bg-muted); color: var(--text); }
+
+.mic-btn.mic-recording { color: var(--danger); }
 
 .result-count {
   font-size: 12px;

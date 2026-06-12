@@ -87,6 +87,9 @@ public class FolderController
         if (!Boolean.TRUE.equals(session.getAttribute("admin")))
             return(ResponseEntity.status(403).body(Map.of("success", false, "message", "Admin required")));
 
+        if (service.hasContent(id))
+            return(ResponseEntity.status(409).body(Map.of("success", false, "message", "Folder is not empty")));
+
         boolean success = service.deleteById(id);
         return(ResponseEntity.ok(Map.of("success", success)));
     }

@@ -121,16 +121,25 @@
 
     <!-- Input row -->
     <div class="input-row">
-      <textarea
-        ref="textareaEl"
-        v-model="query"
-        :disabled="loading"
-        :placeholder="i18n.t('chat.placeholder')"
-        class="chat-input"
-        rows="4"
-        @keydown.enter.exact.prevent="sendMessage"
-      />
+      <div class="input-wrap">
+        <textarea
+          ref="textareaEl"
+          v-model="query"
+          :disabled="loading"
+          :placeholder="i18n.t('chat.placeholder')"
+          class="chat-input"
+          rows="4"
+          @keydown.enter.exact.prevent="sendMessage"
+        />
+        <button v-if="query" type="button" class="input-clear" :title="i18n.t('common.clearInput')" @click="query = ''; nextTick(() => textareaEl?.focus())">✕</button>
+      </div>
       <div class="input-buttons">
+        <button type="button" class="btn btn-icon mic-btn" :class="{ 'mic-recording': recorder.recording.value }" :title="i18n.t('chat.micTitle')" :disabled="loading || transcribing" @click="toggleMic">
+          <span v-if="transcribing" class="spinner spinner-sm"></span>
+          <svg v-else width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10 12a3 3 0 003-3V5a3 3 0 10-6 0v4a3 3 0 003 3zM5 9a1 1 0 10-2 0 7 7 0 006 6.93V18H7a1 1 0 100 2h6a1 1 0 100-2h-2v-2.07A7 7 0 0017 9a1 1 0 10-2 0 5 5 0 01-10 0z"/>
+          </svg>
+        </button>
         <div class="history-wrap">
           <button type="button" @click="queryHistory.length && (showHistory = !showHistory)"
             class="btn btn-primary btn-sm btn-history">
@@ -158,9 +167,11 @@ import { useI18nStore } from '../stores/i18n'
 import { openOrDownload } from '../utils/file'
 import type { DocumentResult } from '../types'
 import axios, { type AxiosError } from 'axios'
+import { transcribeAudio } from '../api/transcribe'
 import { useCategoriesStore } from '../stores/categories'
 import { useEditRequestStore } from '../stores/editRequest'
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { useAudioRecorder } from '../composables/useAudioRecorder'
 
 
 const i18n = useI18nStore()
@@ -268,6 +279,8 @@ const loading = ref(false)
 const messagesEl = ref<HTMLElement | null>(null)
 const textareaEl = ref<HTMLTextAreaElement | null>(null)
 const queryHistory = ref<string[]>([])
+const recorder = useAudioRecorder()
+const transcribing = ref(false)
 
 
 function onKeydown(e: KeyboardEvent)
@@ -345,6 +358,33 @@ async function sendMessage()
     loading.value = false
     scrollBottom()
     nextTick(() => textareaEl.value?.focus())
+  }
+}
+
+
+async function toggleMic()
+{
+  if (recorder.recording.value)
+  {
+    recorder.stop()
+    return
+  }
+  try
+  {
+    query.value = ''
+    const blob = await recorder.start()
+    transcribing.value = true
+    const res = await transcribeAudio(blob)
+    query.value = (res.data.text || '').trim()
+    nextTick(() => textareaEl.value?.focus())
+  }
+  catch
+  {
+    chatStore.addMessage('ai', i18n.t('chat.micError'))
+  }
+  finally
+  {
+    transcribing.value = false
   }
 }
 
@@ -511,11 +551,13 @@ function selectHistory(h: string)
   flex-shrink: 0;
 }
 
+.input-wrap { position: relative; flex: 1; display: flex; }
+
 .chat-input {
   flex: 1;
   min-height: 88px;
   max-height: 220px;
-  padding: 10px 12px;
+  padding: 10px 28px 10px 12px;
   border: 1.5px solid var(--border-input);
   border-radius: 6px;
   background: var(--bg);
@@ -532,6 +574,26 @@ function selectHistory(h: string)
 .chat-input::placeholder { color: var(--text-faint); font-size: 13px; }
 .chat-input:disabled { background: var(--bg-muted); color: var(--text-faint); }
 
+.input-clear {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+}
+.input-clear:hover { background: var(--bg-muted); color: var(--text); }
+
 .input-buttons {
   display: flex;
   flex-direction: column;
@@ -542,6 +604,8 @@ function selectHistory(h: string)
 
 .btn-send { width: 100%; }
 .btn-history { width: 100%; }
+.mic-btn { width: 100%; }
+.mic-btn.mic-recording { color: var(--danger); }
 
 .history-wrap { position: relative; }
 

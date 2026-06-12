@@ -30,6 +30,7 @@ app:
 
 common:
   all: "All"
+  clearInput: "Clear"
   cancel: "Cancel"
   category: "Category"
   date: "Date"
@@ -70,6 +71,8 @@ chat:
   connectionError: "Connection error"
   editDocument: "Edit Document"
   error: "Error: {message}"
+  micError: "Could not access microphone or transcribe audio."
+  micTitle: "Record voice message"
   placeholder: "Ask a question about your documents… (Enter to send, Shift+Enter for new line)"
   precision: "Precision"
   precisionHint: "Controls how closely documents must match before being used as relevant documents."
@@ -149,6 +152,7 @@ explorer:
   continueEditing: "Continue Editing"
   deleteFolderConfirm: 'Delete folder "{path}"?'
   deleteFolderFailed: "Failed to delete folder."
+  deleteFolderNotEmpty: "Folder is not empty. Remove its subfolders and documents first."
   deleteItemsConfirm: "Delete {count} items? This cannot be undone."
   deleteLinkLabel: 'link to "{title}"'
   deleteSingleConfirm: "Delete {label}? This cannot be undone."
@@ -183,6 +187,8 @@ search:
   deleting: "Deleting…"
   enterQuery: "Enter a query to search documents"
   failed: "Search failed — could not reach the server."
+  micError: "Could not access microphone or transcribe audio."
+  micTitle: "Record voice search"
   noMatch: 'No documents matched "{query}"'
   placeholder: "Search documents…"
   search: "Search"

@@ -1,5 +1,32 @@
 <template>
   <div class="login-page">
+
+    <div class="login-toolbar">
+      <div class="locale-flags">
+        <button
+          v-for="l in i18n.locales"
+          :key="l.id"
+          type="button"
+          class="flag-btn"
+          :class="{ active: i18n.locale === l.id }"
+          :title="l.name"
+          @click="i18n.setLocale(l.id)"
+        >{{ flagFor(l.id) }}</button>
+      </div>
+      <div class="theme-swatches">
+        <button
+          v-for="th in theme.themes"
+          :key="th.id"
+          type="button"
+          class="swatch-btn"
+          :class="{ active: theme.theme === th.id }"
+          :title="th.name"
+          :style="swatchStyle(th.id)"
+          @click="theme.setTheme(th.id)"
+        />
+      </div>
+    </div>
+
     <!-- Tenant picker shown after login when user has multiple tenants -->
     <div v-if="tenants.length > 1" class="login-card">
       <div class="login-header">
@@ -74,10 +101,36 @@ import { ref, onMounted } from 'vue'
 import { login, getTenants, switchTenant } from '../api/auth'
 import { useAuthStore } from '../stores/auth'
 import { useI18nStore } from '../stores/i18n'
+import { useThemeStore } from '../stores/theme'
 
 
 const auth = useAuthStore()
 const i18n = useI18nStore()
+const theme = useThemeStore()
+
+
+const FLAGS: Record<string, string> = { en: '🇬🇧', da: '🇩🇰' }
+const SWATCH_COLORS: Record<string, { bg: string; accent: string }> = {
+  light:  { bg: '#ffffff', accent: '#a0abb7' },
+  dark:   { bg: '#1a1d23', accent: '#5b6b7d' },
+  blue:   { bg: '#ffffff', accent: '#3b82f6' },
+  forest: { bg: '#f7faf7', accent: '#4d8061' },
+  sepia:  { bg: '#faf3e7', accent: '#a9824a' },
+  purple: { bg: '#1e1b2e', accent: '#9d7be0' }
+}
+
+
+function flagFor(locale: string): string
+{
+  return(FLAGS[locale] ?? '🌐')
+}
+
+
+function swatchStyle(id: string)
+{
+  const c = SWATCH_COLORS[id] ?? { bg: '#888', accent: '#aaa' }
+  return({ background: `linear-gradient(135deg, ${c.bg} 50%, ${c.accent} 50%)` })
+}
 
 
 const tenant = ref('')
@@ -188,11 +241,53 @@ async function finalizeTenant(t: string, admin: boolean)
 .login-page {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 18px;
   padding-bottom: 30vh;
   background: var(--bg-subtle);
 }
+
+.login-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.locale-flags,
+.theme-swatches {
+  display: flex;
+  gap: 6px;
+}
+
+.flag-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border: 1.5px solid transparent;
+  border-radius: 6px;
+  background: var(--bg-muted);
+  cursor: pointer;
+  transition: border-color 0.1s;
+}
+.flag-btn:hover { border-color: var(--border); }
+.flag-btn.active { border-color: var(--accent); }
+
+.swatch-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  padding: 0;
+  transition: border-color 0.1s, transform 0.1s;
+}
+.swatch-btn:hover { transform: scale(1.1); }
+.swatch-btn.active { border-color: var(--accent); }
 
 .login-card {
   width: min(360px, 90vw);

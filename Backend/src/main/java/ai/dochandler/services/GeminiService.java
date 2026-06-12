@@ -5,6 +5,7 @@ import java.net.URI;
 import java.util.Map;
 import java.util.List;
 import org.slf4j.Logger;
+import java.util.Base64;
 import java.util.HashMap;
 import java.time.Duration;
 import java.io.InputStream;
@@ -138,29 +139,13 @@ public class GeminiService
 
     public JsonNode preprocess(String id, String query) throws Exception
     {
-        List<Map<String, Object>> history = getOrCreate(id);
+        return(extract(getOrCreate(id), query));
+    }
 
-        String prompt = getPrompt("EXTRACT").replace("{question}", query);
 
-        ObjectNode schema = mapper.createObjectNode();
-        schema.put("type", "OBJECT");
-        ObjectNode props = schema.putObject("properties");
-        props.putObject("semantic").put("type", "STRING");
-        ObjectNode lex = props.putObject("lexical");
-        lex.put("type", "ARRAY");
-        lex.putObject("items").put("type", "STRING");
-        schema.putArray("required").add("semantic").add("lexical");
-
-        ObjectNode genConfig = mapper.createObjectNode();
-        genConfig.put("temperature", 0.01);
-        genConfig.put("responseMimeType", "application/json");
-        genConfig.set("responseSchema", schema);
-
-        String text = callModel(history, prompt, genConfig);
-        append(history, "user", prompt);
-        append(history, "model", text);
-
-        return(mapper.readTree(text));
+    public JsonNode preprocessQuery(String query) throws Exception
+    {
+        return(extract(new ArrayList<>(), query));
     }
 
 
@@ -188,7 +173,55 @@ public class GeminiService
     }
 
 
+    // ── Transcription ─────────────────────────────────────────────────────────
+
+    public String transcribe(byte[] audio, String mimeType) throws Exception
+    {
+        ObjectNode body = mapper.createObjectNode();
+        ArrayNode parts = body.putArray("contents").addObject()
+            .put("role", "user")
+            .putArray("parts");
+        parts.addObject().put("text", "Transcribe this audio exactly. Output only the transcription, detect language automatically.");
+        parts.addObject().putObject("inlineData")
+            .put("mimeType", mimeType != null ? mimeType : "audio/webm")
+            .put("data", Base64.getEncoder().encodeToString(audio));
+
+        String url = API_BASE + "/models/" + llmModel + ":generateContent?key=" + apiKey;
+        JsonNode response = post(url, body);
+
+        return(response.path("candidates").path(0)
+            .path("content").path("parts").path(0)
+            .path("text").asText().trim());
+    }
+
+
     // ── Private ───────────────────────────────────────────────────────────────
+
+    private JsonNode extract(List<Map<String, Object>> history, String query) throws Exception
+    {
+        String prompt = getPrompt("EXTRACT").replace("{question}", query);
+
+        ObjectNode schema = mapper.createObjectNode();
+        schema.put("type", "OBJECT");
+        ObjectNode props = schema.putObject("properties");
+        props.putObject("semantic").put("type", "STRING");
+        ObjectNode lex = props.putObject("lexical");
+        lex.put("type", "ARRAY");
+        lex.putObject("items").put("type", "STRING");
+        schema.putArray("required").add("semantic").add("lexical");
+
+        ObjectNode genConfig = mapper.createObjectNode();
+        genConfig.put("temperature", 0.01);
+        genConfig.put("responseMimeType", "application/json");
+        genConfig.set("responseSchema", schema);
+
+        String text = callModel(history, prompt, genConfig);
+        append(history, "user", prompt);
+        append(history, "model", text);
+
+        return(mapper.readTree(text));
+    }
+
 
     private String callModel(List<Map<String, Object>> history, String userPrompt, ObjectNode genConfig) throws Exception
     {

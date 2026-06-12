@@ -30,6 +30,7 @@ app:
 
 common:
   all: "Alle"
+  clearInput: "Ryd"
   cancel: "Annuller"
   category: "Kategori"
   date: "Dato"
@@ -70,6 +71,8 @@ chat:
   connectionError: "Forbindelsesfejl"
   editDocument: "Rediger dokument"
   error: "Fejl: {message}"
+  micError: "Kunne ikke tilgå mikrofonen eller transskribere lyden."
+  micTitle: "Optag talebesked"
   placeholder: "Stil et spørgsmål om dine dokumenter… (Enter for at sende, Shift+Enter for ny linje)"
   precision: "Præcision"
   precisionHint: "Styrer, hvor tæt dokumenter skal matche, før de bruges som relevante dokumenter."
@@ -149,6 +152,7 @@ explorer:
   continueEditing: "Fortsæt redigering"
   deleteFolderConfirm: 'Slet mappen "{path}"?'
   deleteFolderFailed: "Kunne ikke slette mappen."
+  deleteFolderNotEmpty: "Mappen er ikke tom. Fjern undermapper og dokumenter først."
   deleteItemsConfirm: "Slet {count} elementer? Dette kan ikke fortrydes."
   deleteLinkLabel: 'link til "{title}"'
   deleteSingleConfirm: "Slet {label}? Dette kan ikke fortrydes."
@@ -183,6 +187,8 @@ search:
   deleting: "Sletter…"
   enterQuery: "Indtast en søgning for at søge i dokumenter"
   failed: "Søgning mislykkedes — kunne ikke kontakte serveren."
+  micError: "Kunne ikke tilgå mikrofonen eller transskribere lyden."
+  micTitle: "Optag talesøgning"
   noMatch: 'Ingen dokumenter matchede "{query}"'
   placeholder: "Søg i dokumenter…"
   search: "Søg"
