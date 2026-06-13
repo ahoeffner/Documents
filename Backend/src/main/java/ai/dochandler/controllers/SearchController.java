@@ -49,6 +49,7 @@ public class SearchController
         {
             JsonNode preprocessed = geminiService.preprocessQuery(query);
             String[] lexical = mapper.convertValue(preprocessed.path("lexical"), String[].class);
+            if (lexical == null) lexical = new String[0];
             String terms = lexical.length > 0 ? String.join(" ", lexical) : query;
             return(ResponseEntity.ok(Map.of("success", true, "terms", terms)));
         }
@@ -72,6 +73,7 @@ public class SearchController
             JsonNode preprocessed = geminiService.preprocessQuery(query);
             String semantic = preprocessed.path("semantic").asText();
             String[] lexical = mapper.convertValue(preprocessed.path("lexical"), String[].class);
+            if (lexical == null) lexical = new String[0];
 
             double threshold = boundaryLow + 0.5 * (boundaryHigh - boundaryLow);
             docs = documentRepo.hybridSearch(semantic, lexical, req.folder(), threshold, geminiService);

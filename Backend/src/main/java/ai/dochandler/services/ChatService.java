@@ -41,6 +41,7 @@ public class ChatService
 
         String semantic = preprocessed.path("semantic").asText();
         String[] lexical = mapper.convertValue(preprocessed.path("lexical"), String[].class);
+        if (lexical == null) lexical = new String[0];
 
         boolean hasTerms = !semantic.isBlank() || lexical.length > 0;
 

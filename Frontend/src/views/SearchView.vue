@@ -334,6 +334,7 @@ async function toggleMic()
     const extracted = await extractSearchTerms(transcript)
     query.value = (extracted.data.terms || transcript).trim()
     searchInputEl.value?.focus()
+    await doSearch()
   }
   catch
   {

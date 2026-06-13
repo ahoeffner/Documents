@@ -315,7 +315,17 @@ function scrollBottom()
 }
 
 
-async function sendMessage()
+function speakText(text: string)
+{
+  if (!('speechSynthesis' in window)) return
+  window.speechSynthesis.cancel()
+  const utter = new SpeechSynthesisUtterance(text)
+  utter.lang = i18n.locale === 'da' ? 'da-DK' : 'en-US'
+  window.speechSynthesis.speak(utter)
+}
+
+
+async function sendMessage(speak = false)
 {
   const q = query.value.trim()
   if (!q || loading.value) return
@@ -334,6 +344,7 @@ async function sendMessage()
     if (data.success)
     {
       chatStore.addMessage('ai', data.response ?? '', data.documents ?? null)
+      if (speak && data.response) speakText(data.response)
       if (data.refresh) await categoriesStore.load()
     }
     else
@@ -377,6 +388,7 @@ async function toggleMic()
     const res = await transcribeAudio(blob)
     query.value = (res.data.text || '').trim()
     nextTick(() => textareaEl.value?.focus())
+    await sendMessage(true)
   }
   catch
   {
