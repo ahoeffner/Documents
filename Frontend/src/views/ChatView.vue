@@ -167,6 +167,7 @@ import { useI18nStore } from '../stores/i18n'
 import { openOrDownload } from '../utils/file'
 import type { DocumentResult } from '../types'
 import axios, { type AxiosError } from 'axios'
+import { synthesizeSpeech } from '../api/tts'
 import { transcribeAudio } from '../api/transcribe'
 import { useCategoriesStore } from '../stores/categories'
 import { useEditRequestStore } from '../stores/editRequest'
@@ -315,13 +316,24 @@ function scrollBottom()
 }
 
 
-function speakText(text: string)
+let speechAudio: HTMLAudioElement | null = null
+
+
+async function speakText(text: string)
 {
-  if (!('speechSynthesis' in window)) return
-  window.speechSynthesis.cancel()
-  const utter = new SpeechSynthesisUtterance(text)
-  utter.lang = i18n.locale === 'da' ? 'da-DK' : 'en-US'
-  window.speechSynthesis.speak(utter)
+  if (speechAudio) { speechAudio.pause(); speechAudio = null }
+  try
+  {
+    const res = await synthesizeSpeech(text)
+    const url = URL.createObjectURL(res.data as Blob)
+    speechAudio = new Audio(url)
+    speechAudio.onended = () => URL.revokeObjectURL(url)
+    speechAudio.play()
+  }
+  catch
+  {
+    /* ignore */
+  }
 }
 
 

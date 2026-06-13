@@ -251,8 +251,9 @@ async function finalizeTenant(t: string, admin: boolean)
 
 .login-toolbar {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 22px;
+  gap: 10px;
 }
 
 .locale-flags,

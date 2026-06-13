@@ -7,7 +7,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import java.util.Base64;
 import java.util.HashMap;
+import java.nio.ByteOrder;
 import java.time.Duration;
+import java.nio.ByteBuffer;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -16,6 +18,8 @@ import java.io.FileInputStream;
 import java.util.LinkedHashMap;
 import org.yaml.snakeyaml.Yaml;
 import org.slf4j.LoggerFactory;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -56,6 +60,12 @@ public class GeminiService
 
     @Value("${app.gemini.max-conversations:64}")
     private int maxConversations;
+
+    @Value("${app.gemini.tts-model:gemini-2.5-flash-preview-tts}")
+    private String ttsModel;
+
+    @Value("${app.gemini.tts-voice:Kore}")
+    private String ttsVoice;
 
     private final HttpClient client;
     private final ObjectMapper mapper;
@@ -192,6 +202,61 @@ public class GeminiService
         return(response.path("candidates").path(0)
             .path("content").path("parts").path(0)
             .path("text").asText().trim());
+    }
+
+
+    // ── Speech synthesis ──────────────────────────────────────────────────────
+
+    public byte[] synthesizeSpeech(String text) throws Exception
+    {
+        ObjectNode body = mapper.createObjectNode();
+        body.putArray("contents").addObject()
+            .putArray("parts").addObject()
+            .put("text", text);
+
+        ObjectNode genConfig = body.putObject("generationConfig");
+        genConfig.putArray("responseModalities").add("AUDIO");
+        genConfig.putObject("speechConfig")
+            .putObject("voiceConfig")
+            .putObject("prebuiltVoiceConfig")
+            .put("voiceName", ttsVoice);
+
+        String url = API_BASE + "/models/" + ttsModel + ":generateContent?key=" + apiKey;
+        JsonNode response = post(url, body);
+
+        JsonNode inlineData = response.path("candidates").path(0)
+            .path("content").path("parts").path(0)
+            .path("inlineData");
+
+        byte[] pcm = Base64.getDecoder().decode(inlineData.path("data").asText());
+
+        int rate = 24000;
+        Matcher m = Pattern.compile("rate=(\\d+)").matcher(inlineData.path("mimeType").asText());
+        if (m.find()) rate = Integer.parseInt(m.group(1));
+
+        return(pcmToWav(pcm, rate));
+    }
+
+
+    private byte[] pcmToWav(byte[] pcm, int sampleRate)
+    {
+        int byteRate = sampleRate * 2;
+        ByteBuffer buf = ByteBuffer.allocate(44 + pcm.length).order(ByteOrder.LITTLE_ENDIAN);
+        buf.put("RIFF".getBytes(StandardCharsets.US_ASCII));
+        buf.putInt(36 + pcm.length);
+        buf.put("WAVE".getBytes(StandardCharsets.US_ASCII));
+        buf.put("fmt ".getBytes(StandardCharsets.US_ASCII));
+        buf.putInt(16);
+        buf.putShort((short) 1);
+        buf.putShort((short) 1);
+        buf.putInt(sampleRate);
+        buf.putInt(byteRate);
+        buf.putShort((short) 2);
+        buf.putShort((short) 16);
+        buf.put("data".getBytes(StandardCharsets.US_ASCII));
+        buf.putInt(pcm.length);
+        buf.put(pcm);
+        return(buf.array());
     }
 
 

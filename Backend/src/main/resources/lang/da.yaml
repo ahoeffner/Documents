@@ -13,12 +13,14 @@ app:
     documentsItem3: 'Højreklik på <strong>indholdsområdet</strong> → Nyt dokument, Ny mappe'
     documentsItem4: 'Højreklik på en <strong>dokumentrække</strong> → Tekst, Fil, Rediger'
     documentsItem5: 'Dobbeltklik på en <strong>dokumentrække</strong> → åbn fil, eller vis tekst hvis ingen fil'
+    documentsIntroUser: 'Gennemse dokumenter organiseret i mapper. <strong>Dobbeltklik</strong> på en dokumentrække for at åbne dens fil, eller vise dens tekst hvis den ikke har en.'
     searchTitle: "Søgning"
     searchIntro: 'Bruger <strong>BM25 fuldtekstsøgning</strong> — finder dokumenter, der indeholder de nøjagtige ord, du skriver. Ingen semantisk udvidelse, ingen fuzzy-søgning.'
     searchItem1: "Brug de mest karakteristiske ord fra det, du leder efter."
     searchItem2: 'Tilføj <strong>*</strong> til et ord for præfikssøgning — <em>VVS*</em> matcher VVS, VVS-rør, VVSfirma osv.'
     searchItem3: 'Brug <strong>Mappe</strong> til at indsnævre resultaterne til en bestemt kategori.'
     searchItem4: "Højreklik eller dobbeltklik på en resultatrække for at åbne den."
+    searchItem5: 'Tryk på <strong>mikrofonen</strong> for at diktere din søgning — den stopper efter en pause, udtrækker nøgleord og søger automatisk.'
     searchTip: 'Brug <strong>AI-chat</strong> til betydningsbaserede forespørgsler.'
     chatTitle: "AI-chat"
     chatIntro: 'Bruger <strong>RAG (Retrieval-Augmented Generation)</strong> — svarer udelukkende ud fra dine uploadede dokumenter, ikke internettet.'
@@ -27,6 +29,7 @@ app:
     chatItem3: '<strong>Præcision</strong> (Avanceret) styrer, hvor strengt dokumenter skal matche.'
     chatItem4: 'Brug <strong>Mappe</strong> til at indsnævre søgningen til en bestemt kategori.'
     chatItem5: "Brug historikknappen til at genkalde og genbruge tidligere spørgsmål."
+    chatItem6: 'Tryk på <strong>mikrofonen</strong> for at diktere dit spørgsmål — det stopper efter en pause, sendes automatisk, og svaret læses højt.'
 
 common:
   all: "Alle"

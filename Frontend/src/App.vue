@@ -39,14 +39,17 @@
             <div class="modal-body help-body">
 
               <h4>{{ i18n.t('app.helpModal.documentsTitle') }}</h4>
-              <p v-html="i18n.t('app.helpModal.documentsIntro')"></p>
-              <ul>
-                <li v-html="i18n.t('app.helpModal.documentsItem1')"></li>
-                <li v-html="i18n.t('app.helpModal.documentsItem2')"></li>
-                <li v-html="i18n.t('app.helpModal.documentsItem3')"></li>
-                <li v-html="i18n.t('app.helpModal.documentsItem4')"></li>
-                <li v-html="i18n.t('app.helpModal.documentsItem5')"></li>
-              </ul>
+              <template v-if="auth.isAdmin">
+                <p v-html="i18n.t('app.helpModal.documentsIntro')"></p>
+                <ul>
+                  <li v-html="i18n.t('app.helpModal.documentsItem1')"></li>
+                  <li v-html="i18n.t('app.helpModal.documentsItem2')"></li>
+                  <li v-html="i18n.t('app.helpModal.documentsItem3')"></li>
+                  <li v-html="i18n.t('app.helpModal.documentsItem4')"></li>
+                  <li v-html="i18n.t('app.helpModal.documentsItem5')"></li>
+                </ul>
+              </template>
+              <p v-else v-html="i18n.t('app.helpModal.documentsIntroUser')"></p>
 
               <h4>{{ i18n.t('app.helpModal.searchTitle') }}</h4>
               <p v-html="i18n.t('app.helpModal.searchIntro')"></p>
@@ -55,6 +58,7 @@
                 <li v-html="i18n.t('app.helpModal.searchItem2')"></li>
                 <li v-html="i18n.t('app.helpModal.searchItem3')"></li>
                 <li v-html="i18n.t('app.helpModal.searchItem4')"></li>
+                <li v-html="i18n.t('app.helpModal.searchItem5')"></li>
               </ul>
               <p class="help-tip-accent" v-html="i18n.t('app.helpModal.searchTip')"></p>
 
@@ -66,6 +70,7 @@
                 <li v-html="i18n.t('app.helpModal.chatItem3')"></li>
                 <li v-html="i18n.t('app.helpModal.chatItem4')"></li>
                 <li v-html="i18n.t('app.helpModal.chatItem5')"></li>
+                <li v-html="i18n.t('app.helpModal.chatItem6')"></li>
               </ul>
 
             </div>

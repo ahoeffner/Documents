@@ -13,12 +13,14 @@ app:
     documentsItem3: 'Right-click <strong>content area</strong> → New Document, New Folder'
     documentsItem4: 'Right-click a <strong>document row</strong> → Text, File, Edit'
     documentsItem5: 'Double-click a <strong>document row</strong> → open file, or show text if no file'
+    documentsIntroUser: 'Browse documents organised into folders. <strong>Double-click</strong> a document row to open its file, or show its text if it has none.'
     searchTitle: "Search"
     searchIntro: 'Uses <strong>BM25 full-text matching</strong> — finds documents containing the exact words you type. No semantic expansion, no fuzzy matching.'
     searchItem1: "Use the most distinctive words from what you are looking for."
     searchItem2: 'Add <strong>*</strong> to a word for prefix search — <em>VVS*</em> matches VVS, VVS-rør, VVSfirma, etc.'
     searchItem3: 'Use <strong>Folder</strong> to narrow results to a specific category.'
     searchItem4: "Right-click or double-click a result row to open it."
+    searchItem5: 'Tap the <strong>microphone</strong> to dictate your search — it stops after a pause, extracts keywords, and searches automatically.'
     searchTip: 'For meaning-based queries, use <strong>AI Chat</strong> instead.'
     chatTitle: "AI Chat"
     chatIntro: 'Uses <strong>RAG (Retrieval-Augmented Generation)</strong> — answers exclusively from your uploaded documents, not the internet.'
@@ -27,6 +29,7 @@ app:
     chatItem3: '<strong>Precision</strong> (Advanced) controls how strictly documents must match.'
     chatItem4: 'Use <strong>Folder</strong> to narrow the search to a specific category.'
     chatItem5: "Use the history button to recall and reuse previous questions."
+    chatItem6: 'Tap the <strong>microphone</strong> to dictate your question — it stops after a pause, sends automatically, and reads the answer aloud.'
 
 common:
   all: "All"
