@@ -459,14 +459,14 @@ function applyAdvanced()
 {
   const parts: string[] = []
 
-  const all = advAll.value.trim()
+  const all = advAll.value.replace(/,/g, ' ').trim().split(/\s+/).filter(Boolean).join(' ')
   if (all) parts.push(all)
 
-  const any = advAny.value.trim().split(/\s+/).filter(Boolean)
+  const any = advAny.value.replace(/,/g, ' ').trim().split(/\s+/).filter(Boolean)
   if (any.length === 1) parts.push(any[0])
   else if (any.length > 1) parts.push('(' + any.join(' | ') + ')')
 
-  const exclude = advExclude.value.trim().split(/\s+/).filter(Boolean)
+  const exclude = advExclude.value.replace(/,/g, ' ').trim().split(/\s+/).filter(Boolean)
   for (const w of exclude) parts.push('!' + w)
 
   query.value = parts.join(' ')

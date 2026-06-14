@@ -232,12 +232,15 @@ public class DocumentRepository
 
         try
         {
+            log.info("Lexical search SQL: {}to_tsquery(lang::regconfig, '{}');", sql, tsquery);
             docids = jdbc.query(sql + "to_tsquery(lang::regconfig, ?)", (rs, i) -> rs.getLong("docid"), tsquery);
         }
         catch (DataAccessException e)
         {
             log.warn("Invalid tsquery '{}', falling back to plainto_tsquery: {}", tsquery, e.getMessage());
-            docids = jdbc.query(sql + "plainto_tsquery(lang::regconfig, ?)", (rs, i) -> rs.getLong("docid"), String.join(" ", words));
+            String fallback = String.join(" ", words);
+            log.info("Lexical search SQL: {}plainto_tsquery(lang::regconfig, '{}');", sql, fallback);
+            docids = jdbc.query(sql + "plainto_tsquery(lang::regconfig, ?)", (rs, i) -> rs.getLong("docid"), fallback);
         }
 
         return(fetchByIds(docids, fldid));

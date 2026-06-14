@@ -6,7 +6,7 @@ const STORAGE_KEY = 'languageIndependent'
 
 export const useSettingsStore = defineStore('settings', {
   state: () => ({
-    languageIndependent: localStorage.getItem(STORAGE_KEY) !== 'false'
+    languageIndependent: localStorage.getItem(STORAGE_KEY) === 'true'
   }),
   actions: {
     setLanguageIndependent(value: boolean)
