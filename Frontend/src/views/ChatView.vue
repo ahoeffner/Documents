@@ -129,7 +129,7 @@
           :placeholder="i18n.t('chat.placeholder')"
           class="chat-input"
           rows="4"
-          @keydown.enter.exact.prevent="sendMessage"
+          @keydown.enter.exact.prevent="sendMessage()"
         />
         <button v-if="query" type="button" class="input-clear" :title="i18n.t('common.clearInput')" @click="query = ''; nextTick(() => textareaEl?.focus())">✕</button>
       </div>
@@ -151,7 +151,7 @@
             <div v-for="(h, i) in queryHistory" :key="i" class="history-item" @click="selectHistory(h)">{{ h }}</div>
           </div>
         </div>
-        <button type="button" @click="sendMessage"
+        <button type="button" @click="sendMessage()"
           class="btn btn-primary btn-sm btn-send">{{ i18n.t('chat.send') }}</button>
       </div>
     </div>
@@ -170,6 +170,7 @@ import axios, { type AxiosError } from 'axios'
 import { synthesizeSpeech } from '../api/tts'
 import { transcribeAudio } from '../api/transcribe'
 import { useCategoriesStore } from '../stores/categories'
+import { useSettingsStore } from '../stores/settings'
 import { useEditRequestStore } from '../stores/editRequest'
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAudioRecorder } from '../composables/useAudioRecorder'
@@ -234,6 +235,7 @@ watch(srcCtxMenu, val =>
 
 const chatStore = useChatStore()
 const categoriesStore = useCategoriesStore()
+const settings = useSettingsStore()
 
 
 const query = ref('')
@@ -304,7 +306,7 @@ onMounted(() =>
 
 onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
-defineExpose({ focus: () => textareaEl.value?.focus() })
+defineExpose({ focus: () => textareaEl.value?.focus(), toggleMic })
 
 
 function scrollBottom()
@@ -317,14 +319,24 @@ function scrollBottom()
 
 
 let speechAudio: HTMLAudioElement | null = null
+let speechGeneration = 0
+
+
+function stopSpeech()
+{
+  speechGeneration++
+  if (speechAudio) { speechAudio.pause(); speechAudio = null }
+}
 
 
 async function speakText(text: string)
 {
-  if (speechAudio) { speechAudio.pause(); speechAudio = null }
+  stopSpeech()
+  const generation = speechGeneration
   try
   {
     const res = await synthesizeSpeech(text)
+    if (generation !== speechGeneration) return
     const url = URL.createObjectURL(res.data as Blob)
     speechAudio = new Audio(url)
     speechAudio.onended = () => URL.revokeObjectURL(url)
@@ -341,6 +353,7 @@ async function sendMessage(speak = false)
 {
   const q = query.value.trim()
   if (!q || loading.value) return
+  stopSpeech()
   chatStore.addMessage('user', q)
   queryHistory.value = [q, ...queryHistory.value.filter(h => h !== q)].slice(0, 20)
   localStorage.setItem('chat-query-history', JSON.stringify(queryHistory.value))
@@ -351,7 +364,7 @@ async function sendMessage(speak = false)
   startWaitTimer()
   try
   {
-    const res = await chat({ id: chatStore.sessionId, query: q, folder: selectedCategory.value, match: matchValue.value }, abortController.signal)
+    const res = await chat({ id: chatStore.sessionId, query: q, folder: selectedCategory.value, match: matchValue.value, languageIndependent: settings.languageIndependent }, abortController.signal)
     const data = res.data as { success: boolean; response?: string; documents?: DocumentResult[]; refresh?: boolean }
     if (data.success)
     {
@@ -398,7 +411,9 @@ async function toggleMic()
     const blob = await recorder.start()
     transcribing.value = true
     const res = await transcribeAudio(blob)
-    query.value = (res.data.text || '').trim()
+    const transcript = (res.data.text || '').trim()
+    if (transcript.split(/\s+/).filter(Boolean).length < 2) return
+    query.value = transcript
     nextTick(() => textareaEl.value?.focus())
     await sendMessage(true)
   }

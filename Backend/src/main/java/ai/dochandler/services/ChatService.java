@@ -37,7 +37,7 @@ public class ChatService
 
     public ChatResponse chat(ChatRequest req) throws Exception
     {
-        JsonNode preprocessed = geminiService.preprocess(req.id(), req.query());
+        JsonNode preprocessed = geminiService.preprocess(req.id(), req.query(), req.languageIndependent());
 
         String semantic = preprocessed.path("semantic").asText();
         String[] lexical = mapper.convertValue(preprocessed.path("lexical"), String[].class);

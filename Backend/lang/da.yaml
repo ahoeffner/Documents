@@ -16,11 +16,12 @@ app:
     documentsIntroUser: 'Gennemse dokumenter organiseret i mapper. <strong>Dobbeltklik</strong> på en dokumentrække for at åbne dens fil, eller vise dens tekst hvis den ikke har en.'
     searchTitle: "Søgning"
     searchIntro: 'Bruger <strong>BM25 fuldtekstsøgning</strong> — finder dokumenter, der indeholder de nøjagtige ord, du skriver. Ingen semantisk udvidelse, ingen fuzzy-søgning.'
-    searchItem1: "Brug de mest karakteristiske ord fra det, du leder efter."
+    searchItem1: 'Til simple søgninger, skriv blot et par ord — flere ord svarer som standard til <strong>OG</strong> (alle skal matche).'
     searchItem2: 'Tilføj <strong>*</strong> til et ord for præfikssøgning — <em>VVS*</em> matcher VVS, VVS-rør, VVSfirma osv.'
     searchItem3: 'Brug <strong>Mappe</strong> til at indsnævre resultaterne til en bestemt kategori.'
     searchItem4: "Højreklik eller dobbeltklik på en resultatrække for at åbne den."
     searchItem5: 'Tryk på <strong>mikrofonen</strong> for at diktere din søgning — den stopper efter en pause, udtrækker nøgleord og søger automatisk.'
+    searchItem6: 'Til avanceret kontrol, kombinér ord med <strong>|</strong> (eller), <strong>&</strong> (og), <strong>!</strong> (ikke) og <strong>()</strong> til gruppering — f.eks. <em>(cat|dog) mouse</em>.'
     searchTip: 'Brug <strong>AI-chat</strong> til betydningsbaserede forespørgsler.'
     chatTitle: "AI-chat"
     chatIntro: 'Bruger <strong>RAG (Retrieval-Augmented Generation)</strong> — svarer udelukkende ud fra dine uploadede dokumenter, ikke internettet.'
@@ -66,7 +67,6 @@ login:
   username: "Brugernavn"
 
 chat:
-  advanced: "Avanceret"
   assistant: "Assistent"
   cannotDisplayFile: "Denne filtype kan ikke vises i browseren. Vil du downloade den i stedet?"
   clear: "Ryd"
@@ -185,11 +185,21 @@ linkFolderModal:
   results: "Resultater"
 
 search:
+  advanced: "Avanceret"
+  allWords: "Alle disse ord"
+  allWordsPlaceholder: "vigtig nødvendig"
+  anyWords: "Et af disse ord"
+  anyWordsPlaceholder: "dette eller det"
+  apply: "Anvend"
   deleteCountBody: "Dette vil slette {count} dokumenter permanent. Dette kan ikke fortrydes."
   deleteCountTitle: "Slet {count} dokumenter?"
   deleting: "Sletter…"
   enterQuery: "Indtast en søgning for at søge i dokumenter"
+  excludeWords: "Ingen af disse ord"
+  excludeWordsPlaceholder: "uønsket"
   failed: "Søgning mislykkedes — kunne ikke kontakte serveren."
+  languageIndependent: "Oversæt"
+  languageIndependentHint: "Matcher også oversatte termer (f.eks. coffee machine ↔ kaffemaskine) og lignende betydning, vha. AI."
   micError: "Kunne ikke tilgå mikrofonen eller transskribere lyden."
   micTitle: "Optag talesøgning"
   noMatch: 'Ingen dokumenter matchede "{query}"'

@@ -3,7 +3,8 @@ import type { SearchPayload } from '../types'
 
 
 export const search = (payload: SearchPayload) => api.post('/search', payload)
-export const extractSearchTerms = (query: string) => api.post('/search/extract', { query })
+export const extractSearchTerms = (query: string, languageIndependent: boolean) =>
+  api.post('/search/extract', { query, languageIndependent })
 export const listDocuments = (fldid?: number | null, q?: string) =>
   api.get('/documents', { params: { fldid: fldid ?? undefined, q: q || undefined } })
 export const getDocument = (id: number) => api.get(`/documents/${id}`)

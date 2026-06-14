@@ -62,6 +62,7 @@ export interface SearchPayload
 {
   query: string
   folder: number
+  languageIndependent: boolean
 }
 
 
@@ -71,4 +72,5 @@ export interface ChatPayload
   query: string
   folder: number
   match: number
+  languageIndependent: boolean
 }

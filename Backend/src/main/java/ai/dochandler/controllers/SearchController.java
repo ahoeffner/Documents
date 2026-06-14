@@ -2,8 +2,10 @@ package ai.dochandler.controllers;
 
 import java.util.Map;
 import java.util.List;
+import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.stream.Collectors;
 import ai.dochandler.entities.Document;
 import ai.dochandler.model.DocumentRecord;
 import ai.dochandler.entities.SearchRequest;
@@ -42,15 +44,19 @@ public class SearchController
 
 
     @PostMapping("/extract")
-    public ResponseEntity<Map<String, Object>> extract(@RequestBody Map<String, String> body)
+    public ResponseEntity<Map<String, Object>> extract(@RequestBody Map<String, Object> body)
     {
-        String query = body.getOrDefault("query", "");
+        String query = (String) body.getOrDefault("query", "");
+        boolean languageIndependent = !Boolean.FALSE.equals(body.get("languageIndependent"));
         try
         {
-            JsonNode preprocessed = geminiService.preprocessQuery(query);
+            JsonNode preprocessed = geminiService.preprocessQuery(query, languageIndependent);
             String[] lexical = mapper.convertValue(preprocessed.path("lexical"), String[].class);
             if (lexical == null) lexical = new String[0];
-            String terms = lexical.length > 0 ? String.join(" ", lexical) : query;
+            String terms;
+            if (lexical.length == 0) terms = query;
+            else if (languageIndependent) terms = Arrays.stream(lexical).map(t -> "(" + t + ")").collect(Collectors.joining(" "));
+            else terms = String.join(" ", lexical);
             return(ResponseEntity.ok(Map.of("success", true, "terms", terms)));
         }
         catch (Exception e)
@@ -68,19 +74,26 @@ public class SearchController
         String[] words = query.toLowerCase().split("\\s+");
 
         List<DocumentRecord> docs;
-        try
+        if (req.languageIndependent())
         {
-            JsonNode preprocessed = geminiService.preprocessQuery(query);
-            String semantic = preprocessed.path("semantic").asText();
-            String[] lexical = mapper.convertValue(preprocessed.path("lexical"), String[].class);
-            if (lexical == null) lexical = new String[0];
+            try
+            {
+                JsonNode preprocessed = geminiService.preprocessQuery(query, true);
+                String semantic = preprocessed.path("semantic").asText();
+                String[] lexical = mapper.convertValue(preprocessed.path("lexical"), String[].class);
+                if (lexical == null) lexical = new String[0];
 
-            double threshold = boundaryLow + 0.5 * (boundaryHigh - boundaryLow);
-            docs = documentRepo.hybridSearch(semantic, lexical, req.folder(), threshold, geminiService);
+                double threshold = boundaryLow + 0.5 * (boundaryHigh - boundaryLow);
+                docs = documentRepo.hybridSearch(semantic, lexical, req.folder(), threshold, geminiService);
+            }
+            catch (Exception e)
+            {
+                log.warn("Search preprocessing failed, falling back to lexical search: {}", e.getMessage());
+                docs = documentRepo.lexicalSearch(words, req.folder());
+            }
         }
-        catch (Exception e)
+        else
         {
-            log.warn("Search preprocessing failed, falling back to lexical search: {}", e.getMessage());
             docs = documentRepo.lexicalSearch(words, req.folder());
         }
 

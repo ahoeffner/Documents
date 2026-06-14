@@ -16,11 +16,12 @@ app:
     documentsIntroUser: 'Browse documents organised into folders. <strong>Double-click</strong> a document row to open its file, or show its text if it has none.'
     searchTitle: "Search"
     searchIntro: 'Uses <strong>BM25 full-text matching</strong> — finds documents containing the exact words you type. No semantic expansion, no fuzzy matching.'
-    searchItem1: "Use the most distinctive words from what you are looking for."
+    searchItem1: 'For simple searches, just type a few words — multiple words default to <strong>AND</strong> (all must match).'
     searchItem2: 'Add <strong>*</strong> to a word for prefix search — <em>VVS*</em> matches VVS, VVS-rør, VVSfirma, etc.'
     searchItem3: 'Use <strong>Folder</strong> to narrow results to a specific category.'
     searchItem4: "Right-click or double-click a result row to open it."
     searchItem5: 'Tap the <strong>microphone</strong> to dictate your search — it stops after a pause, extracts keywords, and searches automatically.'
+    searchItem6: 'For advanced control, combine words with <strong>|</strong> (or), <strong>&</strong> (and), <strong>!</strong> (not), and <strong>()</strong> to group — e.g. <em>(cat|dog) mouse</em>.'
     searchTip: 'For meaning-based queries, use <strong>AI Chat</strong> instead.'
     chatTitle: "AI Chat"
     chatIntro: 'Uses <strong>RAG (Retrieval-Augmented Generation)</strong> — answers exclusively from your uploaded documents, not the internet.'
@@ -66,7 +67,6 @@ login:
   username: "Username"
 
 chat:
-  advanced: "Advanced"
   assistant: "Assistant"
   cannotDisplayFile: "This file type cannot be displayed in the browser. Download it instead?"
   downloadFileTitle: "Download file"
@@ -185,11 +185,21 @@ linkFolderModal:
   results: "Results"
 
 search:
+  advanced: "Advanced"
+  allWords: "All of these words"
+  allWordsPlaceholder: "important required"
+  anyWords: "Any of these words"
+  anyWordsPlaceholder: "this or that"
+  apply: "Apply"
   deleteCountBody: "This will permanently delete {count} documents. This cannot be undone."
   deleteCountTitle: "Delete {count} documents?"
   deleting: "Deleting…"
   enterQuery: "Enter a query to search documents"
+  excludeWords: "None of these words"
+  excludeWordsPlaceholder: "unwanted"
   failed: "Search failed — could not reach the server."
+  languageIndependent: "Translate"
+  languageIndependentHint: "Also matches translated terms (e.g. coffee machine ↔ kaffemaskine) and similar meaning, using AI."
   micError: "Could not access microphone or transcribe audio."
   micTitle: "Record voice search"
   noMatch: 'No documents matched "{query}"'

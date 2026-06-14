@@ -30,9 +30,39 @@
         </button>
       </form>
 
+      <div class="spacer"></div>
+
+      <button type="button" @click="showAdvanced = !showAdvanced" class="btn btn-primary btn-sm adv-btn">
+        <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+        </svg>
+        {{ i18n.t('search.advanced') }}
+        <svg width="10" height="10" viewBox="0 0 20 20" fill="currentColor"
+          :style="{ transform: showAdvanced ? 'rotate(180deg)' : '' }"
+          style="transition:transform 0.15s">
+          <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+        </svg>
+      </button>
+
     </div>
 
-    <div class="results">
+    <form v-show="showAdvanced" @submit.prevent="applyAdvanced" class="advanced-row">
+      <div class="adv-field">
+        <label class="adv-label">{{ i18n.t('search.allWords') }}</label>
+        <input v-model="advAll" type="text" class="adv-input" :placeholder="i18n.t('search.allWordsPlaceholder')" />
+      </div>
+      <div class="adv-field">
+        <label class="adv-label">{{ i18n.t('search.anyWords') }}</label>
+        <input v-model="advAny" type="text" class="adv-input" :placeholder="i18n.t('search.anyWordsPlaceholder')" />
+      </div>
+      <div class="adv-field">
+        <label class="adv-label">{{ i18n.t('search.excludeWords') }}</label>
+        <input v-model="advExclude" type="text" class="adv-input" :placeholder="i18n.t('search.excludeWordsPlaceholder')" />
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm">{{ i18n.t('search.apply') }}</button>
+    </form>
+
+    <div class="results" @keydown="onResultsKeydown">
       <div v-if="error" class="notice notice-error" style="margin:12px">{{ error }}</div>
 
       <div v-else-if="loading" class="empty-state">
@@ -50,6 +80,7 @@
           v-for="doc in sortedDocuments"
           :key="doc.id"
           :doc="doc"
+          :focused="focusedDocId === doc.id"
           :can-edit="auth.isAdmin"
           :can-link="auth.isAdmin"
           :can-create="false"
@@ -106,8 +137,9 @@ import { useI18nStore } from '../stores/i18n'
 import type { DocumentResult } from '../types'
 import { transcribeAudio } from '../api/transcribe'
 import { useConfirmStore } from '../stores/confirm'
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useCategoriesStore } from '../stores/categories'
+import { useSettingsStore } from '../stores/settings'
 import DocumentCard from '../components/DocumentCard.vue'
 import { useEditRequestStore } from '../stores/editRequest'
 import LinkFolderModal from '../components/LinkFolderModal.vue'
@@ -141,6 +173,11 @@ const error = ref<string | null>(null)
 const searched = ref(false)
 const recorder = useAudioRecorder()
 const transcribing = ref(false)
+const settings = useSettingsStore()
+const showAdvanced = ref(false)
+const advAll = ref('')
+const advAny = ref('')
+const advExclude = ref('')
 
 
 const sortedDocuments = computed(() =>
@@ -174,7 +211,47 @@ onUnmounted(() =>
 })
 
 
-defineExpose({ focus: () => searchInputEl.value?.focus() })
+defineExpose({ focus: () => searchInputEl.value?.focus(), toggleMic })
+
+
+// ── Results keyboard navigation ────────────────────────────────────
+const focusedDocId = ref<number | null>(null)
+
+
+watch(sortedDocuments, list =>
+{
+  if (!list.length) { focusedDocId.value = null; return }
+  if (focusedDocId.value === null || !list.some(d => d.id === focusedDocId.value)) focusedDocId.value = list[0].id
+})
+
+
+function focusDocRow(id: number)
+{
+  nextTick(() => document.querySelector<HTMLElement>(`.results [data-doc-id="${id}"]`)?.focus())
+}
+
+
+function onResultsKeydown(e: KeyboardEvent)
+{
+  const list = sortedDocuments.value
+  if (!list.length) return
+  const idx = list.findIndex(d => d.id === focusedDocId.value)
+
+  if (e.key === 'ArrowDown')
+  {
+    e.preventDefault()
+    const next = list[Math.min(idx + 1, list.length - 1)]
+    focusedDocId.value = next.id
+    focusDocRow(next.id)
+  }
+  else if (e.key === 'ArrowUp')
+  {
+    e.preventDefault()
+    const prev = list[Math.max(idx - 1, 0)]
+    focusedDocId.value = prev.id
+    focusDocRow(prev.id)
+  }
+}
 
 
 function toggleCheck(id: number, shift: boolean, ctrl: boolean)
@@ -331,7 +408,8 @@ async function toggleMic()
     transcribing.value = true
     const res = await transcribeAudio(blob)
     const transcript = (res.data.text || '').trim()
-    const extracted = await extractSearchTerms(transcript)
+    if (transcript.split(/\s+/).filter(Boolean).length < 2) return
+    const extracted = await extractSearchTerms(transcript, settings.languageIndependent)
     query.value = (extracted.data.terms || transcript).trim()
     searchInputEl.value?.focus()
     await doSearch()
@@ -347,6 +425,25 @@ async function toggleMic()
 }
 
 
+function applyAdvanced()
+{
+  const parts: string[] = []
+
+  const all = advAll.value.trim()
+  if (all) parts.push(all)
+
+  const any = advAny.value.trim().split(/\s+/).filter(Boolean)
+  if (any.length === 1) parts.push(any[0])
+  else if (any.length > 1) parts.push('(' + any.join(' | ') + ')')
+
+  const exclude = advExclude.value.trim().split(/\s+/).filter(Boolean)
+  for (const w of exclude) parts.push('!' + w)
+
+  query.value = parts.join(' ')
+  doSearch()
+}
+
+
 async function doSearch()
 {
   if (!query.value.trim()) return
@@ -357,7 +454,7 @@ async function doSearch()
   lastCheckedId.value = null
   try
   {
-    const res = await search({ query: query.value, folder: selectedCategory.value })
+    const res = await search({ query: query.value, folder: selectedCategory.value, languageIndependent: settings.languageIndependent })
     documents.value = (res.data.documents || []) as DocumentResult[]
     searched.value = true
   }
@@ -392,6 +489,8 @@ async function doSearch()
 }
 
 .folder-select { width: auto; height: 32px; }
+
+.spacer { flex: 1; }
 
 .search-form {
   display: flex;
@@ -440,6 +539,49 @@ async function doSearch()
 .input-clear:hover { background: var(--bg-muted); color: var(--text); }
 
 .mic-btn.mic-recording { color: var(--danger); }
+
+.adv-btn { gap: 4px; }
+
+.advanced-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--tab-bar-bg);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.adv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.adv-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.adv-input {
+  width: 22ch;
+  height: 30px;
+  padding: 0 10px;
+  border: 1.5px solid var(--border-input);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.adv-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+.adv-input::placeholder { color: var(--text-faint); }
 
 .result-count {
   font-size: 12px;

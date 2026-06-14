@@ -19,6 +19,10 @@
           </button>
         </nav>
         <div class="spacer" />
+        <label class="lang-indep-toggle" :title="i18n.t('search.languageIndependentHint')">
+          <input type="checkbox" v-model="settings.languageIndependent" @change="settings.setLanguageIndependent(settings.languageIndependent)" />
+          {{ i18n.t('search.languageIndependent') }}
+        </label>
         <select class="lang-select" v-model="theme.theme" @change="theme.setTheme(theme.theme)">
           <option v-for="th in theme.themes" :key="th.id" :value="th.id">{{ th.name }}</option>
         </select>
@@ -59,6 +63,7 @@
                 <li v-html="i18n.t('app.helpModal.searchItem3')"></li>
                 <li v-html="i18n.t('app.helpModal.searchItem4')"></li>
                 <li v-html="i18n.t('app.helpModal.searchItem5')"></li>
+                <li v-html="i18n.t('app.helpModal.searchItem6')"></li>
               </ul>
               <p class="help-tip-accent" v-html="i18n.t('app.helpModal.searchTip')"></p>
 
@@ -78,7 +83,7 @@
         </div>
       </Teleport>
 
-      <ExplorerView v-show="activeTab === 'browse'" />
+      <ExplorerView ref="explorerRef" v-show="activeTab === 'browse'" />
       <SearchView   ref="searchRef" v-show="activeTab === 'search'" />
       <ChatView     ref="chatRef"   v-show="activeTab === 'chat'" />
     </template>
@@ -93,6 +98,7 @@ import { useAuthStore } from './stores/auth'
 import { useI18nStore } from './stores/i18n'
 import LoginView from './views/LoginView.vue'
 import { useThemeStore } from './stores/theme'
+import { useSettingsStore } from './stores/settings'
 import SearchView from './views/SearchView.vue'
 import ExplorerView from './views/ExplorerView.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
@@ -102,6 +108,7 @@ import { ref, watch, computed, nextTick, h, onMounted, onUnmounted } from 'vue'
 const auth = useAuthStore()
 const i18n = useI18nStore()
 const theme = useThemeStore()
+const settings = useSettingsStore()
 theme.init()
 const showHelp = ref(false)
 const _host = window.location.hostname.split('.')[0]
@@ -113,15 +120,23 @@ const activeTab = ref<'browse' | 'search' | 'chat'>('browse')
 
 const searchRef = ref<InstanceType<typeof SearchView> | null>(null)
 const chatRef = ref<InstanceType<typeof ChatView> | null>(null)
+const explorerRef = ref<InstanceType<typeof ExplorerView> | null>(null)
 
 
 watch(activeTab, tab =>
 {
   nextTick(() =>
   {
+    if (tab === 'browse') explorerRef.value?.focus()
     if (tab === 'search') searchRef.value?.focus()
     if (tab === 'chat') chatRef.value?.focus()
   })
+})
+
+
+watch(() => auth.isLoggedIn, loggedIn =>
+{
+  if (loggedIn) nextTick(() => explorerRef.value?.focus())
 })
 
 
@@ -141,14 +156,159 @@ const IconChat = { render: () => h('svg', { width: 14, height: 14, viewBox: '0 0
 ]) }
 
 
-function onKeydown(e: KeyboardEvent)
+const tabOrder = ['browse', 'search', 'chat'] as const
+
+
+function cycleTab(dir: number)
 {
-  if (e.key === 'Escape') showHelp.value = false
+  const idx = tabOrder.indexOf(activeTab.value)
+  activeTab.value = tabOrder[(idx + dir + tabOrder.length) % tabOrder.length]
 }
 
 
-onMounted(() => window.addEventListener('keydown', onKeydown))
-onUnmounted(() => window.removeEventListener('keydown', onKeydown))
+const MIC_HOLD_DELAY = 200
+let micTimer: ReturnType<typeof setTimeout> | null = null
+let micActive = false
+
+
+function activeMicView()
+{
+  if (activeTab.value === 'search') return(searchRef.value)
+  if (activeTab.value === 'chat') return(chatRef.value)
+  return(null)
+}
+
+
+function playBeep()
+{
+  const ctx = new AudioContext()
+  const osc = ctx.createOscillator()
+  const gain = ctx.createGain()
+  osc.frequency.value = 880
+  gain.gain.setValueAtTime(0.15, ctx.currentTime)
+  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.12)
+  osc.connect(gain)
+  gain.connect(ctx.destination)
+  osc.start()
+  osc.stop(ctx.currentTime + 0.12)
+  osc.onended = () => ctx.close()
+}
+
+
+function cancelMicHold()
+{
+  if (micTimer) { clearTimeout(micTimer); micTimer = null }
+  if (micActive)
+  {
+    activeMicView()?.toggleMic()
+    micActive = false
+  }
+}
+
+
+// ── Tab-cycle between topbar and content zones ────────────────────
+function getFocusable(container: Element | null): HTMLElement[]
+{
+  if (!container) return([])
+  const els = Array.from(container.querySelectorAll<HTMLElement>(
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]'
+  ))
+  return(els.filter(el => el.tabIndex !== -1 && el.offsetParent !== null))
+}
+
+
+function contentZones(): Element[]
+{
+  if (activeTab.value === 'browse')
+  {
+    return([
+      document.querySelector('.explorer-view .tree-body'),
+      document.querySelector('.explorer-view .main-panel'),
+    ].filter((el): el is Element => el !== null))
+  }
+  if (activeTab.value === 'search') return([document.querySelector('.search-view')].filter((el): el is Element => el !== null))
+  return([document.querySelector('.chat-view')].filter((el): el is Element => el !== null))
+}
+
+
+function onFocusTab(e: KeyboardEvent)
+{
+  const tabBar = document.querySelector('.tab-bar')
+  const ring = [tabBar, ...contentZones()].filter((el): el is Element => el !== null)
+  if (ring.length < 2) return
+
+  const active = document.activeElement
+  if (!active) return
+
+  for (const zone of ring)
+  {
+    if (!zone.contains(active)) continue
+    const focusables = getFocusable(zone)
+    if (!focusables.length) return
+
+    const i = ring.indexOf(zone)
+
+    if (!e.shiftKey && active === focusables[focusables.length - 1])
+    {
+      const next = getFocusable(ring[(i + 1) % ring.length])
+      if (next.length) { e.preventDefault(); next[0].focus() }
+    }
+    else if (e.shiftKey && active === focusables[0])
+    {
+      const prev = getFocusable(ring[(i - 1 + ring.length) % ring.length])
+      if (prev.length) { e.preventDefault(); prev[prev.length - 1].focus() }
+    }
+    return
+  }
+}
+
+
+function onKeydown(e: KeyboardEvent)
+{
+  if (e.key === 'Escape') showHelp.value = false
+
+  if (e.ctrlKey && e.key === 'ArrowRight') { e.preventDefault(); cancelMicHold(); cycleTab(1); return }
+  if (e.ctrlKey && e.key === 'ArrowLeft') { e.preventDefault(); cancelMicHold(); cycleTab(-1); return }
+
+  if (e.key === 'Tab') { onFocusTab(e); return }
+
+  if ((e.key === 'Control' || e.key === 'Alt') && !e.repeat && !micTimer && !micActive)
+  {
+    micTimer = setTimeout(() =>
+    {
+      micTimer = null
+      const view = activeMicView()
+      if (view) { view.toggleMic(); micActive = true; playBeep() }
+    }, MIC_HOLD_DELAY)
+  }
+}
+
+
+function onKeyup(e: KeyboardEvent)
+{
+  if (e.key === 'Control' || e.key === 'Alt') cancelMicHold()
+}
+
+
+function onBlur()
+{
+  cancelMicHold()
+}
+
+
+onMounted(() =>
+{
+  window.addEventListener('keydown', onKeydown)
+  window.addEventListener('keyup', onKeyup)
+  window.addEventListener('blur', onBlur)
+})
+
+onUnmounted(() =>
+{
+  window.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('keyup', onKeyup)
+  window.removeEventListener('blur', onBlur)
+})
 
 
 const tabs = computed(() => [
@@ -247,6 +407,19 @@ a { text-decoration: none; }
   opacity: 0.65;
 }
 .tab.active .tab-icon { opacity: 1; color: var(--accent); }
+
+.lang-indep-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  align-self: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  margin-right: 6px;
+}
+
 
 .lang-select {
   align-self: center;

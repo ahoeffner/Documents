@@ -2,12 +2,17 @@
   <div>
     <div
       class="tree-row"
-      :class="{ selected: selectedId === folder.id }"
+      :class="{ selected: selectedId === folder.id, 'drag-over': dragOver }"
       :style="{ paddingLeft: depth * 14 + 8 + 'px' }"
+      :data-folder-id="folder.id"
+      :tabindex="focusedId === folder.id ? 0 : -1"
       @click="$emit('select', folder.id)"
       @contextmenu.stop.prevent="$emit('context', { id: folder.id, e: $event })"
+      @dragover.prevent="dragOver = true"
+      @dragleave="dragOver = false"
+      @drop.prevent="onDrop"
     >
-      <span class="tree-toggle" @click.stop="open = !open">
+      <span class="tree-toggle" @click.stop="$emit('toggle', folder.id)">
         <svg v-if="folder.children.length" width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
           <path v-if="open" d="M1 3 L5 7 L9 3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
           <path v-else d="M3 1 L7 5 L3 9" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
@@ -29,33 +34,49 @@
         :folder="child"
         :depth="depth + 1"
         :selected-id="selectedId"
+        :focused-id="focusedId"
+        :closed-ids="closedIds"
         @select="$emit('select', $event)"
         @context="$emit('context', $event)"
+        @toggle="$emit('toggle', $event)"
+        @drop="(id, e) => $emit('drop', id, e)"
       />
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { Folder } from '../types'
 import FolderTreeItem from './FolderTreeItem.vue'
 
 
-defineProps<{
+const props = defineProps<{
   folder: Folder
   depth: number
   selectedId: number | null
+  focusedId: number | null
+  closedIds: Set<number>
 }>()
 
 
-defineEmits<{
+const emit = defineEmits<{
   select: [id: number]
   context: [payload: { id: number; e: MouseEvent }]
+  toggle: [id: number]
+  drop: [id: number, e: DragEvent]
 }>()
 
 
-const open = ref(true)
+const open = computed(() => !props.closedIds.has(props.folder.id))
+const dragOver = ref(false)
+
+
+function onDrop(e: DragEvent)
+{
+  dragOver.value = false
+  emit('drop', props.folder.id, e)
+}
 </script>
 
 <style scoped>
@@ -70,9 +91,12 @@ const open = ref(true)
   font-size: 12px;
   font-weight: 400;
   user-select: none;
+  outline: none;
 }
 .tree-row:hover { background: var(--bg-muted); }
 .tree-row.selected { background: var(--accent-ring); color: var(--text); font-weight: 500; }
+.tree-row:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+.tree-row.drag-over { background: var(--accent-ring); box-shadow: inset 0 0 0 2px var(--accent); }
 
 .tree-toggle {
   width: 14px;

@@ -13,18 +13,6 @@
           @click="i18n.setLocale(l.id)"
         >{{ flagFor(l.id) }}</button>
       </div>
-      <div class="theme-swatches">
-        <button
-          v-for="th in theme.themes"
-          :key="th.id"
-          type="button"
-          class="swatch-btn"
-          :class="{ active: theme.theme === th.id }"
-          :title="th.name"
-          :style="swatchStyle(th.id)"
-          @click="theme.setTheme(th.id)"
-        />
-      </div>
     </div>
 
     <!-- Tenant picker shown after login when user has multiple tenants -->
@@ -68,6 +56,7 @@
             :placeholder="i18n.t('login.username')"
             :disabled="loading"
             required
+            @input="onAutofill"
           />
         </div>
 
@@ -82,6 +71,7 @@
             :placeholder="i18n.t('login.password')"
             :disabled="loading"
             required
+            @input="onAutofill"
           />
         </div>
 
@@ -93,11 +83,24 @@
         </button>
       </form>
     </div>
+
+    <div class="theme-swatches">
+      <button
+        v-for="th in theme.themes"
+        :key="th.id"
+        type="button"
+        class="swatch-btn"
+        :class="{ active: theme.theme === th.id }"
+        :title="th.name"
+        :style="swatchStyle(th.id)"
+        @click="theme.setTheme(th.id)"
+      />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, nextTick, onMounted } from 'vue'
 import { login, getTenants, switchTenant } from '../api/auth'
 import { useAuthStore } from '../stores/auth'
 import { useI18nStore } from '../stores/i18n'
@@ -153,6 +156,15 @@ async function sha256(str: string): Promise<string>
 {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str))
   return(Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join(''))
+}
+
+
+async function onAutofill(e: Event)
+{
+  const inputType = (e as InputEvent).inputType
+  if (inputType && inputType !== 'insertReplacementText') return
+  await nextTick()
+  if (username.value && password.value && !loading.value) submit()
 }
 
 

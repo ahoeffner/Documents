@@ -1,5 +1,5 @@
 <template>
-  <div class="doc-row" :class="{ 'doc-row-checked': checked }" @click="onRowClick" @dblclick="openContent" @contextmenu.prevent.stop="showCtxMenu">
+  <div class="doc-row" :class="{ 'doc-row-checked': checked }" :data-doc-id="doc.id" :tabindex="focused ? 0 : -1" :draggable="draggable" @click="onRowClick" @dblclick="openContent" @contextmenu.prevent.stop="showCtxMenu" @keydown="onRowKeydown" @dragstart="onDragStart">
 
     <svg v-if="!doc.hasFile && !doc.isLink" class="doc-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <path d="M3 2h6.5L13 5.5V14H3V2z"/>
@@ -69,8 +69,8 @@ import type { DocumentResult } from '../types'
 import { ref, onMounted, onUnmounted } from 'vue'
 
 
-const props = defineProps<{ doc: DocumentResult; canEdit?: boolean; canLink?: boolean; canCreate?: boolean; checked?: boolean; selectedCount?: number; allSelected?: boolean; activeSort?: 'title' | 'date'; isLink?: boolean; linkId?: number | null }>()
-const emit = defineEmits<{ edit: [id: number]; delete: [id: number]; move: [id: number]; 'new-doc': []; 'new-folder': []; sort: ['title' | 'date']; check: [id: number, shift: boolean, ctrl: boolean]; link: [id: number]; 'select-all': []; 'remove-link': [linkId: number] }>()
+const props = defineProps<{ doc: DocumentResult; focused?: boolean; draggable?: boolean; canEdit?: boolean; canLink?: boolean; canCreate?: boolean; checked?: boolean; selectedCount?: number; allSelected?: boolean; activeSort?: 'title' | 'date'; isLink?: boolean; linkId?: number | null }>()
+const emit = defineEmits<{ edit: [id: number]; delete: [id: number]; move: [id: number]; 'new-doc': []; 'new-folder': []; sort: ['title' | 'date']; check: [id: number, shift: boolean, ctrl: boolean]; link: [id: number]; 'select-all': []; 'remove-link': [linkId: number]; dragstart: [id: number, e: DragEvent] }>()
 
 
 const i18n = useI18nStore()
@@ -84,6 +84,27 @@ const onCloseAllCtx = () => { if (!selfOpening) ctxMenu.value = null }
 function onRowClick(e: MouseEvent)
 {
   emit('check', props.doc.id, e.shiftKey, e.ctrlKey || e.metaKey)
+}
+
+
+function onDragStart(e: DragEvent)
+{
+  emit('dragstart', props.doc.id, e)
+}
+
+
+function onRowKeydown(e: KeyboardEvent)
+{
+  if (e.key === 'Enter')
+  {
+    e.preventDefault()
+    openContent()
+  }
+  else if (e.key === ' ')
+  {
+    e.preventDefault()
+    emit('check', props.doc.id, e.shiftKey, e.ctrlKey || e.metaKey)
+  }
 }
 
 
@@ -230,7 +251,10 @@ function formatDate(d: string): string
   cursor: pointer;
   user-select: none;
   position: relative;
+  outline: none;
 }
+.doc-row:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+.doc-row[draggable="true"]:active { cursor: grabbing; }
 .doc-row:hover { background: var(--select-bg); }
 .doc-row-checked {
   background: var(--select-bg);

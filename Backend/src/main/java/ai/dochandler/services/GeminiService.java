@@ -147,15 +147,15 @@ public class GeminiService
 
     // ── Preprocess ────────────────────────────────────────────────────────────
 
-    public JsonNode preprocess(String id, String query) throws Exception
+    public JsonNode preprocess(String id, String query, boolean translate) throws Exception
     {
-        return(extract(getOrCreate(id), query));
+        return(extract(getOrCreate(id), query, translate));
     }
 
 
-    public JsonNode preprocessQuery(String query) throws Exception
+    public JsonNode preprocessQuery(String query, boolean translate) throws Exception
     {
-        return(extract(new ArrayList<>(), query));
+        return(extract(new ArrayList<>(), query, translate));
     }
 
 
@@ -262,7 +262,7 @@ public class GeminiService
 
     // ── Private ───────────────────────────────────────────────────────────────
 
-    private JsonNode extract(List<Map<String, Object>> history, String query) throws Exception
+    private JsonNode extract(List<Map<String, Object>> history, String query, boolean translate) throws Exception
     {
         String prompt = getPrompt("EXTRACT").replace("{question}", query);
 
@@ -284,7 +284,16 @@ public class GeminiService
         append(history, "user", prompt);
         append(history, "model", text);
 
-        return(mapper.readTree(text));
+        JsonNode result = mapper.readTree(text);
+        if (translate) return(result);
+
+        ObjectNode stripped = result.deepCopy();
+        ArrayNode lexical = mapper.createArrayNode();
+        for (JsonNode term : result.path("lexical"))
+            lexical.add(term.asText().split("\\|", 2)[0]);
+        stripped.set("lexical", lexical);
+
+        return(stripped);
     }
 
 

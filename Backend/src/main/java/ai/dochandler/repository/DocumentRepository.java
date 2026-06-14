@@ -1,8 +1,10 @@
 package ai.dochandler.repository;
 
+import java.util.Set;
 import java.sql.Types;
 import java.util.List;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import org.slf4j.Logger;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ import ai.dochandler.services.GeminiService;
 import org.springframework.stereotype.Repository;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.dao.DataAccessException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 
@@ -221,26 +224,52 @@ public class DocumentRepository
 
     public List<DocumentRecord> lexicalSearch(String[] words, long fldid)
     {
-        boolean hasWildcard = Arrays.stream(words).anyMatch(w -> w.endsWith("*"));
+        String tsquery = toTsQuery(words);
+        if (tsquery.isEmpty()) return(List.of());
 
         String sql = "SELECT DISTINCT(docid) FROM " + chunks() + " WHERE lexvector @@ ";
         List<Long> docids;
 
-        if (hasWildcard)
+        try
         {
-            String tsquery = Arrays.stream(words)
-                .map(w -> w.replaceAll("[^\\p{L}\\p{N}_-]", "") + (w.endsWith("*") ? ":*" : ""))
-                .filter(w -> !w.isEmpty() && !w.equals(":*"))
-                .collect(Collectors.joining(" & "));
-
             docids = jdbc.query(sql + "to_tsquery(lang::regconfig, ?)", (rs, i) -> rs.getLong("docid"), tsquery);
         }
-        else
+        catch (DataAccessException e)
         {
+            log.warn("Invalid tsquery '{}', falling back to plainto_tsquery: {}", tsquery, e.getMessage());
             docids = jdbc.query(sql + "plainto_tsquery(lang::regconfig, ?)", (rs, i) -> rs.getLong("docid"), String.join(" ", words));
         }
 
         return(fetchByIds(docids, fldid));
+    }
+
+
+    private String toTsQuery(String[] words)
+    {
+        List<String> tokens = Arrays.stream(words)
+            .map(w -> w.replaceAll("[^\\p{L}\\p{N}_|&!()*-]", ""))
+            .map(w -> w.replaceAll("([\\p{L}\\p{N}_-]+)\\*", "$1:*"))
+            .filter(w -> !w.isEmpty() && !w.equals(":*"))
+            .collect(Collectors.toList());
+
+        StringBuilder sb = new StringBuilder();
+
+        for (String token : tokens)
+        {
+            if (sb.length() > 0)
+            {
+                char prev = sb.charAt(sb.length() - 1);
+                char next = token.charAt(0);
+                boolean prevIsOperator = prev == '|' || prev == '&' || prev == '!' || prev == '(';
+                boolean nextIsOperator = next == '|' || next == '&' || next == ')';
+
+                sb.append(prevIsOperator || nextIsOperator ? " " : " & ");
+            }
+
+            sb.append(token);
+        }
+
+        return(sb.toString());
     }
 
 
@@ -256,27 +285,11 @@ public class DocumentRepository
 
         if (!hasEmbedding && !hasLexical) return(List.of());
 
-        List<Long> docids;
+        Set<Long> docids = new LinkedHashSet<>();
 
-        if (hasEmbedding && hasLexical)
+        if (hasEmbedding)
         {
-            String sql =
-                "SELECT DISTINCT(docid) FROM " + chunks() + " WHERE (embedding <=> ?::vector) < ? " +
-                "UNION " +
-                "SELECT DISTINCT(docid) FROM " + chunks() + " WHERE lexvector @@ plainto_tsquery(lang::regconfig,?)";
-            docids = jdbc.query(sql,
-                ps ->
-                {
-                    ps.setObject(1, vecStr, Types.OTHER);
-                    ps.setDouble(2, threshold);
-                    ps.setString(3, wordlist);
-                },
-                (rs, i) -> rs.getLong("docid")
-            );
-        }
-        else if (hasEmbedding)
-        {
-            docids = jdbc.query(
+            docids.addAll(jdbc.query(
                 "SELECT DISTINCT(docid) FROM " + chunks() + " WHERE (embedding <=> ?::vector) < ?",
                 ps ->
                 {
@@ -284,18 +297,47 @@ public class DocumentRepository
                     ps.setDouble(2, threshold);
                 },
                 (rs, i) -> rs.getLong("docid")
-            );
-        }
-        else
-        {
-            docids = jdbc.query(
-                "SELECT DISTINCT(docid) FROM " + chunks() + " WHERE lexvector @@ plainto_tsquery(lang::regconfig,?)",
-                (rs, i) -> rs.getLong("docid"),
-                wordlist
-            );
+            ));
         }
 
-        return(fetchByIds(docids, fldid));
+        if (hasLexical)
+        {
+            String tsquery = lexicalToTsQuery(lexical);
+            String sql = "SELECT DISTINCT(docid) FROM " + chunks() + " WHERE lexvector @@ ";
+
+            try
+            {
+                docids.addAll(jdbc.query(sql + "to_tsquery(lang::regconfig, ?)", (rs, i) -> rs.getLong("docid"), tsquery));
+            }
+            catch (DataAccessException e)
+            {
+                log.warn("Invalid tsquery '{}', falling back to plainto_tsquery: {}", tsquery, e.getMessage());
+                docids.addAll(jdbc.query(sql + "plainto_tsquery(lang::regconfig, ?)", (rs, i) -> rs.getLong("docid"), wordlist));
+            }
+        }
+
+        return(fetchByIds(new ArrayList<>(docids), fldid));
+    }
+
+
+    private String lexicalToTsQuery(String[] lexical)
+    {
+        List<String> items = new ArrayList<>();
+
+        for (String entry : lexical)
+        {
+            List<String> alternatives = new ArrayList<>();
+            for (String alt : entry.split("\\|"))
+            {
+                String[] words = alt.trim().replaceAll("[^\\p{L}\\p{N}_ -]", "").trim().split("\\s+");
+                List<String> lexemes = Arrays.stream(words).filter(w -> !w.isEmpty()).collect(Collectors.toList());
+                if (!lexemes.isEmpty()) alternatives.add(String.join(" <-> ", lexemes));
+            }
+            if (alternatives.isEmpty()) continue;
+            items.add(alternatives.size() > 1 ? "(" + String.join(" | ", alternatives) + ")" : alternatives.get(0));
+        }
+
+        return(String.join(" & ", items));
     }
 
 

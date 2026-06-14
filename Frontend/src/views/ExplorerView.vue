@@ -12,15 +12,19 @@
       </div>
       <div v-else-if="foldersStore.error" class="tree-empty tree-error">{{ foldersStore.error }}</div>
       <div v-else-if="!foldersStore.tree.length" class="tree-empty">{{ i18n.t('explorer.noFoldersYet') }}</div>
-      <div v-else class="tree-body">
+      <div v-else class="tree-body" @keydown="onTreeKeydown">
         <FolderTreeItem
           v-for="folder in foldersStore.tree"
           :key="folder.id"
           :folder="folder"
           :depth="0"
           :selected-id="selectedFolderId"
-          @select="selectFolder"
+          :focused-id="focusedFolderId"
+          :closed-ids="closedIds"
+          @select="onTreeSelect"
           @context="onFolderCtx"
+          @toggle="toggleFolder"
+          @drop="onFolderDrop"
         />
       </div>
     </div>
@@ -53,11 +57,13 @@
         <span>{{ i18n.t('explorer.noDocsInFolder') }}</span>
       </div>
 
-      <div v-else class="doc-list">
+      <div v-else class="doc-list" @keydown="onDocListKeydown">
         <DocumentCard
           v-for="doc in sortedDocs"
           :key="doc.id"
           :doc="doc"
+          :focused="focusedDocId === doc.id"
+          :draggable="auth.isAdmin"
           :can-edit="auth.isAdmin"
           :can-link="auth.isAdmin"
           :can-create="auth.isAdmin"
@@ -77,6 +83,7 @@
           @new-doc="openNew"
           @new-folder="() => openNewFolder(selectedFolderId)"
           @sort="sortMode = $event"
+          @dragstart="onDocDragStart"
         />
       </div>
     </div>
@@ -382,6 +389,127 @@ const flatFolders = computed(() => flattenFolders(foldersStore.tree))
 const selectedFolder = computed(() => flatFolders.value.find(f => f.id === selectedFolderId.value) ?? null)
 
 
+// ── Tree keyboard navigation ───────────────────────────────────────
+const closedIds = ref(new Set<number>())
+const focusedFolderId = ref<number | null>(null)
+
+
+interface FlatFolderNode { id: number; parentId: number | null; hasChildren: boolean }
+
+
+const flatVisibleFolders = computed<FlatFolderNode[]>(() =>
+{
+  const out: FlatFolderNode[] = []
+  function walk(nodes: Folder[], parentId: number | null)
+  {
+    for (const n of nodes)
+    {
+      out.push({ id: n.id, parentId, hasChildren: n.children.length > 0 })
+      if (n.children.length && !closedIds.value.has(n.id)) walk(n.children, n.id)
+    }
+  }
+  walk(foldersStore.tree, null)
+  return(out)
+})
+
+
+let initialTreeFocusDone = false
+watch(() => foldersStore.tree, tree =>
+{
+  if (!initialTreeFocusDone && tree.length)
+  {
+    initialTreeFocusDone = true
+    focusedFolderId.value = tree[0].id
+    focusTreeRow(tree[0].id)
+  }
+}, { immediate: true })
+
+
+function toggleFolder(id: number)
+{
+  const next = new Set(closedIds.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  closedIds.value = next
+}
+
+
+function focusTreeRow(id: number)
+{
+  nextTick(() => document.querySelector<HTMLElement>(`.tree-body [data-folder-id="${id}"]`)?.focus())
+}
+
+
+function onTreeSelect(id: number)
+{
+  focusedFolderId.value = id
+  selectFolder(id)
+}
+
+
+function moveTreeFocus(id: number)
+{
+  focusedFolderId.value = id
+  selectFolder(id)
+  focusTreeRow(id)
+}
+
+
+function onTreeKeydown(e: KeyboardEvent)
+{
+  const list = flatVisibleFolders.value
+  const idx = list.findIndex(n => n.id === focusedFolderId.value)
+  if (idx === -1) return
+
+  switch (e.key)
+  {
+    case 'ArrowDown':
+      e.preventDefault()
+      if (idx < list.length - 1) moveTreeFocus(list[idx + 1].id)
+      break
+
+    case 'ArrowUp':
+      e.preventDefault()
+      if (idx > 0) moveTreeFocus(list[idx - 1].id)
+      break
+
+    case 'ArrowRight':
+    {
+      e.preventDefault()
+      const node = list[idx]
+      if (node.hasChildren && closedIds.value.has(node.id)) toggleFolder(node.id)
+      else if (node.hasChildren && list[idx + 1]?.parentId === node.id) moveTreeFocus(list[idx + 1].id)
+      break
+    }
+
+    case 'ArrowLeft':
+    {
+      e.preventDefault()
+      const node = list[idx]
+      if (node.hasChildren && !closedIds.value.has(node.id)) toggleFolder(node.id)
+      else if (node.parentId !== null) moveTreeFocus(node.parentId)
+      break
+    }
+
+    case 'Home':
+      e.preventDefault()
+      moveTreeFocus(list[0].id)
+      break
+
+    case 'End':
+      e.preventDefault()
+      moveTreeFocus(list[list.length - 1].id)
+      break
+  }
+}
+
+
+function focusTree()
+{
+  if (focusedFolderId.value !== null) focusTreeRow(focusedFolderId.value)
+}
+
+
 // ── Folder documents ─────────────────────────────────────────────
 const selectedFolderId = ref<number | null>(null)
 const docs = ref<DocumentResult[]>([])
@@ -398,6 +526,55 @@ const sortedDocs = computed(() =>
     return(list.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '')))
   return(list.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? '', undefined, { sensitivity: 'base' })))
 })
+
+
+// ── Document list keyboard navigation ──────────────────────────────
+const focusedDocId = ref<number | null>(null)
+
+
+watch(sortedDocs, list =>
+{
+  if (!list.length) { focusedDocId.value = null; return }
+  if (focusedDocId.value === null || !list.some(d => d.id === focusedDocId.value)) focusedDocId.value = list[0].id
+})
+
+
+function focusDocRow(id: number)
+{
+  nextTick(() => document.querySelector<HTMLElement>(`.doc-list [data-doc-id="${id}"]`)?.focus())
+}
+
+
+function onDocListKeydown(e: KeyboardEvent)
+{
+  const list = sortedDocs.value
+  if (!list.length) return
+  const idx = list.findIndex(d => d.id === focusedDocId.value)
+
+  if (e.key === 'ArrowDown')
+  {
+    e.preventDefault()
+    const next = list[Math.min(idx + 1, list.length - 1)]
+    focusedDocId.value = next.id
+    focusDocRow(next.id)
+  }
+  else if (e.key === 'ArrowUp')
+  {
+    e.preventDefault()
+    const prev = list[Math.max(idx - 1, 0)]
+    focusedDocId.value = prev.id
+    focusDocRow(prev.id)
+  }
+}
+
+
+function focusDocList()
+{
+  if (focusedDocId.value !== null) focusDocRow(focusedDocId.value)
+}
+
+
+defineExpose({ focus: focusTree, focusDocList })
 
 
 async function selectFolder(id: number)
@@ -795,6 +972,37 @@ async function onFolderPickerConfirm(fldid: number)
       selectedIds.value = new Set()
       await reloadDocs()
     }
+  }
+  catch
+  {
+    /* ignore */
+  }
+}
+
+
+// ── Drag & drop move ─────────────────────────────────────────────
+const DOC_DRAG_MIME = 'application/x-doc-ids'
+
+
+function onDocDragStart(id: number, e: DragEvent)
+{
+  const ids = selectedIds.value.has(id) && selectedIds.value.size > 1 ? [...selectedIds.value] : [id]
+  e.dataTransfer?.setData(DOC_DRAG_MIME, JSON.stringify(ids))
+  if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'
+}
+
+
+async function onFolderDrop(folderId: number, e: DragEvent)
+{
+  const data = e.dataTransfer?.getData(DOC_DRAG_MIME)
+  if (!data) return
+  const ids: number[] = JSON.parse(data)
+  if (!ids.length) return
+  try
+  {
+    await Promise.all(ids.map(id => moveDocument(id, folderId)))
+    selectedIds.value = new Set()
+    await reloadDocs()
   }
   catch
   {
