@@ -51,6 +51,7 @@
                   <li v-html="i18n.t('app.helpModal.documentsItem3')"></li>
                   <li v-html="i18n.t('app.helpModal.documentsItem4')"></li>
                   <li v-html="i18n.t('app.helpModal.documentsItem5')"></li>
+                  <li v-html="i18n.t('app.helpModal.documentsItem6')"></li>
                 </ul>
               </template>
               <p v-else v-html="i18n.t('app.helpModal.documentsIntroUser')"></p>
@@ -64,6 +65,7 @@
                 <li v-html="i18n.t('app.helpModal.searchItem4')"></li>
                 <li v-html="i18n.t('app.helpModal.searchItem5')"></li>
                 <li v-html="i18n.t('app.helpModal.searchItem6')"></li>
+                <li v-html="i18n.t('app.helpModal.searchItem7')"></li>
               </ul>
               <p class="help-tip-accent" v-html="i18n.t('app.helpModal.searchTip')"></p>
 
@@ -76,6 +78,14 @@
                 <li v-html="i18n.t('app.helpModal.chatItem4')"></li>
                 <li v-html="i18n.t('app.helpModal.chatItem5')"></li>
                 <li v-html="i18n.t('app.helpModal.chatItem6')"></li>
+              </ul>
+
+              <h4>{{ i18n.t('app.helpModal.keyboardTitle') }}</h4>
+              <ul>
+                <li v-html="i18n.t('app.helpModal.keyboardItem1')"></li>
+                <li v-html="i18n.t('app.helpModal.keyboardItem2')"></li>
+                <li v-html="i18n.t('app.helpModal.keyboardItem3')"></li>
+                <li v-html="i18n.t('app.helpModal.keyboardItem4')"></li>
               </ul>
 
             </div>

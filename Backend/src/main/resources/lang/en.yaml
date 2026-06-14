@@ -13,6 +13,7 @@ app:
     documentsItem3: 'Right-click <strong>content area</strong> → New Document, New Folder'
     documentsItem4: 'Right-click a <strong>document row</strong> → Text, File, Edit'
     documentsItem5: 'Double-click a <strong>document row</strong> → open file, or show text if no file'
+    documentsItem6: 'Drag a <strong>document row</strong> onto a folder in the sidebar to move it there.'
     documentsIntroUser: 'Browse documents organised into folders. <strong>Double-click</strong> a document row to open its file, or show its text if it has none.'
     searchTitle: "Search"
     searchIntro: 'Uses <strong>BM25 full-text matching</strong> — finds documents containing the exact words you type. No semantic expansion, no fuzzy matching.'
@@ -22,6 +23,7 @@ app:
     searchItem4: "Right-click or double-click a result row to open it."
     searchItem5: 'Tap the <strong>microphone</strong> to dictate your search — it stops after a pause, extracts keywords, and searches automatically.'
     searchItem6: 'For advanced control, combine words with <strong>|</strong> (or), <strong>&</strong> (and), <strong>!</strong> (not), and <strong>()</strong> to group — e.g. <em>(cat|dog) mouse</em>.'
+    searchItem7: 'Click <strong>Advanced</strong> for a simple form — all/any/none of these words — without typing the syntax above.'
     searchTip: 'For meaning-based queries, use <strong>AI Chat</strong> instead.'
     chatTitle: "AI Chat"
     chatIntro: 'Uses <strong>RAG (Retrieval-Augmented Generation)</strong> — answers exclusively from your uploaded documents, not the internet.'
@@ -31,6 +33,11 @@ app:
     chatItem4: 'Use <strong>Folder</strong> to narrow the search to a specific category.'
     chatItem5: "Use the history button to recall and reuse previous questions."
     chatItem6: 'Tap the <strong>microphone</strong> to dictate your question — it stops after a pause, sends automatically, and reads the answer aloud.'
+    keyboardTitle: "Keyboard"
+    keyboardItem1: '<strong>Ctrl+Left/Right</strong> — switch between Documents, Search and Chat tabs.'
+    keyboardItem2: 'Hold <strong>Ctrl</strong> or <strong>Alt</strong> to talk — release to stop and send/search.'
+    keyboardItem3: '<strong>Arrow keys</strong> navigate the folder tree and result/document lists; <strong>Tab</strong>/<strong>Shift+Tab</strong> cycle focus between the toolbar and content.'
+    keyboardItem4: 'In Search, dictating by voice also reads the number of results found aloud.'
 
 common:
   all: "All"
@@ -204,6 +211,7 @@ search:
   micTitle: "Record voice search"
   noMatch: 'No documents matched "{query}"'
   placeholder: "Search documents…"
+  resultsFoundCount: "{count} documents found"
   search: "Search"
   searching: "Searching…"
   sortByDate: "Sort by Date"

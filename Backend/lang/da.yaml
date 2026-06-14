@@ -13,6 +13,7 @@ app:
     documentsItem3: 'Højreklik på <strong>indholdsområdet</strong> → Nyt dokument, Ny mappe'
     documentsItem4: 'Højreklik på en <strong>dokumentrække</strong> → Tekst, Fil, Rediger'
     documentsItem5: 'Dobbeltklik på en <strong>dokumentrække</strong> → åbn fil, eller vis tekst hvis ingen fil'
+    documentsItem6: 'Træk en <strong>dokumentrække</strong> til en mappe i sidepanelet for at flytte den.'
     documentsIntroUser: 'Gennemse dokumenter organiseret i mapper. <strong>Dobbeltklik</strong> på en dokumentrække for at åbne dens fil, eller vise dens tekst hvis den ikke har en.'
     searchTitle: "Søgning"
     searchIntro: 'Bruger <strong>BM25 fuldtekstsøgning</strong> — finder dokumenter, der indeholder de nøjagtige ord, du skriver. Ingen semantisk udvidelse, ingen fuzzy-søgning.'
@@ -22,6 +23,7 @@ app:
     searchItem4: "Højreklik eller dobbeltklik på en resultatrække for at åbne den."
     searchItem5: 'Tryk på <strong>mikrofonen</strong> for at diktere din søgning — den stopper efter en pause, udtrækker nøgleord og søger automatisk.'
     searchItem6: 'Til avanceret kontrol, kombinér ord med <strong>|</strong> (eller), <strong>&</strong> (og), <strong>!</strong> (ikke) og <strong>()</strong> til gruppering — f.eks. <em>(cat|dog) mouse</em>.'
+    searchItem7: 'Klik på <strong>Avanceret</strong> for en simpel formular — alle/et af/ingen af disse ord — uden at skrive syntaksen ovenfor.'
     searchTip: 'Brug <strong>AI-chat</strong> til betydningsbaserede forespørgsler.'
     chatTitle: "AI-chat"
     chatIntro: 'Bruger <strong>RAG (Retrieval-Augmented Generation)</strong> — svarer udelukkende ud fra dine uploadede dokumenter, ikke internettet.'
@@ -31,6 +33,11 @@ app:
     chatItem4: 'Brug <strong>Mappe</strong> til at indsnævre søgningen til en bestemt kategori.'
     chatItem5: "Brug historikknappen til at genkalde og genbruge tidligere spørgsmål."
     chatItem6: 'Tryk på <strong>mikrofonen</strong> for at diktere dit spørgsmål — det stopper efter en pause, sendes automatisk, og svaret læses højt.'
+    keyboardTitle: "Tastatur"
+    keyboardItem1: '<strong>Ctrl+venstre/højre</strong> — skift mellem fanerne Dokumenter, Søgning og Chat.'
+    keyboardItem2: 'Hold <strong>Ctrl</strong> eller <strong>Alt</strong> nede for at tale — slip for at stoppe og sende/søge.'
+    keyboardItem3: '<strong>Piletaster</strong> navigerer i mappetræet og resultat-/dokumentlister; <strong>Tab</strong>/<strong>Shift+Tab</strong> skifter fokus mellem værktøjslinjen og indholdet.'
+    keyboardItem4: 'I Søgning læser stemmediktering også antallet af fundne resultater højt.'
 
 common:
   all: "Alle"
@@ -204,6 +211,7 @@ search:
   micTitle: "Optag talesøgning"
   noMatch: 'Ingen dokumenter matchede "{query}"'
   placeholder: "Søg i dokumenter…"
+  resultsFoundCount: "{count} dokumenter fundet"
   search: "Søg"
   searching: "Søger…"
   sortByDate: "Sorter efter dato"

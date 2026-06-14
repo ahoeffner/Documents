@@ -28,21 +28,20 @@
         <button type="submit" class="btn btn-primary btn-sm">
           {{ loading ? i18n.t('search.searching') : i18n.t('search.search') }}
         </button>
+        <button type="button" @click="showAdvanced = !showAdvanced" class="btn btn-primary btn-sm adv-btn">
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+          </svg>
+          {{ i18n.t('search.advanced') }}
+          <svg width="10" height="10" viewBox="0 0 20 20" fill="currentColor"
+            :style="{ transform: showAdvanced ? 'rotate(180deg)' : '' }"
+            style="transition:transform 0.15s">
+            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
+        </button>
       </form>
 
       <div class="spacer"></div>
-
-      <button type="button" @click="showAdvanced = !showAdvanced" class="btn btn-primary btn-sm adv-btn">
-        <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
-        </svg>
-        {{ i18n.t('search.advanced') }}
-        <svg width="10" height="10" viewBox="0 0 20 20" fill="currentColor"
-          :style="{ transform: showAdvanced ? 'rotate(180deg)' : '' }"
-          style="transition:transform 0.15s">
-          <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
-        </svg>
-      </button>
 
     </div>
 
@@ -135,6 +134,7 @@
 import { useAuthStore } from '../stores/auth'
 import { useI18nStore } from '../stores/i18n'
 import type { DocumentResult } from '../types'
+import { synthesizeSpeech } from '../api/tts'
 import { transcribeAudio } from '../api/transcribe'
 import { useConfirmStore } from '../stores/confirm'
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
@@ -394,6 +394,34 @@ async function onFolderPickerConfirm(fldid: number)
 }
 
 
+let speechAudio: HTMLAudioElement | null = null
+let speechGeneration = 0
+
+
+function stopSpeech()
+{
+  speechGeneration++
+  if (speechAudio) { speechAudio.pause(); speechAudio = null }
+}
+
+
+async function speakText(text: string)
+{
+  stopSpeech()
+  const generation = speechGeneration
+  try
+  {
+    const res = await synthesizeSpeech(text)
+    if (generation !== speechGeneration) return
+    const url = URL.createObjectURL(res.data as Blob)
+    speechAudio = new Audio(url)
+    speechAudio.onended = () => URL.revokeObjectURL(url)
+    speechAudio.play()
+  }
+  catch { /* ignore */ }
+}
+
+
 async function toggleMic()
 {
   if (recorder.recording.value)
@@ -401,6 +429,7 @@ async function toggleMic()
     recorder.stop()
     return
   }
+  stopSpeech()
   try
   {
     query.value = ''
@@ -413,6 +442,7 @@ async function toggleMic()
     query.value = (extracted.data.terms || transcript).trim()
     searchInputEl.value?.focus()
     await doSearch()
+    speakText(i18n.t('search.resultsFoundCount', { count: String(documents.value.length) }))
   }
   catch
   {
