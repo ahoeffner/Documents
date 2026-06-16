@@ -133,17 +133,17 @@
 <script setup lang="ts">
 import { useAuthStore } from '../stores/auth'
 import { useI18nStore } from '../stores/i18n'
-import type { DocumentResult } from '../types'
 import { synthesizeSpeech } from '../api/tts'
+import type { DocumentResult } from '../types'
 import { transcribeAudio } from '../api/transcribe'
 import { useConfirmStore } from '../stores/confirm'
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import { useCategoriesStore } from '../stores/categories'
 import { useSettingsStore } from '../stores/settings'
+import { useCategoriesStore } from '../stores/categories'
 import DocumentCard from '../components/DocumentCard.vue'
 import { useEditRequestStore } from '../stores/editRequest'
 import LinkFolderModal from '../components/LinkFolderModal.vue'
 import { useAudioRecorder } from '../composables/useAudioRecorder'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { search, linkDocuments, moveDocument, deleteDocument, extractSearchTerms } from '../api/documents'
 
 

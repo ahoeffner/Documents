@@ -14,7 +14,6 @@ public class DocumentRecord
     private long id;
     private Date date;
     private long fldid;
-    private String lang;
     private String file;
     private String text;
     private String title;
@@ -78,19 +77,6 @@ public class DocumentRecord
         if (dateStr == null || dateStr.isBlank()) return(this);
         LocalDate local = LocalDate.parse(dateStr, DateTimeFormatter.ISO_DATE);
         this.date = Date.valueOf(local);
-        return(this);
-    }
-
-
-    public String getLang()
-    {
-        return(lang);
-    }
-
-
-    public DocumentRecord setLang(String lang)
-    {
-        this.lang = lang;
         return(this);
     }
 

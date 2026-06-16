@@ -209,17 +209,9 @@
               <div class="edit-col-header">{{ i18n.t('common.metadata') }}</div>
               <div class="edit-col-body">
 
-                <div class="field-row">
-                  <div class="field">
-                    <label class="field-label">{{ i18n.t('common.date') }}</label>
-                    <input type="date" v-model="editDate" class="input" />
-                  </div>
-                  <div class="field">
-                    <label class="field-label">{{ i18n.t('common.language') }}</label>
-                    <select v-model="editLanguage" class="select">
-                      <option v-for="lang in languages" :key="lang.id" :value="lang.name">{{ lang.name }}</option>
-                    </select>
-                  </div>
+                <div class="field">
+                  <label class="field-label">{{ i18n.t('common.date') }}</label>
+                  <input type="date" v-model="editDate" class="input" />
                 </div>
 
                 <div class="field">
@@ -297,9 +289,6 @@
             <span v-if="editFormLoading" class="saving-hint">
               <span class="spinner spinner-md"></span> {{ i18n.t('create.saving') }}
             </span>
-            <button v-if="!editIsNew" class="btn btn-primary btn-sm" :disabled="editFormLoading" @click="confirmDelete">
-              {{ i18n.t('common.delete') }}
-            </button>
             <button class="btn btn-ghost btn-sm" @click="resetEditForm">{{ i18n.t('common.reset') }}</button>
             <button class="btn btn-primary btn-sm" :disabled="editFormLoading" @click="submitEdit">
               {{ editIsNew ? i18n.t('common.save') : i18n.t('common.update') }}
@@ -327,7 +316,6 @@ import { storeDocument } from '../api/store'
 import { useAuthStore } from '../stores/auth'
 import { useI18nStore } from '../stores/i18n'
 import { openOrDownload } from '../utils/file'
-import { listLanguages } from '../api/languages'
 import { useFoldersStore } from '../stores/folders'
 import { useConfirmStore } from '../stores/confirm'
 import { useResize } from '../composables/useResize'
@@ -336,7 +324,7 @@ import { useEditRequestStore } from '../stores/editRequest'
 import FolderTreeItem from '../components/FolderTreeItem.vue'
 import LinkFolderModal from '../components/LinkFolderModal.vue'
 import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
-import type { DocumentResult, DocumentDetail, Language, Folder } from '../types'
+import type { DocumentResult, DocumentDetail, Folder } from '../types'
 import { getFolderDocuments, createFolder, renameFolder, deleteFolder } from '../api/folders'
 import { getDocument, updateDocument, deleteDocument, deleteLink, linkDocuments, moveDocument } from '../api/documents'
 
@@ -419,6 +407,20 @@ watch(() => foldersStore.tree, tree =>
   if (!initialTreeFocusDone && tree.length)
   {
     initialTreeFocusDone = true
+    const closed = new Set<number>()
+    function collect(nodes: Folder[])
+    {
+      for (const n of nodes)
+      {
+        if (n.children.length)
+        {
+          closed.add(n.id)
+          collect(n.children)
+        }
+      }
+    }
+    collect(tree)
+    closedIds.value = closed
     focusedFolderId.value = tree[0].id
     focusTreeRow(tree[0].id)
   }
@@ -804,27 +806,6 @@ async function deleteSelectedFolder()
 }
 
 
-// ── Languages ─────────────────────────────────────────────────────
-const languages = ref<Language[]>([])
-
-
-async function loadLanguages()
-{
-  try
-  {
-    const res = await listLanguages()
-    languages.value = (res.data.languages || []) as Language[]
-  }
-  catch
-  {
-    languages.value = [{ id: 'DA', name: 'danish' }, { id: 'EN', name: 'english' }]
-  }
-}
-
-
-onMounted(loadLanguages)
-
-
 // ── Edit / New Document modal ─────────────────────────────────────
 const showEditModal = ref(false)
 const editIsNew = ref(false)
@@ -833,7 +814,6 @@ const editTitle = ref('')
 
 const editDate = ref(todayIso())
 const editTitleField = ref('')
-const editLanguage = ref('')
 const editText = ref('')
 const editFldid = ref<number | null>(null)
 const editUrl = ref('')
@@ -877,11 +857,6 @@ function clearEditForm()
   editErrorMsg.value = null
   editValidationError.value = null
   if (editFileInputRef.value) editFileInputRef.value.value = ''
-  if (languages.value.length && !editLanguage.value)
-  {
-    const da = languages.value.find(l => l.id === 'DA')
-    editLanguage.value = da ? da.name : languages.value[0].name
-  }
 }
 
 
@@ -1169,7 +1144,6 @@ async function submitEdit()
   fd.append('date', editDate.value)
   fd.append('fldid', String(editFldid.value ?? 0))
   fd.append('title', editTitleField.value)
-  fd.append('language', editLanguage.value)
   if (editText.value) fd.append('text', editText.value)
   if (editSelectedFile.value) fd.append('file', editSelectedFile.value)
   else if (editPastedFile.value) fd.append('file', editPastedFile.value, 'pasted-image.png')
@@ -1236,7 +1210,6 @@ async function saveAnyway()
   fd.append('date', editDate.value)
   fd.append('fldid', String(editFldid.value ?? 0))
   fd.append('title', editTitleField.value)
-  fd.append('language', editLanguage.value)
   if (editText.value) fd.append('text', editText.value)
   if (editSelectedFile.value) fd.append('file', editSelectedFile.value)
   else if (editPastedFile.value) fd.append('file', editPastedFile.value, 'pasted-image.png')
@@ -1259,27 +1232,6 @@ async function saveAnyway()
   catch
   {
     editErrorMsg.value = i18n.t('edit.failedConnection')
-  }
-  finally
-  {
-    editFormLoading.value = false
-  }
-}
-
-
-async function confirmDelete()
-{
-  if (editId.value === null || !await confirm.ask({ message: i18n.t('edit.deleteConfirm', { title: editTitleField.value }), confirmLabel: i18n.t('common.delete'), danger: true })) return
-  editFormLoading.value = true
-  try
-  {
-    await deleteDocument(editId.value)
-    closeEditModal()
-    await reloadDocs()
-  }
-  catch
-  {
-    editErrorMsg.value = i18n.t('edit.deleteFailed')
   }
   finally
   {
@@ -1449,8 +1401,6 @@ onUnmounted(() =>
 .field { display: flex; flex-direction: column; gap: 4px; }
 .edit-field-grow { flex: 1; }
 .edit-field-grow .textarea { flex: 1; min-height: 100px; }
-.field-row { display: flex; gap: 10px; }
-.field-row .field { flex: 1; }
 
 .input.textarea { height: auto; padding: 7px 10px; resize: vertical; }
 

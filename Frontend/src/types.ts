@@ -28,13 +28,6 @@ export interface DocumentResult
 }
 
 
-export interface Language
-{
-  id: string
-  name: string
-}
-
-
 export interface ChatMessage
 {
   id: string

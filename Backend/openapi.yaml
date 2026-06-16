@@ -14,7 +14,6 @@ tags:
   - name: folders
   - name: content
   - name: documents
-  - name: languages
   - name: i18n
 
 paths:
@@ -592,25 +591,6 @@ paths:
                     type: boolean
         "404":
           description: Not found
-
-  /api/languages:
-    get:
-      tags: [languages]
-      summary: List supported languages
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  languages:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Language"
 
   /api/i18n/locales:
     get:

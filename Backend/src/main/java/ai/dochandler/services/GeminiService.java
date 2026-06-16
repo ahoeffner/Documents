@@ -290,7 +290,9 @@ public class GeminiService
         ObjectNode stripped = result.deepCopy();
         ArrayNode lexical = mapper.createArrayNode();
         for (JsonNode term : result.path("lexical"))
+        {
             lexical.add(term.asText().split("\\|", 2)[0]);
+        }
         stripped.set("lexical", lexical);
 
         return(stripped);

@@ -10,7 +10,6 @@ import java.io.InputStreamReader;
 import ai.dochandler.config.Database;
 import ai.dochandler.entities.Folder;
 import ai.dochandler.entities.Document;
-import ai.dochandler.entities.Language;
 import ai.dochandler.config.AdminRunner;
 import ai.dochandler.entities.ChatRequest;
 import com.zaxxer.hikari.HikariDataSource;
@@ -38,7 +37,6 @@ import org.springframework.aot.hint.annotation.RegisterReflectionForBinding;
 ({
     Folder.class,
     Document.class,
-    Language.class,
     ChatRequest.class,
     ChatResponse.class,
     LoginRequest.class,

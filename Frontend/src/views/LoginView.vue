@@ -100,11 +100,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, onMounted } from 'vue'
-import { login, getTenants, switchTenant } from '../api/auth'
 import { useAuthStore } from '../stores/auth'
 import { useI18nStore } from '../stores/i18n'
+import { ref, nextTick, onMounted } from 'vue'
 import { useThemeStore } from '../stores/theme'
+import { login, getTenants, switchTenant } from '../api/auth'
 
 
 const auth = useAuthStore()

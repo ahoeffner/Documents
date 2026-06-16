@@ -63,7 +63,6 @@ public class DocumentController
         @RequestParam(required = false) String fldid,
         @RequestParam(required = false) String title,
         @RequestParam(required = false) String text,
-        @RequestParam(required = false) String language,
         @RequestParam(required = false) MultipartFile file,
         @RequestParam(required = false) String url,
         HttpSession session
@@ -74,13 +73,12 @@ public class DocumentController
 
         try
         {
-            DocumentRecord existing = documentRepo.findByIdWithLang(id);
+            DocumentRecord existing = documentRepo.findById(id);
             if (existing == null) return(ResponseEntity.notFound().build());
 
-            String effectiveDate  = date     != null ? date     : (existing.getDate() != null ? existing.getDate().toString() : null);
-            String effectiveFldid = fldid    != null ? fldid    : String.valueOf(existing.getFldid());
-            String effectiveTitle = title    != null ? title    : existing.getTitle();
-            String effectiveLang  = language != null ? language : existing.getLang();
+            String effectiveDate  = date  != null ? date  : (existing.getDate() != null ? existing.getDate().toString() : null);
+            String effectiveFldid = fldid != null ? fldid : String.valueOf(existing.getFldid());
+            String effectiveTitle = title != null ? title : existing.getTitle();
 
             boolean reprocess = (text != null && !text.isBlank())
                 || (file != null && !file.isEmpty())
@@ -90,7 +88,7 @@ public class DocumentController
             if (reprocess)
             {
                 String effectiveText = text != null ? text : existing.getText();
-                record = processor.process(effectiveDate, effectiveFldid, effectiveTitle, effectiveText, effectiveLang, file, url, false);
+                record = processor.process(effectiveDate, effectiveFldid, effectiveTitle, effectiveText, file, url, false);
             }
             else
             {
@@ -99,7 +97,6 @@ public class DocumentController
                 record.setFldid(effectiveFldid);
                 record.setTitle(effectiveTitle);
                 record.setText(existing.getText());
-                record.setLang(effectiveLang);
             }
 
             boolean success = documentRepo.update(id, record, geminiService);

@@ -39,7 +39,6 @@ public class StoreController
         @RequestParam String fldid,
         @RequestParam String title,
         @RequestParam(required = false) String text,
-        @RequestParam String language,
         @RequestParam(required = false) MultipartFile file,
         @RequestParam(required = false) String url,
         @RequestParam(required = false, defaultValue = "false") boolean noExtract,
@@ -51,7 +50,7 @@ public class StoreController
 
         try
         {
-            DocumentRecord record = processor.process(date, fldid, title, text, language, file, url, noExtract);
+            DocumentRecord record = processor.process(date, fldid, title, text, file, url, noExtract);
             long id = documentRepo.create(record, geminiService);
             return(ResponseEntity.ok(new CreateResponse(true, id)));
         }

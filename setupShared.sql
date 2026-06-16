@@ -37,18 +37,6 @@ $$;
 ALTER FUNCTION public.getEmbedding(text, boolean) OWNER TO alex;
 
 
-CREATE OR REPLACE FUNCTION public.ginvec() RETURNS trigger AS $$
-BEGIN
-    IF (new.text IS NOT NULL AND new.lexvector IS NULL) OR (new.lang != old.lang) THEN
-        new.lexvector = to_tsvector(new.lang::regconfig, new.text);
-    END IF;
-    RETURN new;
-END;
-$$ LANGUAGE plpgsql;
-
-ALTER FUNCTION public.ginvec() OWNER TO alex;
-
-
 CREATE OR REPLACE FUNCTION public.embeddings() RETURNS trigger AS $$
 BEGIN
     IF new.text IS NOT NULL AND new.embedding IS NULL THEN

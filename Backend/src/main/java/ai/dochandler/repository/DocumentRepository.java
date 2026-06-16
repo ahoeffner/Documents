@@ -4,12 +4,12 @@ import java.util.Set;
 import java.sql.Types;
 import java.util.List;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
 import org.slf4j.Logger;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.sql.SQLException;
 import org.slf4j.LoggerFactory;
+import java.util.LinkedHashSet;
 import java.sql.PreparedStatement;
 import java.util.stream.Collectors;
 import ai.dochandler.config.Database;
@@ -69,6 +69,7 @@ public class DocumentRepository
         long docid = holder.getKey().longValue();
 
         insertChunks(docid, record);
+        updateDoctext(docid, record);
         log.info("Created document id={} with {} chunks", docid, record.getTextChunks().size());
         return(docid);
     }
@@ -227,23 +228,26 @@ public class DocumentRepository
         String tsquery = toTsQuery(words);
         if (tsquery.isEmpty()) return(List.of());
 
-        String sql = "SELECT DISTINCT(docid) FROM " + chunks() + " WHERE lexvector @@ ";
-        List<Long> docids;
+        List<Long> docids = queryDocids(tsquery, String.join(" ", words));
+        return(fetchByIds(docids, fldid));
+    }
+
+
+    private List<Long> queryDocids(String tsqueryPart, String plainFallback)
+    {
+        String sql = "SELECT id FROM " + docs() + " WHERE lexvector @@ ";
 
         try
         {
-            log.info("Lexical search SQL: {}to_tsquery(lang::regconfig, '{}');", sql, tsquery);
-            docids = jdbc.query(sql + "to_tsquery(lang::regconfig, ?)", (rs, i) -> rs.getLong("docid"), tsquery);
+            log.info("Lexical search SQL: {}to_tsquery('simple', '{}');", sql, tsqueryPart);
+            return(jdbc.query(sql + "to_tsquery('simple', ?)", (rs, i) -> rs.getLong("id"), tsqueryPart));
         }
         catch (DataAccessException e)
         {
-            log.warn("Invalid tsquery '{}', falling back to plainto_tsquery: {}", tsquery, e.getMessage());
-            String fallback = String.join(" ", words);
-            log.info("Lexical search SQL: {}plainto_tsquery(lang::regconfig, '{}');", sql, fallback);
-            docids = jdbc.query(sql + "plainto_tsquery(lang::regconfig, ?)", (rs, i) -> rs.getLong("docid"), fallback);
+            log.warn("Invalid tsquery '{}', falling back to plainto_tsquery: {}", tsqueryPart, e.getMessage());
+            log.info("Lexical search SQL: {}plainto_tsquery('simple', '{}');", sql, plainFallback);
+            return(jdbc.query(sql + "plainto_tsquery('simple', ?)", (rs, i) -> rs.getLong("id"), plainFallback));
         }
-
-        return(fetchByIds(docids, fldid));
     }
 
 
@@ -306,16 +310,16 @@ public class DocumentRepository
         if (hasLexical)
         {
             String tsquery = lexicalToTsQuery(lexical);
-            String sql = "SELECT DISTINCT(docid) FROM " + chunks() + " WHERE lexvector @@ ";
+            String sql = "SELECT id FROM " + docs() + " WHERE lexvector @@ ";
 
             try
             {
-                docids.addAll(jdbc.query(sql + "to_tsquery(lang::regconfig, ?)", (rs, i) -> rs.getLong("docid"), tsquery));
+                docids.addAll(jdbc.query(sql + "to_tsquery('simple', ?)", (rs, i) -> rs.getLong("id"), tsquery));
             }
             catch (DataAccessException e)
             {
                 log.warn("Invalid tsquery '{}', falling back to plainto_tsquery: {}", tsquery, e.getMessage());
-                docids.addAll(jdbc.query(sql + "plainto_tsquery(lang::regconfig, ?)", (rs, i) -> rs.getLong("docid"), wordlist));
+                docids.addAll(jdbc.query(sql + "plainto_tsquery('simple', ?)", (rs, i) -> rs.getLong("id"), wordlist));
             }
         }
 
@@ -378,6 +382,7 @@ public class DocumentRepository
             jdbc.update("DELETE FROM " + chunks() + " WHERE docid = ?", id);
             record.createEmbeddings(geminiService);
             insertChunks(id, record);
+            updateDoctext(id, record);
         }
 
         return(true);
@@ -421,29 +426,8 @@ public class DocumentRepository
     }
 
 
-    public DocumentRecord findByIdWithLang(long id)
-    {
-        String sql =
-            "SELECT d.id, d.fldid, d.date, d.title, d.text, d.extref, " +
-            "(d.content IS NOT NULL) AS has_content, t.lang " +
-            "FROM " + docs() + " d LEFT JOIN " + chunks() + " t ON t.docid = d.id " +
-            "WHERE d.id = ? LIMIT 1";
-
-        List<DocumentRecord> results = jdbc.query(sql, (rs, i) ->
-        {
-            DocumentRecord doc = mapRow(rs);
-            doc.setLang(rs.getString("lang"));
-            return(doc);
-        }, id);
-
-        return(results.isEmpty() ? null : results.get(0));
-    }
-
-
     private void insertChunks(long docid, DocumentRecord record)
     {
-        String lang = record.getLang();
-
         ArrayList<String> sections = record.getSections();
         ArrayList<String> chunkList = record.getTextChunks();
         ArrayList<Float[]> embeddings = record.getEmbeddings();
@@ -461,25 +445,30 @@ public class DocumentRepository
             String section = sections.get(i);
             String chunk = chunkList.get(i);
             String vecStr = toVectorLiteral(emb);
-            String fLang = lang;
 
             jdbc.update(con ->
             {
                 PreparedStatement ps = con.prepareStatement
                 (
-                    "INSERT INTO " + chunks() + " (docid, line, section, lang, text, embedding) VALUES (?, ?, ?, ?, ?, ?::vector)"
+                    "INSERT INTO " + chunks() + " (docid, line, section, text, embedding) VALUES (?, ?, ?, ?, ?::vector)"
                 );
 
                 ps.setLong(1, docid);
                 ps.setInt(2, line);
                 ps.setString(3, section);
-                ps.setString(4, fLang);
-                ps.setString(5, chunk);
-                ps.setObject(6, vecStr, Types.OTHER);
+                ps.setString(4, chunk);
+                ps.setObject(5, vecStr, Types.OTHER);
 
                 return(ps);
             });
         }
+    }
+
+
+    private void updateDoctext(long docid, DocumentRecord record)
+    {
+        String doctext = String.join(" ", record.getTextChunks());
+        jdbc.update("UPDATE " + docs() + " SET doctext = ? WHERE id = ?", doctext, docid);
     }
 
 
