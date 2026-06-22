@@ -176,7 +176,7 @@
           <button class="ctx-item" @click="ctxAction(() => openNewFolder(null))">{{ i18n.t('explorer.newRootFolder') }}</button>
         </template>
         <template v-if="ctxMenu.type === 'folder'">
-          <button class="ctx-item" @click="ctxAction(openNew)">{{ i18n.t('create.newDocument') }}</button>
+          <button class="ctx-item" @click="ctxAction(() => openNew(ctxMenu!.folderId ?? null))">{{ i18n.t('create.newDocument') }}</button>
           <button class="ctx-item" @click="ctxAction(() => openNewFolder(ctxMenu!.folderId ?? null))">{{ i18n.t('explorer.newSubfolder') }}</button>
           <button class="ctx-item" @click="ctxRenameFolder">{{ i18n.t('explorer.rename') }}</button>
           <div class="ctx-divider"></div>
@@ -860,12 +860,13 @@ function clearEditForm()
 }
 
 
-function openNew()
+function openNew(folderId?: number | null)
 {
   editIsNew.value = true
   editId.value = null
   editTitle.value = i18n.t('create.newDocument')
   clearEditForm()
+  if (folderId !== undefined) editFldid.value = folderId
   showEditModal.value = true
 }
 

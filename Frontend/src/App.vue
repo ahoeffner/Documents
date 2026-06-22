@@ -282,7 +282,7 @@ function onKeydown(e: KeyboardEvent)
 
   if (e.key === 'Tab') { onFocusTab(e); return }
 
-  if ((e.key === 'Control' || e.key === 'Alt') && !e.repeat && !micTimer && !micActive)
+  if (e.key === 'Alt' && e.location === 1 && !e.repeat && !micTimer && !micActive)
   {
     micTimer = setTimeout(() =>
     {
@@ -296,7 +296,7 @@ function onKeydown(e: KeyboardEvent)
 
 function onKeyup(e: KeyboardEvent)
 {
-  if (e.key === 'Control' || e.key === 'Alt') cancelMicHold()
+  if (e.key === 'Alt' && e.location === 1) cancelMicHold()
 }
 
 

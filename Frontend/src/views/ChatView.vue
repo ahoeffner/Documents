@@ -381,9 +381,10 @@ async function sendMessage(speak = false)
   {
     if (!axios.isCancel(err))
     {
-      const e = err as AxiosError<string>
-      const msg = e.response?.data
-      chatStore.addMessage('ai', i18n.t('chat.error', { message: typeof msg === 'string' ? msg : (e.message || i18n.t('chat.connectionError')) }))
+      const e = err as AxiosError
+      const body = e.response?.data as Record<string, unknown> | string | undefined
+      const msg = typeof body === 'object' && body?.response ? String(body.response) : typeof body === 'string' ? body : (e.message || i18n.t('chat.connectionError'))
+      chatStore.addMessage('ai', i18n.t('chat.error', { message: msg }))
     }
   }
   finally

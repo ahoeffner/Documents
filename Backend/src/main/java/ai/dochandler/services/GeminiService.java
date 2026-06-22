@@ -357,7 +357,16 @@ public class GeminiService
             .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         if (response.statusCode() != 200)
-            throw new Exception("Gemini API " + response.statusCode() + ": " + response.body());
+        {
+            String detail = response.body();
+            try
+            {
+                JsonNode err = mapper.readTree(detail).path("error").path("message");
+                if (!err.isMissingNode()) detail = err.asText();
+            }
+            catch (Exception ignored) {}
+            throw new Exception("Gemini API " + response.statusCode() + ": " + detail);
+        }
         return(mapper.readTree(response.body()));
     }
 
