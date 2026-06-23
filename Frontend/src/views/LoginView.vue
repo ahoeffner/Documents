@@ -18,7 +18,7 @@
     <!-- Tenant picker shown after login when user has multiple tenants -->
     <div v-if="tenants.length > 1" class="login-card">
       <div class="login-header">
-        <span class="login-brand">{{ i18n.t('login.brand') }}</span>
+        <span class="login-brand">{{ tenantStore.title }}</span>
         <span class="login-subtitle">{{ i18n.t('login.selectTenant') }}</span>
       </div>
       <div class="tenant-list">
@@ -39,7 +39,7 @@
     <!-- Login form -->
     <div v-else class="login-card">
       <div class="login-header">
-        <span class="login-brand">{{ i18n.t('login.brand') }}</span>
+        <span class="login-brand">{{ tenantStore.title }}</span>
         <span v-if="tenant" class="login-tenant">{{ tenant }}</span>
       </div>
 
@@ -104,12 +104,14 @@ import { useAuthStore } from '../stores/auth'
 import { useI18nStore } from '../stores/i18n'
 import { ref, nextTick, onMounted } from 'vue'
 import { useThemeStore } from '../stores/theme'
+import { useTenantStore } from '../stores/tenant'
 import { login, getTenants, switchTenant } from '../api/auth'
 
 
 const auth = useAuthStore()
 const i18n = useI18nStore()
 const theme = useThemeStore()
+const tenantStore = useTenantStore()
 
 
 const FLAGS: Record<string, string> = { en: '🇬🇧', da: '🇩🇰' }

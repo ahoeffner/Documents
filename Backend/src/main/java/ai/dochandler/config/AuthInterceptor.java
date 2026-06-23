@@ -17,6 +17,7 @@ public class AuthInterceptor implements HandlerInterceptor
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) return(true);
         if (request.getRequestURI().startsWith("/api/auth/")) return(true);
         if (request.getRequestURI().startsWith("/api/i18n/")) return(true);
+        if (request.getRequestURI().startsWith("/api/tenant")) return(true);
 
         HttpSession session = request.getSession(false);
 

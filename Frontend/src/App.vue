@@ -5,7 +5,7 @@
 
     <template v-else>
       <header class="tab-bar">
-        <div class="brand">{{ brand }}</div>
+        <div class="brand">{{ tenant.name }}</div>
         <nav class="tabs">
           <button
             v-for="t in tabs"
@@ -118,6 +118,7 @@ import LoginView from './views/LoginView.vue'
 import { useThemeStore } from './stores/theme'
 import SearchView from './views/SearchView.vue'
 import ExplorerView from './views/ExplorerView.vue'
+import { useTenantStore } from './stores/tenant'
 import { useSettingsStore } from './stores/settings'
 import ConfirmDialog from './components/ConfirmDialog.vue'
 import { ref, watch, computed, nextTick, h, onMounted, onUnmounted } from 'vue'
@@ -126,6 +127,7 @@ import { ref, watch, computed, nextTick, h, onMounted, onUnmounted } from 'vue'
 const auth = useAuthStore()
 const i18n = useI18nStore()
 const theme = useThemeStore()
+const tenant = useTenantStore()
 const settings = useSettingsStore()
 theme.init()
 const showHelp = ref(false)
@@ -156,8 +158,6 @@ async function installPwa()
   if (outcome === 'accepted') canInstall.value = false
   deferredPrompt = null
 }
-const _host = window.location.hostname.split('.')[0]
-const brand = _host.charAt(0).toUpperCase() + _host.slice(1)
 
 
 const activeTab = ref<'browse' | 'search' | 'chat'>('browse')
