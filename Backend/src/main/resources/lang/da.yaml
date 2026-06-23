@@ -1,5 +1,6 @@
 app:
   help: "Hjælp"
+  install: "Installér App"
   signOut: "Log ud"
   tabs:
     browse: "Gennemse"
@@ -33,6 +34,10 @@ app:
     chatItem4: 'Brug <strong>Mappe</strong> til at indsnævre søgningen til en bestemt kategori.'
     chatItem5: "Brug historikknappen til at genkalde og genbruge tidligere spørgsmål."
     chatItem6: 'Tryk på <strong>mikrofonen</strong> for at diktere dit spørgsmål — det stopper efter en pause, sendes automatisk, og svaret læses højt.'
+    installTitle: "Installér som app"
+    installItem1: 'Klik på <strong>Installér App</strong> i værktøjslinjen for at tilføje denne som en selvstændig app på din enhed.'
+    installItem2: 'Når den er installeret, kører den i sit eget vindue — uden browserens adresselinje eller faner.'
+    installItem3: 'Installér-knappen forsvinder efter installation. For at afinstallere, brug din browser eller OS-indstillinger.'
     keyboardTitle: "Tastatur"
     keyboardItem1: '<strong>Ctrl+venstre/højre</strong> — skift mellem fanerne Dokumenter, Søgning og Chat.'
     keyboardItem2: 'Hold <strong>Ctrl</strong> eller <strong>Alt</strong> nede for at tale — slip for at stoppe og sende/søge.'

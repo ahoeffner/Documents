@@ -31,6 +31,7 @@
         </select>
         <button class="btn btn-ghost btn-sm" style="align-self:center" @click="showHelp = true">{{ i18n.t('app.help') }}</button>
         <button class="btn btn-ghost btn-sm" style="align-self:center" @click="auth.logout()">{{ i18n.t('app.signOut') }}</button>
+        <button v-if="canInstall" class="install-btn" @click="installPwa">{{ i18n.t('app.install') }}</button>
       </header>
 
       <Teleport to="body">
@@ -80,6 +81,13 @@
                 <li v-html="i18n.t('app.helpModal.chatItem6')"></li>
               </ul>
 
+              <h4>{{ i18n.t('app.helpModal.installTitle') }}</h4>
+              <ul>
+                <li v-html="i18n.t('app.helpModal.installItem1')"></li>
+                <li v-html="i18n.t('app.helpModal.installItem2')"></li>
+                <li v-html="i18n.t('app.helpModal.installItem3')"></li>
+              </ul>
+
               <h4>{{ i18n.t('app.helpModal.keyboardTitle') }}</h4>
               <ul>
                 <li v-html="i18n.t('app.helpModal.keyboardItem1')"></li>
@@ -121,6 +129,33 @@ const theme = useThemeStore()
 const settings = useSettingsStore()
 theme.init()
 const showHelp = ref(false)
+
+
+let deferredPrompt: any = null
+const canInstall = ref(false)
+
+window.addEventListener('beforeinstallprompt', (e: Event) =>
+{
+  e.preventDefault()
+  deferredPrompt = e
+  canInstall.value = true
+})
+
+window.addEventListener('appinstalled', () =>
+{
+  canInstall.value = false
+  deferredPrompt = null
+})
+
+
+async function installPwa()
+{
+  if (!deferredPrompt) return
+  deferredPrompt.prompt()
+  const { outcome } = await deferredPrompt.userChoice
+  if (outcome === 'accepted') canInstall.value = false
+  deferredPrompt = null
+}
 const _host = window.location.hostname.split('.')[0]
 const brand = _host.charAt(0).toUpperCase() + _host.slice(1)
 
@@ -446,6 +481,26 @@ a { text-decoration: none; }
 }
 .lang-select:last-of-type {
   margin-right: 32px;
+}
+
+.install-btn {
+  align-self: center;
+  margin-left: 16px;
+  padding: 0 10px;
+  height: 26px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.install-btn:hover {
+  opacity: 0.85;
 }
 
 </style>

@@ -1,5 +1,6 @@
 app:
   help: "Help"
+  install: "Install App"
   signOut: "Sign out"
   tabs:
     browse: "Browse"
@@ -33,6 +34,10 @@ app:
     chatItem4: 'Use <strong>Folder</strong> to narrow the search to a specific category.'
     chatItem5: "Use the history button to recall and reuse previous questions."
     chatItem6: 'Tap the <strong>microphone</strong> to dictate your question — it stops after a pause, sends automatically, and reads the answer aloud.'
+    installTitle: "Install as App"
+    installItem1: 'Click <strong>Install App</strong> in the toolbar to add this as a standalone app on your device.'
+    installItem2: 'Once installed it runs in its own window — no browser address bar or tabs.'
+    installItem3: 'The install button disappears after installation. To uninstall, use your browser or OS settings.'
     keyboardTitle: "Keyboard"
     keyboardItem1: '<strong>Ctrl+Left/Right</strong> — switch between Documents, Search and Chat tabs.'
     keyboardItem2: 'Hold <strong>Ctrl</strong> or <strong>Alt</strong> to talk — release to stop and send/search.'
