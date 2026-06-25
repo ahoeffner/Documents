@@ -78,6 +78,7 @@ login:
   username: "Username"
 
 chat:
+  advanced: "Advanced"
   assistant: "Assistant"
   cannotDisplayFile: "This file type cannot be displayed in the browser. Download it instead?"
   downloadFileTitle: "Download file"
@@ -217,3 +218,5 @@ search:
   searching: "Searching…"
   sortByDate: "Sort by Date"
   sortByTitle: "Sort by Title"
+  translateOff: "Translate: Off"
+  translateOn: "Translate: On"

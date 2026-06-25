@@ -19,19 +19,22 @@
           </button>
         </nav>
         <div class="spacer" />
-        <label class="lang-indep-toggle" :title="i18n.t('search.languageIndependentHint')">
-          <input type="checkbox" v-model="settings.languageIndependent" @change="settings.setLanguageIndependent(settings.languageIndependent)" />
-          {{ i18n.t('search.languageIndependent') }}
-        </label>
+        <select class="lang-select" :title="i18n.t('search.languageIndependentHint')" :value="settings.languageIndependent ? 'on' : 'off'" @change="settings.setLanguageIndependent(($event.target as HTMLSelectElement).value === 'on')">
+          <option value="off">{{ i18n.t('search.translateOff') }}</option>
+          <option value="on">{{ i18n.t('search.translateOn') }}</option>
+        </select>
+        <div class="toolbar-gap" />
         <select class="lang-select" v-model="theme.theme" @change="theme.setTheme(theme.theme)">
           <option v-for="th in theme.themes" :key="th.id" :value="th.id">{{ th.name }}</option>
         </select>
         <select class="lang-select" v-model="i18n.locale" @change="i18n.setLocale(i18n.locale)">
           <option v-for="l in i18n.locales" :key="l.id" :value="l.id">{{ l.name }}</option>
         </select>
+        <div class="toolbar-gap" />
         <button class="btn btn-ghost btn-sm" style="align-self:center" @click="showHelp = true">{{ i18n.t('app.help') }}</button>
         <button class="btn btn-ghost btn-sm" style="align-self:center" @click="auth.logout()">{{ i18n.t('app.signOut') }}</button>
-        <button v-if="canInstall" class="install-btn" @click="installPwa">{{ i18n.t('app.install') }}</button>
+        <div v-if="canInstall" class="toolbar-gap" />
+        <button v-if="canInstall" class="btn btn-ghost btn-sm" style="align-self:center" @click="installPwa">{{ i18n.t('app.install') }}</button>
       </header>
 
       <Teleport to="body">
@@ -453,19 +456,6 @@ a { text-decoration: none; }
 }
 .tab.active .tab-icon { opacity: 1; color: var(--accent); }
 
-.lang-indep-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  align-self: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text);
-  cursor: pointer;
-  margin-right: 6px;
-}
-
-
 .lang-select {
   align-self: center;
   height: 26px;
@@ -477,30 +467,9 @@ a { text-decoration: none; }
   background: var(--tab-bg);
   color: var(--text);
   cursor: pointer;
-  margin-right: 6px;
-}
-.lang-select:last-of-type {
-  margin-right: 32px;
 }
 
-.install-btn {
-  align-self: center;
-  margin-left: 16px;
-  padding: 0 10px;
-  height: 26px;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-  border: 1px solid var(--accent);
-  border-radius: 4px;
-  background: var(--accent);
-  color: #fff;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
+.toolbar-gap { width: 20px; flex-shrink: 0; }
 
-.install-btn:hover {
-  opacity: 0.85;
-}
 
 </style>

@@ -17,7 +17,7 @@
             :placeholder="i18n.t('search.placeholder')"
             class="search-input"
           />
-          <button v-if="query" type="button" class="input-clear" :title="i18n.t('common.clearInput')" @click="query = ''; searchInputEl?.focus()">✕</button>
+          <button v-if="query" type="button" class="input-clear" :title="i18n.t('common.clearInput')" @click="clearAll">✕</button>
         </div>
         <button type="button" class="btn btn-icon mic-btn" :class="{ 'mic-recording': recorder.recording.value }" :title="i18n.t('search.micTitle')" :disabled="transcribing" @click="toggleMic">
           <span v-if="transcribing" class="spinner spinner-sm"></span>
@@ -40,6 +40,8 @@
           </svg>
         </button>
       </form>
+
+      <button type="button" class="btn btn-primary btn-sm" @click="clearAll">{{ i18n.t('common.clearInput') }}</button>
 
       <div class="spacer"></div>
 
@@ -143,6 +145,7 @@ import DocumentCard from '../components/DocumentCard.vue'
 import { useEditRequestStore } from '../stores/editRequest'
 import LinkFolderModal from '../components/LinkFolderModal.vue'
 import { useAudioRecorder } from '../composables/useAudioRecorder'
+import { type AxiosError } from 'axios'
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { search, linkDocuments, moveDocument, deleteDocument, extractSearchTerms } from '../api/documents'
 
@@ -444,15 +447,65 @@ async function toggleMic()
     await doSearch()
     speakText(i18n.t('search.resultsFoundCount', { count: String(documents.value.length) }))
   }
-  catch
+  catch (err)
   {
-    error.value = i18n.t('search.micError')
+    const e = err as AxiosError
+    const body = e.response?.data as Record<string, unknown> | undefined
+    const detail = body?.error ? String(body.error) : e.message
+    error.value = detail || i18n.t('search.micError')
   }
   finally
   {
     transcribing.value = false
   }
 }
+
+
+function clearAll()
+{
+  query.value = ''
+  advAll.value = ''
+  advAny.value = ''
+  advExclude.value = ''
+  documents.value = []
+  searched.value = false
+  error.value = null
+  selectedIds.value = new Set()
+  lastCheckedId.value = null
+  searchInputEl.value?.focus()
+}
+
+
+function parseQueryToAdvanced(q: string)
+{
+  const excluded: string[] = []
+  const any: string[] = []
+  const all: string[] = []
+
+  let remaining = q.trim()
+
+  const parenMatch = remaining.match(/\(([^)]+)\)/)
+  if (parenMatch)
+  {
+    const inner = parenMatch[1]
+    if (inner.includes('|'))
+      any.push(...inner.split('|').map(s => s.trim()).filter(Boolean))
+    remaining = remaining.replace(parenMatch[0], ' ')
+  }
+
+  for (const token of remaining.split(/\s+/).filter(Boolean))
+  {
+    if (token.startsWith('!')) excluded.push(token.slice(1))
+    else all.push(token)
+  }
+
+  advAll.value = all.join(' ')
+  advAny.value = any.join(' ')
+  advExclude.value = excluded.join(' ')
+}
+
+
+watch(query, parseQueryToAdvanced)
 
 
 function applyAdvanced()

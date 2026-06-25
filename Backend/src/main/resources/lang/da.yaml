@@ -78,6 +78,7 @@ login:
   username: "Brugernavn"
 
 chat:
+  advanced: "Avanceret"
   assistant: "Assistent"
   cannotDisplayFile: "Denne filtype kan ikke vises i browseren. Vil du downloade den i stedet?"
   downloadFileTitle: "Download fil"
@@ -217,3 +218,5 @@ search:
   searching: "Søger…"
   sortByDate: "Sorter efter dato"
   sortByTitle: "Sorter efter titel"
+  translateOff: "Oversæt: Fra"
+  translateOn: "Oversæt: Til"

@@ -418,9 +418,12 @@ async function toggleMic()
     nextTick(() => textareaEl.value?.focus())
     await sendMessage(true)
   }
-  catch
+  catch (err)
   {
-    chatStore.addMessage('ai', i18n.t('chat.micError'))
+    const e = err as AxiosError
+    const body = e.response?.data as Record<string, unknown> | undefined
+    const detail = body?.error ? String(body.error) : e.message
+    chatStore.addMessage('ai', i18n.t('chat.error', { message: detail || i18n.t('chat.micError') }))
   }
   finally
   {

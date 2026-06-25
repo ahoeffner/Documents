@@ -11,7 +11,8 @@ export default defineConfig({
         enabled: true
       },
       workbox: {
-        navigateFallback: 'index.html'
+        navigateFallback: 'index.html',
+        navigateFallbackDenylist: [/^\/api\//]
       },
       manifest: false
     })

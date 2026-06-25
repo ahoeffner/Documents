@@ -46,6 +46,9 @@ public class GeminiService
     @Value("${app.gemini.llm-model:gemini-2.5-flash-lite}")
     private String llmModel;
 
+    @Value("${app.gemini.fallback-model:}")
+    private String fallbackModel;
+
     @Value("${app.gemini.embedding-model:models/text-embedding-004}")
     private String embeddingModel;
 
@@ -191,17 +194,37 @@ public class GeminiService
         ArrayNode parts = body.putArray("contents").addObject()
             .put("role", "user")
             .putArray("parts");
+
         parts.addObject().put("text", "Transcribe this audio exactly. Output only the transcription, detect language automatically.");
+
         parts.addObject().putObject("inlineData")
             .put("mimeType", mimeType != null ? mimeType : "audio/webm")
             .put("data", Base64.getEncoder().encodeToString(audio));
 
-        String url = API_BASE + "/models/" + llmModel + ":generateContent?key=" + apiKey;
-        JsonNode response = post(url, body);
+        String model = llmModel;
+        try
+        {
+            String url = API_BASE + "/models/" + model + ":generateContent?key=" + apiKey;
+            JsonNode response = post(url, body);
 
-        return(response.path("candidates").path(0)
-            .path("content").path("parts").path(0)
-            .path("text").asText().trim());
+            return(response.path("candidates").path(0)
+                .path("content").path("parts").path(0)
+                .path("text").asText().trim());
+        }
+        catch (Exception e)
+        {
+            if (shouldFallback(e))
+            {
+                log.warn("Model {} rate-limited, falling back to {}", model, fallbackModel);
+                String url = API_BASE + "/models/" + fallbackModel + ":generateContent?key=" + apiKey;
+                JsonNode response = post(url, body);
+
+                return(response.path("candidates").path(0)
+                    .path("content").path("parts").path(0)
+                    .path("text").asText().trim());
+            }
+            throw e;
+        }
     }
 
 
@@ -216,6 +239,7 @@ public class GeminiService
 
         ObjectNode genConfig = body.putObject("generationConfig");
         genConfig.putArray("responseModalities").add("AUDIO");
+        
         genConfig.putObject("speechConfig")
             .putObject("voiceConfig")
             .putObject("prebuiltVoiceConfig")
@@ -301,6 +325,24 @@ public class GeminiService
 
     private String callModel(List<Map<String, Object>> history, String userPrompt, ObjectNode genConfig) throws Exception
     {
+        try
+        {
+            return(callModelWith(llmModel, history, userPrompt, genConfig));
+        }
+        catch (Exception e)
+        {
+            if (shouldFallback(e))
+            {
+                log.warn("Model {} rate-limited, falling back to {}", llmModel, fallbackModel);
+                return(callModelWith(fallbackModel, history, userPrompt, genConfig));
+            }
+            throw e;
+        }
+    }
+
+
+    private String callModelWith(String model, List<Map<String, Object>> history, String userPrompt, ObjectNode genConfig) throws Exception
+    {
         ObjectNode body = mapper.createObjectNode();
 
         body.putObject("system_instruction")
@@ -322,12 +364,20 @@ public class GeminiService
 
         if (genConfig != null) body.set("generationConfig", genConfig);
 
-        String url = API_BASE + "/models/" + llmModel + ":generateContent?key=" + apiKey;
+        String url = API_BASE + "/models/" + model + ":generateContent?key=" + apiKey;
         JsonNode response = post(url, body);
 
         return(response.path("candidates").path(0)
             .path("content").path("parts").path(0)
             .path("text").asText());
+    }
+
+
+    private boolean shouldFallback(Exception e)
+    {
+        if (fallbackModel == null || fallbackModel.isBlank()) return(false);
+        String msg = e.getMessage();
+        return(msg != null && (msg.contains("429") || msg.contains("503")));
     }
 
 
