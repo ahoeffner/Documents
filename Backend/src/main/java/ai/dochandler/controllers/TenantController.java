@@ -2,6 +2,7 @@ package ai.dochandler.controllers;
 
 import java.util.Map;
 import ai.dochandler.config.Database;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,20 +22,26 @@ public class TenantController
     }
 
 
+    private String displayName(HttpServletRequest request)
+    {
+        String host = request.getServerName();
+        String sub = host.split("\\.")[0];
+        return(sub.substring(0, 1).toUpperCase() + sub.substring(1));
+    }
+
+
     @GetMapping
-    public ResponseEntity<Map<String, Object>> tenant()
+    public ResponseEntity<Map<String, Object>> tenant(HttpServletRequest request)
     {
         String tenant = db.getTenant();
-        String name = tenant.substring(0, 1).toUpperCase() + tenant.substring(1);
-        return(ResponseEntity.ok(Map.of("success", true, "tenant", tenant, "name", name)));
+        return(ResponseEntity.ok(Map.of("success", true, "tenant", tenant, "name", displayName(request))));
     }
 
 
     @GetMapping("/manifest.webmanifest")
-    public ResponseEntity<Map<String, Object>> manifest()
+    public ResponseEntity<Map<String, Object>> manifest(HttpServletRequest request)
     {
-        String tenant = db.getTenant();
-        String name = tenant.substring(0, 1).toUpperCase() + tenant.substring(1);
+        String name = displayName(request);
         String fullName = name + " AI Documents";
 
         return(ResponseEntity.ok(Map.of(
