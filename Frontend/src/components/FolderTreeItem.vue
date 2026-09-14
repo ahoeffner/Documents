@@ -6,8 +6,10 @@
       :style="{ paddingLeft: depth * 14 + 8 + 'px' }"
       :data-folder-id="folder.id"
       :tabindex="focusedId === folder.id ? 0 : -1"
+      :draggable="canDrag"
       @click="$emit('select', folder.id)"
       @contextmenu.stop.prevent="$emit('context', { id: folder.id, e: $event })"
+      @dragstart="onDragStart"
       @dragover.prevent="dragOver = true"
       @dragleave="dragOver = false"
       @drop.prevent="onDrop"
@@ -36,6 +38,7 @@
         :selected-id="selectedId"
         :focused-id="focusedId"
         :closed-ids="closedIds"
+        :can-drag="canDrag"
         @select="$emit('select', $event)"
         @context="$emit('context', $event)"
         @toggle="$emit('toggle', $event)"
@@ -51,12 +54,16 @@ import type { Folder } from '../types'
 import FolderTreeItem from './FolderTreeItem.vue'
 
 
+const FOLDER_DRAG_MIME = 'application/x-folder-id'
+
+
 const props = defineProps<{
   folder: Folder
   depth: number
   selectedId: number | null
   focusedId: number | null
   closedIds: Set<number>
+  canDrag: boolean
 }>()
 
 
@@ -70,6 +77,14 @@ const emit = defineEmits<{
 
 const open = computed(() => !props.closedIds.has(props.folder.id))
 const dragOver = ref(false)
+
+
+function onDragStart(e: DragEvent)
+{
+  if (!props.canDrag) { e.preventDefault(); return }
+  e.dataTransfer?.setData(FOLDER_DRAG_MIME, String(props.folder.id))
+  if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'
+}
 
 
 function onDrop(e: DragEvent)

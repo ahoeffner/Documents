@@ -60,6 +60,19 @@ public class FolderController
     }
 
 
+    @PutMapping("/{id}/move")
+    public ResponseEntity<Map<String, Object>> move(@PathVariable long id, @RequestBody Map<String, Object> body, HttpSession session)
+    {
+        if (!Boolean.TRUE.equals(session.getAttribute("admin")))
+            return(ResponseEntity.status(403).body(Map.of("success", false, "message", "Admin required")));
+
+        Long pid = body.get("pid") != null ? ((Number) body.get("pid")).longValue() : null;
+        boolean ok = service.move(id, pid);
+        if (!ok) return(ResponseEntity.status(409).body(Map.of("success", false, "message", "Invalid move")));
+        return(ResponseEntity.ok(Map.of("success", true)));
+    }
+
+
     @GetMapping("/{id}/documents")
     public ResponseEntity<Map<String, Object>> documents(@PathVariable long id)
     {

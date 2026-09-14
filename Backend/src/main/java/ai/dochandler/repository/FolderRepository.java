@@ -80,6 +80,13 @@ public class FolderRepository
     }
 
 
+    public boolean move(long id, Long pid)
+    {
+        if (pid != null) return(jdbc.update("UPDATE " + folders() + " SET pid = ? WHERE id = ?", pid, id) > 0);
+        return(jdbc.update("UPDATE " + folders() + " SET pid = NULL WHERE id = ?", id) > 0);
+    }
+
+
     public boolean deleteByName(String name)
     {
         return(jdbc.update("DELETE FROM " + folders() + " WHERE upper(name) = upper(?)", name) > 0);

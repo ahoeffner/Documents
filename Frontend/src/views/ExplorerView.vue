@@ -21,6 +21,7 @@
           :selected-id="selectedFolderId"
           :focused-id="focusedFolderId"
           :closed-ids="closedIds"
+          :can-drag="auth.isAdmin"
           @select="onTreeSelect"
           @context="onFolderCtx"
           @toggle="toggleFolder"
@@ -53,38 +54,55 @@
 
       <div v-else-if="docsError" class="notice notice-error" style="margin:12px">{{ docsError }}</div>
 
-      <div v-else-if="!docs.length" class="empty-state">
+      <div v-else-if="!subfolders.length && !docs.length" class="empty-state">
         <span>{{ i18n.t('explorer.noDocsInFolder') }}</span>
       </div>
 
-      <div v-else class="doc-list" @keydown="onDocListKeydown">
-        <DocumentCard
-          v-for="doc in sortedDocs"
-          :key="doc.id"
-          :doc="doc"
-          :focused="focusedDocId === doc.id"
-          :draggable="auth.isAdmin"
-          :can-edit="auth.isAdmin"
-          :can-link="auth.isAdmin"
-          :can-create="auth.isAdmin"
-          :is-link="doc.isLink"
-          :link-id="doc.linkId"
-          :checked="selectedIds.has(doc.id)"
-          :selected-count="selectedIds.size"
-          :all-selected="selectedIds.size > 0"
-          :active-sort="sortMode"
-          @edit="openEdit"
-          @delete="deleteDoc"
-          @remove-link="removeLink"
-          @check="toggleCheck"
-          @select-all="toggleAll"
-          @link="onLinkDoc"
-          @move="onMoveDoc"
-          @new-doc="openNew"
-          @new-folder="() => openNewFolder(selectedFolderId)"
-          @sort="sortMode = $event"
-          @dragstart="onDocDragStart"
-        />
+      <div v-else class="folder-content">
+        <div v-if="subfolders.length" class="subfolder-list">
+          <div
+            v-for="sub in subfolders"
+            :key="sub.id"
+            class="subfolder-row"
+            @click="onSubfolderClick(sub.id)"
+            @contextmenu.stop.prevent="onFolderCtx({ id: sub.id, e: $event })"
+          >
+            <svg class="subfolder-icon" width="15" height="15" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/>
+            </svg>
+            <span class="subfolder-name">{{ sub.name }}</span>
+          </div>
+        </div>
+
+        <div class="doc-list" @keydown="onDocListKeydown">
+          <DocumentCard
+            v-for="doc in sortedDocs"
+            :key="doc.id"
+            :doc="doc"
+            :focused="focusedDocId === doc.id"
+            :draggable="auth.isAdmin"
+            :can-edit="auth.isAdmin"
+            :can-link="auth.isAdmin"
+            :can-create="auth.isAdmin"
+            :is-link="doc.isLink"
+            :link-id="doc.linkId"
+            :checked="selectedIds.has(doc.id)"
+            :selected-count="selectedIds.size"
+            :all-selected="selectedIds.size > 0"
+            :active-sort="sortMode"
+            @edit="openEdit"
+            @delete="deleteDoc"
+            @remove-link="removeLink"
+            @check="toggleCheck"
+            @select-all="toggleAll"
+            @link="onLinkDoc"
+            @move="onMoveDoc"
+            @new-doc="openNew"
+            @new-folder="() => openNewFolder(selectedFolderId)"
+            @sort="sortMode = $event"
+            @dragstart="onDocDragStart"
+          />
+        </div>
       </div>
     </div>
 
@@ -179,6 +197,7 @@
           <button class="ctx-item" @click="ctxAction(() => openNew(ctxMenu!.folderId ?? null))">{{ i18n.t('create.newDocument') }}</button>
           <button class="ctx-item" @click="ctxAction(() => openNewFolder(ctxMenu!.folderId ?? null))">{{ i18n.t('explorer.newSubfolder') }}</button>
           <button class="ctx-item" @click="ctxRenameFolder">{{ i18n.t('explorer.rename') }}</button>
+          <button class="ctx-item" @click="ctxMoveFolder">{{ i18n.t('explorer.move') }}</button>
           <div class="ctx-divider"></div>
           <button class="ctx-item ctx-item-danger" @click="ctxDeleteFolder">{{ i18n.t('common.delete') }}</button>
         </template>
@@ -301,8 +320,9 @@
 
     <LinkFolderModal
       :visible="showFolderPicker"
-      :title="folderPickerMode === 'move' ? i18n.t('explorer.moveToFolder') : i18n.t('explorer.linkToFolder')"
-      :confirm-label="folderPickerMode === 'move' ? i18n.t('linkFolderModal.move') : i18n.t('linkFolderModal.link')"
+      :title="folderPickerMode === 'move-folder' ? i18n.t('explorer.moveFolder') : folderPickerMode === 'move' ? i18n.t('explorer.moveToFolder') : i18n.t('explorer.linkToFolder')"
+      :confirm-label="folderPickerMode === 'link' ? i18n.t('linkFolderModal.link') : i18n.t('linkFolderModal.move')"
+      :exclude-ids="folderPickerMode === 'move-folder' ? folderMoveExcludeIds : undefined"
       @close="showFolderPicker = false"
       @confirm="onFolderPickerConfirm"
     />
@@ -325,7 +345,7 @@ import FolderTreeItem from '../components/FolderTreeItem.vue'
 import LinkFolderModal from '../components/LinkFolderModal.vue'
 import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
 import type { DocumentResult, DocumentDetail, Folder } from '../types'
-import { getFolderDocuments, createFolder, renameFolder, deleteFolder } from '../api/folders'
+import { getFolderDocuments, createFolder, renameFolder, moveFolder, deleteFolder } from '../api/folders'
 import { getDocument, updateDocument, deleteDocument, deleteLink, linkDocuments, moveDocument } from '../api/documents'
 
 
@@ -375,6 +395,25 @@ function flattenFolders(nodes: Folder[], prefix = ''): { id: number; path: strin
 
 const flatFolders = computed(() => flattenFolders(foldersStore.tree))
 const selectedFolder = computed(() => flatFolders.value.find(f => f.id === selectedFolderId.value) ?? null)
+
+
+function findFolderNode(nodes: Folder[], id: number): Folder | null
+{
+  for (const n of nodes)
+  {
+    if (n.id === id) return(n)
+    if (n.children.length)
+    {
+      const found = findFolderNode(n.children, id)
+      if (found) return(found)
+    }
+  }
+  return(null)
+}
+
+
+const selectedFolderNode = computed(() => selectedFolderId.value === null ? null : findFolderNode(foldersStore.tree, selectedFolderId.value))
+const subfolders = computed(() => selectedFolderNode.value?.children ?? [])
 
 
 // ── Tree keyboard navigation ───────────────────────────────────────
@@ -451,6 +490,40 @@ function onTreeSelect(id: number)
 
 function moveTreeFocus(id: number)
 {
+  focusedFolderId.value = id
+  selectFolder(id)
+  focusTreeRow(id)
+}
+
+
+function findAncestors(nodes: Folder[], id: number, path: number[] = []): number[] | null
+{
+  for (const n of nodes)
+  {
+    if (n.id === id) return(path)
+    if (n.children.length)
+    {
+      const found = findAncestors(n.children, id, [...path, n.id])
+      if (found) return(found)
+    }
+  }
+  return(null)
+}
+
+
+function expandToFolder(id: number)
+{
+  const ancestors = findAncestors(foldersStore.tree, id) ?? []
+  if (!ancestors.length) return
+  const next = new Set(closedIds.value)
+  for (const a of ancestors) next.delete(a)
+  closedIds.value = next
+}
+
+
+function onSubfolderClick(id: number)
+{
+  expandToFolder(id)
   focusedFolderId.value = id
   selectFolder(id)
   focusTreeRow(id)
@@ -915,8 +988,25 @@ async function deleteDoc(id: number)
 
 
 const showFolderPicker = ref(false)
-const folderPickerMode = ref<'link' | 'move'>('link')
+const folderPickerMode = ref<'link' | 'move' | 'move-folder'>('link')
 const folderPickerDocIds = ref<number[]>([])
+const folderMoveId = ref<number | null>(null)
+
+
+function collectSubtreeIds(node: Folder): number[]
+{
+  const out = [node.id]
+  for (const c of node.children) out.push(...collectSubtreeIds(c))
+  return(out)
+}
+
+
+const folderMoveExcludeIds = computed(() =>
+{
+  if (folderMoveId.value === null) return([])
+  const node = findFolderNode(foldersStore.tree, folderMoveId.value)
+  return(node ? collectSubtreeIds(node) : [folderMoveId.value])
+})
 
 
 function onLinkDoc(id: number)
@@ -935,6 +1025,17 @@ function onMoveDoc(id: number)
 }
 
 
+function ctxMoveFolder()
+{
+  const id = ctxMenu.value?.folderId
+  ctxMenu.value = null
+  if (!id) return
+  folderPickerMode.value = 'move-folder'
+  folderMoveId.value = id
+  showFolderPicker.value = true
+}
+
+
 async function onFolderPickerConfirm(fldid: number)
 {
   showFolderPicker.value = false
@@ -942,6 +1043,12 @@ async function onFolderPickerConfirm(fldid: number)
   {
     if (folderPickerMode.value === 'link')
       await linkDocuments(fldid, folderPickerDocIds.value)
+    else if (folderPickerMode.value === 'move-folder')
+    {
+      if (folderMoveId.value === null) return
+      await moveFolder(folderMoveId.value, fldid)
+      await foldersStore.load()
+    }
     else
     {
       await Promise.all(folderPickerDocIds.value.map(id => moveDocument(id, fldid)))
@@ -951,13 +1058,14 @@ async function onFolderPickerConfirm(fldid: number)
   }
   catch
   {
-    /* ignore */
+    docsError.value = folderPickerMode.value === 'move-folder' ? i18n.t('explorer.moveFolderFailed') : docsError.value
   }
 }
 
 
 // ── Drag & drop move ─────────────────────────────────────────────
 const DOC_DRAG_MIME = 'application/x-doc-ids'
+const FOLDER_DRAG_MIME = 'application/x-folder-id'
 
 
 function onDocDragStart(id: number, e: DragEvent)
@@ -970,6 +1078,22 @@ function onDocDragStart(id: number, e: DragEvent)
 
 async function onFolderDrop(folderId: number, e: DragEvent)
 {
+  const draggedFolderId = e.dataTransfer?.getData(FOLDER_DRAG_MIME)
+  if (draggedFolderId)
+  {
+    if (Number(draggedFolderId) === folderId) return
+    try
+    {
+      await moveFolder(Number(draggedFolderId), folderId)
+      await foldersStore.load()
+    }
+    catch
+    {
+      /* ignore */
+    }
+    return
+  }
+
   const data = e.dataTransfer?.getData(DOC_DRAG_MIME)
   if (!data) return
   const ids: number[] = JSON.parse(data)
@@ -1353,8 +1477,29 @@ onUnmounted(() =>
   white-space: nowrap;
 }
 
+/* ── Folder content ── */
+.folder-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+.subfolder-list { flex-shrink: 0; padding: 4px 0; }
+
+.subfolder-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 14px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+}
+.subfolder-row:hover { background: var(--bg-muted); }
+
+.subfolder-icon { flex-shrink: 0; color: var(--warn); }
+
+.subfolder-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* ── Document list ── */
-.doc-list { flex: 1; overflow-y: auto; }
+.doc-list { flex: 1; }
 
 /* ── Edit modal internals ── */
 .edit-notice { margin: 8px 16px 0; flex-shrink: 0; }

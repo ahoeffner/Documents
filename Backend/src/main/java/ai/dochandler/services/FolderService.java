@@ -1,6 +1,8 @@
 package ai.dochandler.services;
 
+import java.util.Map;
 import java.util.List;
+import java.util.HashMap;
 import ai.dochandler.entities.Folder;
 import org.springframework.stereotype.Service;
 import ai.dochandler.repository.FolderRepository;
@@ -44,6 +46,30 @@ public class FolderService
     public boolean rename(long id, String name)
     {
         return(repo.rename(id, name));
+    }
+
+
+    public boolean move(long id, Long pid)
+    {
+        if (pid != null && pid == id) return(false);
+        if (pid != null && isDescendant(id, pid)) return(false);
+        return(repo.move(id, pid));
+    }
+
+
+    private boolean isDescendant(long ancestorId, long id)
+    {
+        Map<Long, Long> parentById = new HashMap<>();
+        for (ai.dochandler.model.Folder f : repo.findAll()) parentById.put(f.getId(), f.getPid());
+
+        Long current = id;
+        while (true)
+        {
+            Long parent = parentById.get(current);
+            if (parent == null) return(false);
+            if (parent == ancestorId) return(true);
+            current = parent;
+        }
     }
 
 

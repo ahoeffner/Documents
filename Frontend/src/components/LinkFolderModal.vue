@@ -18,11 +18,11 @@
           />
         </div>
 
-        <template v-if="!filterQuery && recentFolders.length">
+        <template v-if="!filterQuery && visibleRecent.length">
           <div class="link-section-label">{{ i18n.t('linkFolderModal.recent') }}</div>
           <div class="chip-row">
             <button
-              v-for="f in recentFolders"
+              v-for="f in visibleRecent"
               :key="f.id"
               class="folder-chip"
               :class="{ active: selected === f.id }"
@@ -58,7 +58,7 @@ import { useCategoriesStore } from '../stores/categories'
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 
 
-const props = defineProps<{ visible: boolean; title?: string; confirmLabel?: string }>()
+const props = defineProps<{ visible: boolean; title?: string; confirmLabel?: string; excludeIds?: number[] }>()
 const emit = defineEmits<{ close: []; confirm: [fldid: number] }>()
 
 
@@ -72,12 +72,28 @@ const searchEl = ref<HTMLInputElement | null>(null)
 const RECENT_KEY = 'doc-link-recent-folders'
 
 
+const selectableFolders = computed(() =>
+{
+  const excluded = props.excludeIds
+  if (!excluded?.length) return(categoriesStore.categories)
+  return(categoriesStore.categories.filter(f => !excluded.includes(f.id)))
+})
+
+
 const filteredFolders = computed(() =>
 {
   const q = filterQuery.value.trim().replace(/^\//, '')
-  if (!q) return(categoriesStore.categories)
+  if (!q) return(selectableFolders.value)
   const lower = q.toLowerCase()
-  return(categoriesStore.categories.filter(f => f.name.toLowerCase().includes(lower)))
+  return(selectableFolders.value.filter(f => f.name.toLowerCase().includes(lower)))
+})
+
+
+const visibleRecent = computed(() =>
+{
+  const excluded = props.excludeIds
+  if (!excluded?.length) return(recentFolders.value)
+  return(recentFolders.value.filter(f => !excluded.includes(f.id)))
 })
 
 
