@@ -25,6 +25,16 @@ app:
     embedding-retries: 3
     max-conversations: 64
 
+  # Home tab: Home Assistant MCP server (Settings → Devices & services → Model Context Protocol Server)
+  # In Docker, Home Assistant runs with network_mode: host, so reach it via the host gateway;
+  # docker-compose.yaml needs:  extra_hosts: ["host.docker.internal:host-gateway"]
+  # Outside Docker use e.g. http://home:8123/api/mcp
+  homeassistant:
+    url: http://host.docker.internal:8123/api/mcp
+    token: YOUR_LONG_LIVED_ACCESS_TOKEN   # HA profile → Security → Long-lived access tokens
+    timeout-seconds: 60
+    max-steps: 10                         # max tool calls per question
+
   i18n:
     path: ./lang
 
@@ -33,6 +43,11 @@ app:
     home.hoeffner.net: documents
     private.hoeffner.net: documents
     slotsdalen.hoeffner.net: slotsdalen
+
+  # optional app name per host (installed app name, short name and window title);
+  # hosts not listed get "<Subdomain> AI Documents"
+  names:
+    home.hoeffner.net: Butler
 
   tesseract:
     pdf-dpi: 300

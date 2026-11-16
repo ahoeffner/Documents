@@ -6,6 +6,7 @@ app:
     browse: "Browse"
     search: "Search"
     chat: "Ask"
+    home: "Home"
   helpModal:
     documentsTitle: "Documents"
     documentsIntro: 'Organise your documents into folders. Use <strong>right-click</strong> to manage everything — no toolbar buttons.'
@@ -102,6 +103,10 @@ chat:
   waitMore: "Wait 30 more seconds"
   welcome: "I am your personal assistant. Ask me anything about your documents."
   you: "You"
+
+home:
+  placeholder: "Ask about or control your home… (Enter to send, Shift+Enter for new line)"
+  welcome: "I control your home through Home Assistant. Ask me to turn things on or off, or about the state of your home."
 
 create:
   descriptionPlaceholder: "Enter description or paste OCR result here…"

@@ -284,6 +284,61 @@ public class GeminiService
     }
 
 
+    // ── Tool calling ──────────────────────────────────────────────────────────
+
+    public JsonNode generateWithTools(ArrayNode contents, ArrayNode functions, String systemText) throws Exception
+    {
+        try
+        {
+            return(generateWithToolsUsing(llmModel, contents, functions, systemText));
+        }
+        catch (Exception e)
+        {
+            if (shouldFallback(e))
+            {
+                log.warn("Model {} rate-limited, falling back to {}", llmModel, fallbackModel);
+                return(generateWithToolsUsing(fallbackModel, contents, functions, systemText));
+            }
+            throw e;
+        }
+    }
+
+
+    public String getPromptText(String key)
+    {
+        return(getPrompt(key));
+    }
+
+
+    private JsonNode generateWithToolsUsing(String model, ArrayNode contents, ArrayNode functions, String systemText) throws Exception
+    {
+        ObjectNode body = mapper.createObjectNode();
+
+        body.putObject("system_instruction")
+            .putArray("parts").addObject()
+            .put("text", systemText);
+
+        body.set("contents", contents);
+
+        if (functions != null && !functions.isEmpty())
+            body.putArray("tools").addObject().set("functionDeclarations", functions);
+
+        body.putObject("generationConfig").put("temperature", 0.0);
+
+        String url = API_BASE + "/models/" + model + ":generateContent?key=" + apiKey;
+
+        JsonNode candidate = post(url, body).path("candidates").path(0);
+        if (candidate.path("content").path("parts").size() > 0) return(candidate.get("content"));
+
+        // Empty reply (typically finishReason STOP after tool results): hand back an empty turn, the caller decides
+        log.info("Gemini returned no content (finishReason {})", candidate.path("finishReason").asText());
+        ObjectNode empty = mapper.createObjectNode();
+        empty.put("role", "model");
+        empty.putArray("parts");
+        return(empty);
+    }
+
+
     // ── Private ───────────────────────────────────────────────────────────────
 
     private JsonNode extract(List<Map<String, Object>> history, String query, boolean translate) throws Exception

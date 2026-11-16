@@ -17,7 +17,7 @@ export const useTenantStore = defineStore('tenant', () =>
       const res = await getTenant()
       id.value = res.tenant
       name.value = res.name
-      title.value = res.name + ' AI Documents'
+      title.value = res.title || res.name + ' AI Documents'
       document.title = title.value
     }
     catch

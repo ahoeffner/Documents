@@ -107,6 +107,7 @@
       <ExplorerView ref="explorerRef" v-show="activeTab === 'browse'" />
       <SearchView   ref="searchRef" v-show="activeTab === 'search'" />
       <ChatView     ref="chatRef"   v-show="activeTab === 'chat'" />
+      <HomeView     ref="homeRef"   v-show="activeTab === 'home'" />
     </template>
 
     <ConfirmDialog />
@@ -115,6 +116,7 @@
 
 <script setup lang="ts">
 import ChatView from './views/ChatView.vue'
+import HomeView from './views/HomeView.vue'
 import { useAuthStore } from './stores/auth'
 import { useI18nStore } from './stores/i18n'
 import LoginView from './views/LoginView.vue'
@@ -163,11 +165,12 @@ async function installPwa()
 }
 
 
-const activeTab = ref<'browse' | 'search' | 'chat'>('browse')
+const activeTab = ref<'home' | 'browse' | 'search' | 'chat'>('home')
 
 
 const searchRef = ref<InstanceType<typeof SearchView> | null>(null)
 const chatRef = ref<InstanceType<typeof ChatView> | null>(null)
+const homeRef = ref<InstanceType<typeof HomeView> | null>(null)
 const explorerRef = ref<InstanceType<typeof ExplorerView> | null>(null)
 
 
@@ -178,13 +181,14 @@ watch(activeTab, tab =>
     if (tab === 'browse') explorerRef.value?.focus()
     if (tab === 'search') searchRef.value?.focus()
     if (tab === 'chat') chatRef.value?.focus()
+    if (tab === 'home') homeRef.value?.focus()
   })
 })
 
 
 watch(() => auth.isLoggedIn, loggedIn =>
 {
-  if (loggedIn) nextTick(() => explorerRef.value?.focus())
+  if (loggedIn) nextTick(() => homeRef.value?.focus())
 })
 
 
@@ -204,7 +208,12 @@ const IconChat = { render: () => h('svg', { width: 14, height: 14, viewBox: '0 0
 ]) }
 
 
-const tabOrder = ['browse', 'search', 'chat'] as const
+const IconHome = { render: () => h('svg', { width: 14, height: 14, viewBox: '0 0 20 20', fill: 'currentColor' }, [
+  h('path', { d: 'M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z' })
+]) }
+
+
+const tabOrder = ['home', 'browse', 'search', 'chat'] as const
 
 
 function cycleTab(dir: number)
@@ -223,6 +232,7 @@ function activeMicView()
 {
   if (activeTab.value === 'search') return(searchRef.value)
   if (activeTab.value === 'chat') return(chatRef.value)
+  if (activeTab.value === 'home') return(homeRef.value)
   return(null)
 }
 
@@ -275,6 +285,7 @@ function contentZones(): Element[]
     ].filter((el): el is Element => el !== null))
   }
   if (activeTab.value === 'search') return([document.querySelector('.search-view')].filter((el): el is Element => el !== null))
+  if (activeTab.value === 'home') return([document.querySelector('.home-view')].filter((el): el is Element => el !== null))
   return([document.querySelector('.chat-view')].filter((el): el is Element => el !== null))
 }
 
@@ -360,6 +371,7 @@ onUnmounted(() =>
 
 
 const tabs = computed(() => [
+  { id: 'home' as const, label: i18n.t('app.tabs.home'), icon: IconHome },
   { id: 'browse' as const, label: i18n.t('app.tabs.browse'), icon: IconBrowse },
   { id: 'search' as const, label: i18n.t('app.tabs.search'), icon: IconSearch },
   { id: 'chat' as const, label: i18n.t('app.tabs.chat'), icon: IconChat },

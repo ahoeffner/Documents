@@ -6,6 +6,7 @@ app:
     browse: "Gennemse"
     search: "Søg"
     chat: "Spørg"
+    home: "Hjem"
   helpModal:
     documentsTitle: "Dokumenter"
     documentsIntro: 'Organiser dine dokumenter i mapper. Brug <strong>højreklik</strong> til at styre alt — ingen værktøjslinjeknapper.'
@@ -102,6 +103,10 @@ chat:
   waitMore: "Vent 30 sekunder mere"
   welcome: "Jeg er din personlige assistent. Spørg mig om hvad som helst om dine dokumenter."
   you: "Dig"
+
+home:
+  placeholder: "Spørg om eller styr dit hjem… (Enter for at sende, Shift+Enter for ny linje)"
+  welcome: "Jeg styrer dit hjem via Home Assistant. Bed mig tænde eller slukke ting, eller spørg om hjemmets tilstand."
 
 create:
   descriptionPlaceholder: "Indtast beskrivelse eller indsæt OCR-resultat her…"
