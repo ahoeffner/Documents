@@ -9,7 +9,7 @@
     </div>
 
     <!-- Discussion with the control panel in its upper right corner -->
-    <div class="discussion">
+    <div class="discussion" ref="discussionEl">
     <div class="messages" ref="messagesEl">
       <div class="msg msg-ai">
         <span class="msg-sender">{{ i18n.t('chat.assistant') }}</span>
@@ -44,8 +44,8 @@
     </div>
 
 
-    <aside v-if="showPanel" class="panel-aside">
-      <HomePanel ref="panelRef" />
+    <aside v-if="showPanel" ref="asideEl" class="panel-aside" :style="panelStyle">
+      <HomePanel ref="panelRef" @drag-start="startPanelDrag" @reset-position="resetPanelPosition" />
     </aside>
     </div>
 
@@ -120,14 +120,19 @@ import { transcribeAudio } from '../api/transcribe'
 import HomePanel from '../components/HomePanel.vue'
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAudioRecorder } from '../composables/useAudioRecorder'
+import { useDraggablePanel } from '../composables/useDraggablePanel'
 
 
 const HISTORY_KEY = 'home-query-history'
 const PANEL_KEY = 'home-panel'
+const PANEL_POS_KEY = 'home-panel-position'
 
 
 const panelRef = ref<InstanceType<typeof HomePanel> | null>(null)
 const showPanel = ref(readPanelSetting())
+const asideEl = ref<HTMLElement | null>(null)
+const discussionEl = ref<HTMLElement | null>(null)
+const { style: panelStyle, startDrag: startPanelDrag, reset: resetPanelPosition } = useDraggablePanel(discussionEl, asideEl, PANEL_POS_KEY)
 
 
 function readPanelSetting(): boolean

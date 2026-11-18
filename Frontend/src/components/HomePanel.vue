@@ -1,5 +1,13 @@
 <template>
   <div class="panel">
+    <div class="panel-handle" :title="i18n.t('home.panelMove')" @pointerdown="emit('drag-start', $event)" @dblclick="emit('reset-position')">
+      <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
+        <circle cx="7" cy="5" r="1.6"/><circle cx="13" cy="5" r="1.6"/>
+        <circle cx="7" cy="10" r="1.6"/><circle cx="13" cy="10" r="1.6"/>
+        <circle cx="7" cy="15" r="1.6"/><circle cx="13" cy="15" r="1.6"/>
+      </svg>
+      <span>{{ i18n.t('home.panel') }}</span>
+    </div>
     <div v-if="error" class="panel-error">{{ error }}</div>
     <div v-else-if="loaded && !items.length" class="panel-empty">{{ i18n.t('home.panelEmpty') }}</div>
 
@@ -63,6 +71,7 @@ import { ref, reactive, onMounted, onUnmounted } from 'vue'
 const REFRESH_MS = 30000
 
 
+const emit = defineEmits<{ (e: 'drag-start', ev: PointerEvent): void; (e: 'reset-position'): void }>()
 const i18n = useI18nStore()
 const items = ref<PanelItem[]>([])
 const error = ref('')
@@ -178,6 +187,26 @@ defineExpose({ load })
   border-radius: 8px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
 }
+
+.panel-handle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: -6px -12px 2px;
+  padding: 4px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  border-bottom: 1px solid var(--border);
+  border-radius: 8px 8px 0 0;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+.panel-handle:active { cursor: grabbing; }
+.panel-handle:hover { color: var(--text-muted); background: var(--bg-muted); }
 
 .panel-empty {
   font-size: 12px;

@@ -116,6 +116,7 @@ home:
   mute: "Mute"
   unmute: "Unmute"
   panelEmpty: "No devices configured. Add app.homeassistant.panel (entity ids) to config.yaml."
+  panelMove: "Drag to move, double-click to put back in the corner"
 
 create:
   descriptionPlaceholder: "Enter description or paste OCR result here…"

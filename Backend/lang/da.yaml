@@ -116,6 +116,7 @@ home:
   mute: "Slå lyden fra"
   unmute: "Slå lyden til"
   panelEmpty: "Ingen enheder valgt. Tilføj app.homeassistant.panel (entity-id'er) i config.yaml."
+  panelMove: "Træk for at flytte, dobbeltklik for at sætte tilbage i hjørnet"
 
 create:
   descriptionPlaceholder: "Indtast beskrivelse eller indsæt OCR-resultat her…"
