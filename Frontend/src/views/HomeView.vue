@@ -115,7 +115,6 @@
 import { home } from '../api/home'
 import { useHomeStore } from '../stores/home'
 import { useI18nStore } from '../stores/i18n'
-import { synthesizeSpeech } from '../api/tts'
 import axios, { type AxiosError } from 'axios'
 import { transcribeAudio } from '../api/transcribe'
 import HomePanel from '../components/HomePanel.vue'
@@ -213,17 +212,6 @@ function parseSegments(text: string): Segment[]
 }
 
 
-// Tables read aloud as one sentence per row ("Sofa: Tændt, 30%.")
-function speechText(text: string): string
-{
-  return(parseSegments(text).map(seg =>
-  {
-    if (seg.kind === 'text') return(seg.text)
-    return(seg.rows.map(row => row[0] + ': ' + row.slice(1).filter(c => c && c !== '-').join(', ') + '.').join(' '))
-  }).join(' '))
-}
-
-
 const i18n = useI18nStore()
 const homeStore = useHomeStore()
 
@@ -300,42 +288,10 @@ function scrollBottom()
 }
 
 
-let speechAudio: HTMLAudioElement | null = null
-let speechGeneration = 0
-
-
-function stopSpeech()
-{
-  speechGeneration++
-  if (speechAudio) { speechAudio.pause(); speechAudio = null }
-}
-
-
-async function speakText(text: string)
-{
-  stopSpeech()
-  const generation = speechGeneration
-  try
-  {
-    const res = await synthesizeSpeech(text)
-    if (generation !== speechGeneration) return
-    const url = URL.createObjectURL(res.data as Blob)
-    speechAudio = new Audio(url)
-    speechAudio.onended = () => URL.revokeObjectURL(url)
-    speechAudio.play()
-  }
-  catch
-  {
-    /* ignore */
-  }
-}
-
-
-async function sendMessage(speak = false)
+async function sendMessage()
 {
   const q = query.value.trim()
   if (!q || loading.value) return
-  stopSpeech()
   homeStore.addMessage('user', q)
   queryHistory.value = [q, ...queryHistory.value.filter(h => h !== q)].slice(0, 20)
   localStorage.setItem(HISTORY_KEY, JSON.stringify(queryHistory.value))
@@ -351,7 +307,6 @@ async function sendMessage(speak = false)
     if (data.success)
     {
       homeStore.addMessage('ai', data.response ?? '')
-      if (speak && data.response) speakText(speechText(data.response))
       setTimeout(() => panelRef.value?.load(), 1500)
     }
     else
@@ -395,10 +350,11 @@ async function toggleMic()
     transcribing.value = true
     const res = await transcribeAudio(blob)
     const transcript = (res.data.text || '').trim()
-    if (transcript.split(/\s+/).filter(Boolean).length < 2) return
+    // home commands are often one word ("sluk", "status", "støvsug")
+    if (!transcript) return
     query.value = transcript
     nextTick(() => textareaEl.value?.focus())
-    await sendMessage(true)
+    await sendMessage()
   }
   catch (err)
   {
@@ -447,6 +403,7 @@ function selectHistory(h: string)
 
 /* ── Discussion + panel ── */
 .discussion {
+  position: relative;
   flex: 1;
   display: flex;
   min-height: 0;
@@ -454,15 +411,16 @@ function selectHistory(h: string)
   background: var(--bg);
 }
 
+/* Floating popup over the upper right corner of the discussion; takes no layout space */
 .panel-aside {
-  flex-shrink: 0;
-  align-self: flex-start;
-  padding: 12px 14px 0 0;
+  position: absolute;
+  top: 10px;
+  right: 18px;
+  z-index: 20;
 }
 
-@media (max-width: 760px) {
-  .discussion { flex-direction: column; }
-  .panel-aside { align-self: stretch; padding: 8px 14px 0; order: -1; }
+@media (max-width: 520px) {
+  .panel-aside { left: 8px; right: 8px; }
 }
 
 /* ── Messages ── */
