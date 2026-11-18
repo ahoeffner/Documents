@@ -32,6 +32,7 @@ public class HomeService
     private static final String ADJUST = "AdjustBrightness";
     private static final String STATUS = "LightStatus";
     private static final String DEVICES = "ListDevices";
+    private static final String MEDIA = "MediaControl";
     private static final Pattern HELP = Pattern.compile("^\\s*(\\?+|help|hjælp|hjaelp|hilfe|hjelp|hvad kan du( gøre)?|hvad kan jeg( gøre| styre)?|what can you do|what can i (do|control))\\s*[?!.]*\\s*$", Pattern.CASE_INSENSITIVE);
     private static final Set<String> TABLES = Set.of(STATUS, DEVICES);
     private static final Pattern DOMAIN = Pattern.compile("(?m)^\\s*domain:\\s*(\\S+)");
@@ -66,20 +67,25 @@ public class HomeService
     @Value("${app.homeassistant.max-steps:10}")
     private int maxSteps;
 
+    @Value("${app.homeassistant.hidden:}")
+    private String hiddenNames;
+
     @Value("${app.gemini.max-conversations:64}")
     private int maxConversations;
 
     private final ObjectMapper mapper;
     private final GeminiService gemini;
+    private final TvVolumeService tv;
     private final HomeAssistantService homeAssistant;
 
     private Map<String, ArrayNode> conversations;
 
 
-    public HomeService(GeminiService gemini, HomeAssistantService homeAssistant, ObjectMapper mapper)
+    public HomeService(GeminiService gemini, HomeAssistantService homeAssistant, TvVolumeService tv, ObjectMapper mapper)
     {
         this.gemini = gemini;
         this.homeAssistant = homeAssistant;
+        this.tv = tv;
         this.mapper = mapper;
     }
 
@@ -175,13 +181,15 @@ public class HomeService
             JsonNode result;
 
             if (ADJUST.equals(name)) result = adjustBrightness(args);
+            else if (MEDIA.equals(name)) result = mediaControl(args);
             else if (TABLES.contains(name)) result = toolResult(table(call, en), false);
             else result = homeAssistant.callTool(name, args);
 
             String text = resultText(result);
-            if ("GetLiveContext".equals(name)) text = brightnessToPercent(text);
+            if ("GetLiveContext".equals(name)) text = brightnessToPercent(withoutHidden(text));
 
             if (result.path("isError").asBoolean(false)) response.put("error", text);
+            else if (nothingAffected(text)) response.put("error", "No device was affected; the device does not support this action in its current state. Tell the user it did not work.");
             else response.put("result", text);
 
             log.info("Home tool {} {} -> {}", name, call.path("args"), text.length() > 200 ? text.substring(0, 200) + "…" : text);
@@ -222,6 +230,7 @@ public class HomeService
 
         functions.add(adjustDeclaration());
         functions.add(statusDeclaration());
+        functions.add(mediaDeclaration());
         functions.add(devicesDeclaration());
         return(functions);
     }
@@ -258,6 +267,112 @@ public class HomeService
         }
         if (sb.length() == 0) return(result.toString());
         return(sb.toString().trim());
+    }
+
+
+    /**
+     * Home Assistant answers "action_done" even when its intent matched no device (e.g. volume on a TV that is
+     * on but not playing); without this the model would report success.
+     */
+    private boolean nothingAffected(String text)
+    {
+        try
+        {
+            JsonNode json = mapper.readTree(text);
+            if (!"action_done".equals(json.path("response_type").asText())) return(false);
+            JsonNode data = json.path("data");
+            return(data.path("success").size() == 0 && data.path("failed").size() == 0);
+        }
+        catch (Exception e)
+        {
+            return(false);
+        }
+    }
+
+
+    /**
+     * Local tool: mute and volume via direct service calls, which (unlike the voice intents) also work on
+     * media players that are on but not playing, such as the TV.
+     */
+    private ObjectNode mediaDeclaration()
+    {
+        ObjectNode fn = mapper.createObjectNode();
+        fn.put("name", MEDIA);
+        fn.put("description", "Mutes, unmutes or sets the volume of a media player such as the TV. Use this instead of HassMediaPlayerMute, HassMediaPlayerUnmute, HassSetVolume and HassSetVolumeRelative.");
+
+        ObjectNode schema = fn.putObject("parametersJsonSchema");
+        schema.put("type", "object");
+        ObjectNode props = schema.putObject("properties");
+        props.putObject("name").put("type", "string").put("description", "The media player name, e.g. Stue tv");
+        ObjectNode action = props.putObject("action");
+        action.put("type", "string");
+        action.putArray("enum").add("mute").add("unmute").add("volume").add("volume_up").add("volume_down");
+        props.putObject("level").put("type", "integer").put("description", "For volume: the level 0-100. For volume_up/volume_down: how many steps (key presses on a TV), omit for the default.");
+        schema.putArray("required").add("name").add("action");
+
+        return(fn);
+    }
+
+
+    private JsonNode mediaControl(JsonNode args) throws Exception
+    {
+        String name = args.path("name").asText();
+        String action = args.path("action").asText();
+
+        JsonNode player = null;
+        for (JsonNode s : homeAssistant.states())
+        {
+            String id = s.path("entity_id").asText();
+            String friendly = s.path("attributes").path("friendly_name").asText("");
+            if (id.startsWith("media_player.") && friendly.equalsIgnoreCase(name.trim()) && !isHidden(List.of(friendly))) player = s;
+        }
+        if (player == null) return(toolResult("No media player named '" + name + "'", true));
+
+        String id = player.path("entity_id").asText();
+        int current = (int) Math.round(player.path("attributes").path("volume_level").asDouble(0) * 100);
+
+        ObjectNode data = mapper.createObjectNode();
+        data.put("entity_id", id);
+
+        switch (action)
+        {
+            case "mute", "unmute" ->
+            {
+                data.put("is_volume_muted", "mute".equals(action));
+                homeAssistant.callService("media_player", "volume_mute", data);
+                return(toolResult(name + ": " + ("mute".equals(action) ? "muted" : "unmuted"), false));
+            }
+            case "volume_up", "volume_down" ->
+            {
+                if (tv.stepVolumeOnly(player))
+                {
+                    int steps = args.has("level") ? Math.abs(args.path("level").asInt()) : 5;
+                    int to = tv.changeVolume(player, "volume_up".equals(action) ? steps : -steps);
+                    return(toolResult(name + ": turning the volume " + ("volume_up".equals(action) ? "up" : "down") + " to about " + to + " (maximum " + tv.maxVolume() + ")", false));
+                }
+                int step = args.has("level") ? Math.abs(args.path("level").asInt()) : 10;
+                int target = Math.max(0, Math.min(100, current + ("volume_up".equals(action) ? step : -step)));
+                data.put("volume_level", target / 100.0);
+                homeAssistant.callService("media_player", "volume_set", data);
+                return(toolResult(name + ": volume changed from " + current + "% to " + target + "%", false));
+            }
+            case "volume" ->
+            {
+                if (tv.stepVolumeOnly(player))
+                {
+                    int to = tv.setVolume(player, args.path("level").asInt(tv.volume(player)));
+                    return(toolResult(name + ": setting the volume to about " + to + " (maximum " + tv.maxVolume() + ")", false));
+                }
+                int target = Math.max(0, Math.min(100, args.path("level").asInt(current)));
+                data.put("volume_level", target / 100.0);
+                homeAssistant.callService("media_player", "volume_set", data);
+                return(toolResult(name + ": volume changed from " + current + "% to " + target + "%", false));
+            }
+            default ->
+            {
+                return(toolResult("Unknown action '" + action + "'", true));
+            }
+        }
     }
 
 
@@ -337,13 +452,13 @@ public class HomeService
     {
         ObjectNode fn = mapper.createObjectNode();
         fn.put("name", STATUS);
-        fn.put("description", "Shows the current status of lights as a table. Use for every question about the state of lights.");
+        fn.put("description", "Shows the current status of lights and the TV as a table. Use for every question about the state of lights or the TV, and for 'status'.");
 
         ObjectNode schema = fn.putObject("parametersJsonSchema");
         schema.put("type", "object");
         ObjectNode props = schema.putObject("properties");
         ObjectNode names = props.putObject("names");
-        names.put("type", "array").put("description", "The light names to show, e.g. [\"1 sal\", \"Sofa\"]. [\"*\"] ONLY when the user explicitly says all/alle; 'the lights' is not all.");
+        names.put("type", "array").put("description", "The device names to show, e.g. [\"1 sal\", \"Sofa\", \"Stue tv\"]. [\"*\"] (all lights) ONLY when the user explicitly says all/alle; 'the lights' is not all.");
         names.putObject("items").put("type", "string");
         schema.putArray("required").add("names");
 
@@ -370,23 +485,41 @@ public class HomeService
 
     private String statusTable(JsonNode args, boolean en) throws Exception
     {
-        List<Entity> all = entities(live()).stream().filter(e -> "light".equals(e.domain())).toList();
+        List<Entity> all = entities(live()).stream().filter(e -> "light".equals(e.domain()) || "media_player".equals(e.domain())).toList();
 
         List<String> names = new ArrayList<>();
         for (JsonNode n : args.path("names")) names.add(n.asText());
 
-        StringBuilder sb = new StringBuilder(en ? "| Light | Status |\n|---|---|\n" : "| Lys | Status |\n|---|---|\n");
+        StringBuilder sb = new StringBuilder(en ? "| Device | Status |\n|---|---|\n" : "| Enhed | Status |\n|---|---|\n");
 
+        // "*" (all lights) lists the lights only
         if (names.isEmpty() || names.contains("*"))
         {
-            for (Entity l : all) sb.append("| ").append(l.name()).append(" | ").append(statusText(l, en)).append(" |\n");
+            for (Entity l : all)
+            {
+                if ("light".equals(l.domain())) sb.append("| ").append(l.name()).append(" | ").append(statusText(l, en)).append(" |\n");
+            }
             return(sb.toString().trim());
         }
 
+        Map<String, JsonNode> players = null;
+
         for (String name : names)
         {
-            Entity l = find(all, name);
-            sb.append("| ").append(l != null ? l.name() : name).append(" | ").append(l != null ? statusText(l, en) : "NA").append(" |\n");
+            Entity e = find(all, name);
+            String status = "NA";
+
+            if (e != null && "media_player".equals(e.domain()))
+            {
+                if (players == null) players = mediaPlayers();
+                status = mediaStatus(e, players.get(e.name().toLowerCase()), en);
+            }
+            else if (e != null)
+            {
+                status = statusText(e, en);
+            }
+
+            sb.append("| ").append(e != null ? e.name() : name).append(" | ").append(status).append(" |\n");
         }
 
         return(sb.toString().trim());
@@ -410,6 +543,40 @@ public class HomeService
         }
 
         return(sb.toString().trim());
+    }
+
+
+    /**
+     * Media players by lower-case friendly name, from the REST API (it has mute state and features, the live context not).
+     */
+    private Map<String, JsonNode> mediaPlayers() throws Exception
+    {
+        Map<String, JsonNode> players = new LinkedHashMap<>();
+        for (JsonNode s : homeAssistant.states())
+        {
+            if (s.path("entity_id").asText().startsWith("media_player.")) players.put(s.path("attributes").path("friendly_name").asText("").toLowerCase(), s);
+        }
+        return(players);
+    }
+
+
+    /**
+     * "tændt, 40%" / "tændt, lydløs" / "slukket". The volume is left out for TVs that never report it (key presses only).
+     */
+    private String mediaStatus(Entity e, JsonNode rest, boolean en)
+    {
+        if (rest == null) return(statusText(e, en));
+
+        String state = rest.path("state").asText("unknown");
+        if ("unavailable".equals(state) || "unknown".equals(state)) return("NA");
+        if ("off".equals(state) || "standby".equals(state)) return(en ? "off" : "slukket");
+
+        String text = en ? state : STATE_DA.getOrDefault(state, state);
+        JsonNode a = rest.path("attributes");
+
+        if (a.path("is_volume_muted").asBoolean(false)) return(text + (en ? ", muted" : ", lydløs"));
+        if (!tv.stepVolumeOnly(rest) && a.has("volume_level")) return(text + ", " + Math.round(a.path("volume_level").asDouble() * 100) + "%");
+        return(text);
     }
 
 
@@ -483,7 +650,7 @@ public class HomeService
             Matcher br = BRIGHTNESS.matcher(lines[1]);
             Integer percent = br.find() ? (int) Math.round(Integer.parseInt(br.group(2)) * 100.0 / 255.0) : null;
 
-            entities.add(new Entity(aliases, dm.group(1).trim(), state, percent));
+            if (!isHidden(aliases)) entities.add(new Entity(aliases, dm.group(1).trim(), state, percent));
         }
 
         return(entities);
@@ -525,6 +692,64 @@ public class HomeService
     }
 
 
+    /**
+     * Entities listed in app.homeassistant.hidden (comma separated) are left out everywhere,
+     * e.g. a duplicate TV entry that does not respond.
+     */
+    private boolean isHidden(List<String> aliases)
+    {
+        if (hiddenNames == null || hiddenNames.isBlank()) return(false);
+
+        for (String hidden : hiddenNames.split(","))
+        {
+            for (String alias : aliases)
+            {
+                if (alias.equalsIgnoreCase(hidden.trim())) return(true);
+            }
+        }
+        return(false);
+    }
+
+
+    /**
+     * Removes hidden entities from Home Assistant's device lists ("- names: ..." blocks), in plain or JSON-wrapped text.
+     */
+    private String withoutHidden(String text)
+    {
+        if (hiddenNames == null || hiddenNames.isBlank()) return(text);
+
+        String inner = text;
+        ObjectNode wrapper = null;
+        try
+        {
+            JsonNode json = mapper.readTree(text);
+            if (json.isObject() && json.has("result"))
+            {
+                wrapper = (ObjectNode) json;
+                inner = json.get("result").asText();
+            }
+        }
+        catch (Exception ignored) {}
+
+        StringBuilder sb = new StringBuilder();
+        String[] blocks = inner.split("(?m)^(?=- names: )");
+        for (String block : blocks)
+        {
+            if (block.startsWith("- names: "))
+            {
+                List<String> aliases = new ArrayList<>();
+                for (String alias : block.substring(9).split("\\n", 2)[0].split(",")) aliases.add(alias.replace("'", "").replace("\"", "").trim());
+                if (isHidden(aliases)) continue;
+            }
+            sb.append(block);
+        }
+
+        if (wrapper == null) return(sb.toString());
+        wrapper.put("result", sb.toString());
+        return(wrapper.toString());
+    }
+
+
     private String systemText()
     {
         String prompt = gemini.getPromptText("HOME");
@@ -534,7 +759,7 @@ public class HomeService
         try
         {
             // Home Assistant tells the model to ask for an area on "turn on the lights"; that conflicts with the house defaults
-            assist = AREA_QUESTION.matcher(homeAssistant.prompts()).replaceAll("");
+            assist = withoutHidden(AREA_QUESTION.matcher(homeAssistant.prompts()).replaceAll(""));
         }
         catch (Exception e)
         {

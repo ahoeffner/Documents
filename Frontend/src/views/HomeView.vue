@@ -4,10 +4,12 @@
     <!-- Main toolbar -->
     <div class="toolbar">
       <div class="spacer"></div>
+      <button type="button" @click="togglePanel" class="btn btn-primary btn-sm" :class="{ 'panel-on': showPanel }">{{ i18n.t('home.panel') }}</button>
       <button type="button" @click="homeStore.clear()" class="btn btn-primary btn-sm">{{ i18n.t('chat.clear') }}</button>
     </div>
 
-    <!-- Messages -->
+    <!-- Discussion with the control panel in its upper right corner -->
+    <div class="discussion">
     <div class="messages" ref="messagesEl">
       <div class="msg msg-ai">
         <span class="msg-sender">{{ i18n.t('chat.assistant') }}</span>
@@ -39,6 +41,12 @@
           <span class="thinking-label">{{ i18n.t('chat.thinking') }}</span>
         </span>
       </div>
+    </div>
+
+
+    <aside v-if="showPanel" class="panel-aside">
+      <HomePanel ref="panelRef" />
+    </aside>
     </div>
 
     <Teleport to="body">
@@ -110,11 +118,44 @@ import { useI18nStore } from '../stores/i18n'
 import { synthesizeSpeech } from '../api/tts'
 import axios, { type AxiosError } from 'axios'
 import { transcribeAudio } from '../api/transcribe'
+import HomePanel from '../components/HomePanel.vue'
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAudioRecorder } from '../composables/useAudioRecorder'
 
 
 const HISTORY_KEY = 'home-query-history'
+const PANEL_KEY = 'home-panel'
+
+
+const panelRef = ref<InstanceType<typeof HomePanel> | null>(null)
+const showPanel = ref(readPanelSetting())
+
+
+function readPanelSetting(): boolean
+{
+  try
+  {
+    return(localStorage.getItem(PANEL_KEY) !== 'off')
+  }
+  catch
+  {
+    return(true)
+  }
+}
+
+
+function togglePanel()
+{
+  showPanel.value = !showPanel.value
+  try
+  {
+    localStorage.setItem(PANEL_KEY, showPanel.value ? 'on' : 'off')
+  }
+  catch
+  {
+    /* ignore */
+  }
+}
 
 
 interface Segment
@@ -311,6 +352,7 @@ async function sendMessage(speak = false)
     {
       homeStore.addMessage('ai', data.response ?? '')
       if (speak && data.response) speakText(speechText(data.response))
+      setTimeout(() => panelRef.value?.load(), 1500)
     }
     else
     {
@@ -400,6 +442,28 @@ function selectHistory(h: string)
   flex-shrink: 0;
 }
 
+
+.panel-on { border-color: var(--accent); color: var(--accent); }
+
+/* ── Discussion + panel ── */
+.discussion {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.panel-aside {
+  flex-shrink: 0;
+  align-self: flex-start;
+  padding: 12px 14px 0 0;
+}
+
+@media (max-width: 760px) {
+  .discussion { flex-direction: column; }
+  .panel-aside { align-self: stretch; padding: 8px 14px 0; order: -1; }
+}
 
 /* ── Messages ── */
 .messages {

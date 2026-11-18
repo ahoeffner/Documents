@@ -1,5 +1,9 @@
 server:
   port: 8080
+  # idle session lifetime (default 24h, set in the app); the app logs out itself when closed
+  # servlet:
+  #   session:
+  #     timeout: 24h
 
 spring:
   servlet:
@@ -34,6 +38,10 @@ app:
     token: YOUR_LONG_LIVED_ACCESS_TOKEN   # HA profile → Security → Long-lived access tokens
     timeout-seconds: 60
     max-steps: 10                         # max tool calls per question
+    max-volume: 50                        # TV volume never goes above this (panel and chat)
+    hidden: Samsung QN95AA 55 TV          # entities to ignore (comma separated), e.g. a TV entry that does not respond
+    # entity ids shown in the Home tab's control panel (comma separated; lights and media players)
+    panel: light.sofa, light.wiz_tunable_white_2843f0, media_player.samsung_qn95aa_55_tv_qe55qn95aatxxc
 
   i18n:
     path: ./lang

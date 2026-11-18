@@ -21,11 +21,18 @@ export const useAuthStore = defineStore('auth', () =>
   async function logout()
   {
     await apiLogout()
+    expire()
+  }
+
+
+  // Session ended on the server: back to the login screen without calling the server
+  function expire()
+  {
     isLoggedIn.value = false
     isAdmin.value = false
     tenant.value = ''
   }
 
 
-  return({ isLoggedIn, isAdmin, tenant, setLoggedIn, logout })
+  return({ isLoggedIn, isAdmin, tenant, setLoggedIn, logout, expire })
 })

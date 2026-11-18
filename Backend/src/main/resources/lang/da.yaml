@@ -107,6 +107,15 @@ chat:
 home:
   placeholder: "Spørg om eller styr dit hjem… (Enter for at sende, Shift+Enter for ny linje)"
   welcome: "Jeg styrer dit hjem via Home Assistant. Bed mig tænde eller slukke ting, eller spørg om hjemmets tilstand."
+  panel: "Panel"
+  panelError: "Kunne ikke kontakte Home Assistant."
+  turnOn: "Tænd"
+  turnOff: "Sluk"
+  brightness: "Lysstyrke"
+  volume: "Lydstyrke"
+  mute: "Slå lyden fra"
+  unmute: "Slå lyden til"
+  panelEmpty: "Ingen enheder valgt. Tilføj app.homeassistant.panel (entity-id'er) i config.yaml."
 
 create:
   descriptionPlaceholder: "Indtast beskrivelse eller indsæt OCR-resultat her…"

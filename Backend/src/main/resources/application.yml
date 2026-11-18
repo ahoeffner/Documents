@@ -1,3 +1,18 @@
 spring:
   config:
     import: optional:file:./config.yaml
+
+  # Browsers must revalidate static files (icons, index.html) so a new deploy is picked up at once;
+  # unchanged files are answered with 304 Not Modified, so this costs almost nothing
+  web:
+    resources:
+      cache:
+        cachecontrol:
+          no-cache: true
+
+# The app keeps its session alive with a heartbeat while open and logs out when closed;
+# 24h idle only matters when the computer sleeps with the app open. Override in config.yaml if needed.
+server:
+  servlet:
+    session:
+      timeout: 24h

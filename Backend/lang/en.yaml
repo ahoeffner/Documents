@@ -107,6 +107,15 @@ chat:
 home:
   placeholder: "Ask about or control your home… (Enter to send, Shift+Enter for new line)"
   welcome: "I control your home through Home Assistant. Ask me to turn things on or off, or about the state of your home."
+  panel: "Panel"
+  panelError: "Could not reach Home Assistant."
+  turnOn: "Turn on"
+  turnOff: "Turn off"
+  brightness: "Brightness"
+  volume: "Volume"
+  mute: "Mute"
+  unmute: "Unmute"
+  panelEmpty: "No devices configured. Add app.homeassistant.panel (entity ids) to config.yaml."
 
 create:
   descriptionPlaceholder: "Enter description or paste OCR result here…"

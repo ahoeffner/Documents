@@ -87,6 +87,62 @@ public class HomeAssistantService
     }
 
 
+    /**
+     * Current state of one entity via Home Assistant's REST API (same token, same host as the MCP endpoint).
+     */
+    public JsonNode state(String entityId) throws Exception
+    {
+        HttpRequest request = rest("/api/states/" + entityId).GET().build();
+        return(restSend(request));
+    }
+
+
+    /**
+     * All entity states via the REST API.
+     */
+    public JsonNode states() throws Exception
+    {
+        HttpRequest request = rest("/api/states").GET().build();
+        return(restSend(request));
+    }
+
+
+    /**
+     * Calls a service directly, e.g. media_player.volume_mute; unlike the voice intents this also works
+     * on media players that are on but not playing.
+     */
+    public void callService(String domain, String service, ObjectNode data) throws Exception
+    {
+        String body = mapper.writeValueAsString(data);
+        HttpRequest request = rest("/api/services/" + domain + "/" + service).POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8)).build();
+        restSend(request);
+    }
+
+
+    private HttpRequest.Builder rest(String path) throws Exception
+    {
+        if (token == null || token.isBlank()) throw new Exception("app.homeassistant.token is not configured");
+
+        URI mcp = URI.create(url);
+        URI target = new URI(mcp.getScheme(), null, mcp.getHost(), mcp.getPort(), path, null, null);
+
+        return(HttpRequest.newBuilder()
+            .uri(target)
+            .version(HttpClient.Version.HTTP_1_1)
+            .timeout(Duration.ofSeconds(timeoutSeconds))
+            .header("Content-Type", "application/json")
+            .header("Authorization", "Bearer " + token));
+    }
+
+
+    private JsonNode restSend(HttpRequest request) throws Exception
+    {
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        if (response.statusCode() >= 300) throw new Exception("Home Assistant " + response.statusCode() + ": " + response.body());
+        return(mapper.readTree(response.body()));
+    }
+
+
     private synchronized JsonNode rpc(String method, ObjectNode params) throws Exception
     {
         if (!initialized) initialize();

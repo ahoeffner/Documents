@@ -67,3 +67,18 @@ export interface ChatPayload
   match: number
   languageIndependent: boolean
 }
+
+
+export interface PanelItem
+{
+  id: string
+  name: string
+  domain: string
+  state: string
+  available: boolean
+  on: boolean
+  level: number
+  muted?: boolean
+  stepVolume?: boolean
+  max?: number
+}

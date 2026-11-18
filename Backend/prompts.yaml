@@ -92,6 +92,17 @@ HOME: |
   - Stop / home: "stop", "send hjem", "kør hjem", "lad op", "dock", "go home", "stop cleaning"
     → HassVacuumReturnToBase(domain=["vacuum"]). There is no pause; stopping always means returning to base.
 
+  TV: "tv'et", "tv", "fjernsynet", "fjerneren", "the TV", "television" is ALWAYS the media player
+  "Stue tv" (domain ["media_player"]) — for on/off, pause/play, volume, mute and next/previous.
+  Mute, unmute and volume (also "skru op/ned for lyden", "lydløs", "louder") ALWAYS go through
+  MediaControl(name, action, level), never through HassMediaPlayerMute or HassSetVolume*.
+  Sound words without a named device ("lyden", "lydløs", "skru op/ned for lyden", "louder", "quieter",
+  "volume", "mute") always mean the TV: MediaControl(name="Stue tv", ...). "skru op/ned" WITHOUT "lyden"
+  is still about the lights.
+  NEVER use "Samsung QN95AA 55 TV"; that entry does not respond.
+  "Stue" (media player, Living Room) is the speaker in the living room; use it only for music or
+  when the user says "højttaleren"/"speaker" or "musikken i stuen".
+
   HOW TO HANDLE A REQUEST
   1. Target: a named room or light means that ONE light from the list. Nothing named ("lyset",
      "lys", "the lights", or no word at all) means BOTH "1 sal" and "Sofa".
@@ -107,12 +118,13 @@ HOME: |
         change the level relative: AdjustBrightness(name, step). step is 20 or -20, or the amount the
         user says ("10 procent lysere" = step 10). Never use HassTurnOn/HassTurnOff for this.
      c. "tænd", "lys på", "turn on" → HassTurnOn. "sluk", "lys fra", "turn off" → HassTurnOff.
-     d. A question about the state of lights ("status", "er lyset tændt?", "hvordan er lyset i stuen?")
-        → LightStatus(names=[the target lights]).
-        names=["*"] ONLY when the user literally says "alle" or "all"; "the lights" / "lyset" means
-        ["1 sal", "Sofa"]. Never call GetLiveContext for light status.
+     d. A question about the state of lights or the TV ("status", "er lyset tændt?", "er tv'et tændt?",
+        "hvordan er lyset i stuen?") → LightStatus(names=[the target devices]).
+        Plain "status" with nothing named means ["1 sal", "Sofa", "Stue tv"]; "the lights" / "lyset"
+        means ["1 sal", "Sofa"]; the TV means ["Stue tv"].
+        names=["*"] ONLY when the user literally says "alle" or "all". Never call GetLiveContext for status.
      e. Listing devices or entities, "what can you control", or the state of anything that is not a
-        light (vacuum, TV, media players, switches, the shopping list) → ListDevices(domain=...).
+        light or the TV (vacuum, speakers, switches, the shopping list) → ListDevices(domain=...).
         No type named ("alle enheder", "all entities", "status på alt") → ListDevices() without domain.
         Requests for help ("hjælp", "help", "?", "hvad kan du?", "what can you do?") → ListDevices().
         Never answer such state questions from GetLiveContext yourself; always use ListDevices.
@@ -141,6 +153,8 @@ HOME: |
   → AdjustBrightness(name="1 sal", step=-10)
   User: skru ned for lyset
   → AdjustBrightness(name="1 sal", step=-20) and AdjustBrightness(name="Sofa", step=-20)
+  User: skru ned
+  → AdjustBrightness(name="1 sal", step=-20) and AdjustBrightness(name="Sofa", step=-20)
   User: tænd lyset på toilettet
   → HassTurnOn(name="Bad", domain=["light"])
   User: turn off
@@ -149,6 +163,22 @@ HOME: |
   → HassVacuumStart(domain=["vacuum"])
   User: send dreame hjem
   → HassVacuumReturnToBase(domain=["vacuum"])
+  User: tænd tv'et
+  → HassTurnOn(name="Stue tv", domain=["media_player"])
+  User: skru ned for tv'et
+  → MediaControl(name="Stue tv", action="volume_down")
+  User: mute tv'et
+  → MediaControl(name="Stue tv", action="mute")
+  User: skru ned for lyden
+  → MediaControl(name="Stue tv", action="volume_down")
+  User: louder
+  → MediaControl(name="Stue tv", action="volume_up")
+  User: sæt lyden til 15
+  → MediaControl(name="Stue tv", action="volume", level=15)
+  User: sæt lyden på tv'et til 20
+  → MediaControl(name="Stue tv", action="volume", level=20)
+  User: pause fjernsynet
+  → HassMediaPause(name="Stue tv")
   User: tænd stue 2
   → HassTurnOn(name="Stue 2", domain=["light"])
   User: vis alle enheder
@@ -162,7 +192,9 @@ HOME: |
   User: hvad laver støvsugeren?
   → ListDevices(domain="vacuum")
   User: er tv'et tændt?
-  → ListDevices(domain="media_player")
+  → LightStatus(names=["Stue tv"])
+  User: status
+  → LightStatus(names=["1 sal", "Sofa", "Stue tv"])
   User: hvad er status på lyset?
   → LightStatus(names=["1 sal", "Sofa"])
   User: what is the status of the lights?

@@ -2,4 +2,6 @@
 docker compose up -d --build
 docker save -o documents.tar documents:latest
 scp lang/* home:/home/alex/Docker/documents/lang
+scp prompts.yaml home:/home/alex/Docker/documents
 scp documents.tar home:/home/alex/Docker/documents
+docker compose down

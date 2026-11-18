@@ -1,13 +1,173 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <path d="M511.344,274.266C511.77,268.231,512,262.143,512,256C512,114.615,397.385,0,256,0S0,114.615,0,256
-    c0,117.769,79.53,216.949,187.809,246.801L511.344,274.266z" fill="#0076CF"/>
-  <path d="M511.344,274.266L314.991,77.913L119.096,434.087l68.714,68.714C209.522,508.787,232.385,512,256,512
-    C391.243,512,501.976,407.125,511.344,274.266z" fill="#00477D"/>
-  <polygon points="278.328,333.913 255.711,77.913 119.096,77.913 119.096,311.652" fill="#fff"/>
-  <polygon points="392.904,311.652 392.904,155.826 337.252,133.565 314.991,77.913 255.711,77.913 256.067,333.913" fill="#E8E6E6"/>
-  <polygon points="314.991,155.826 314.991,77.913 392.904,155.826" fill="#fff"/>
-  <rect x="119.096" y="311.652" width="273.809" height="122.435" fill="#3CA8FA"/>
-  <path d="M244.8,399.362h-13.6l-3.8-10.5h-19.4l-3.8,10.5h-13.2l20.3-52.975h13.4l20.1,52.975z
-    M224.5,378.3l-6.5-18.8h-0.2l-6.5,18.8h13.2z" fill="#fff"/>
-  <path d="M272.8,399.362h-13.5v-52.975h13.5z" fill="#fff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="28 68 344 344">
+  <defs>
+    <!-- Vintage Parchment & Warm Editorial Gradients -->
+    <radialGradient id="bgGrad" cx="50%" cy="42%" r="60%">
+      <stop offset="0%" stop-color="#f5ecd8"/>
+      <stop offset="70%" stop-color="#e3d2b4"/>
+      <stop offset="100%" stop-color="#cbb48e"/>
+    </radialGradient>
+
+    <linearGradient id="suitGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#262930"/>
+      <stop offset="50%" stop-color="#181a1f"/>
+      <stop offset="100%" stop-color="#0d0e11"/>
+    </linearGradient>
+
+    <linearGradient id="lapelGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#111216"/>
+      <stop offset="100%" stop-color="#22252c"/>
+    </linearGradient>
+
+    <linearGradient id="hairGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f3d98b"/>
+      <stop offset="55%" stop-color="#dcb558"/>
+      <stop offset="100%" stop-color="#b58932"/>
+    </linearGradient>
+
+    <linearGradient id="skinGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#fce3ce"/>
+      <stop offset="70%" stop-color="#f2cba9"/>
+      <stop offset="100%" stop-color="#dfa880"/>
+    </linearGradient>
+
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff0a8"/>
+      <stop offset="45%" stop-color="#d4af37"/>
+      <stop offset="100%" stop-color="#8a6d1b"/>
+    </linearGradient>
+
+    <radialGradient id="monocleGlass" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.7"/>
+      <stop offset="50%" stop-color="#d8f0f8" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#a5d2e2" stop-opacity="0.4"/>
+    </radialGradient>
+
+    <clipPath id="portraitClip">
+      <circle cx="200" cy="240" r="165"/>
+    </clipPath>
+  </defs>
+
+
+  <!-- Circular Medallion Backdrop -->
+  <circle cx="200" cy="240" r="168" fill="none" stroke="url(#goldGrad)" stroke-width="4"/>
+  <circle cx="200" cy="240" r="165" fill="url(#bgGrad)"/>
+
+  <!-- Subtle Art Deco Sunburst Rays inside Medallion -->
+  <g clip-path="url(#portraitClip)" opacity="0.16" stroke="#8a6d1b" stroke-width="1">
+    <line x1="200" y1="220" x2="20" y2="60"/>
+    <line x1="200" y1="220" x2="90" y2="30"/>
+    <line x1="200" y1="220" x2="200" y2="20"/>
+    <line x1="200" y1="220" x2="310" y2="30"/>
+    <line x1="200" y1="220" x2="380" y2="60"/>
+    <line x1="200" y1="220" x2="20" y2="160"/>
+    <line x1="200" y1="220" x2="380" y2="160"/>
+    <circle cx="200" cy="220" r="95" fill="none"/>
+    <circle cx="200" cy="220" r="130" fill="none"/>
+  </g>
+
+  <!-- Main Character Group Clipped to Medallion -->
+  <g clip-path="url(#portraitClip)">
+
+    <!-- Shoulders & Evening Tailcoat / Dinner Jacket -->
+    <path d="M 65 420 C 72 340, 118 312, 160 302 L 240 302 C 282 312, 328 340, 335 420 Z" fill="url(#suitGrad)"/>
+
+    <!-- Crisp White Dress Shirt & Piqué Bib -->
+    <polygon points="165,302 235,302 216,415 184,415" fill="#fbf9f5"/>
+    <line x1="200" y1="322" x2="200" y2="415" stroke="#e2ddd5" stroke-width="1.5"/>
+    <circle cx="200" cy="342" r="2.2" fill="#181a1f" stroke="url(#goldGrad)" stroke-width="0.8"/>
+    <circle cx="200" cy="366" r="2.2" fill="#181a1f" stroke="url(#goldGrad)" stroke-width="0.8"/>
+    <circle cx="200" cy="390" r="2.2" fill="#181a1f" stroke="url(#goldGrad)" stroke-width="0.8"/>
+
+    <!-- Silk Peak Lapels -->
+    <path d="M 164 301 L 136 332 L 154 345 L 144 358 L 188 415 L 176 310 Z" fill="url(#lapelGrad)" stroke="#31353e" stroke-width="0.8"/>
+    <path d="M 236 301 L 264 332 L 246 345 L 256 358 L 212 415 L 224 310 Z" fill="url(#lapelGrad)" stroke="#31353e" stroke-width="0.8"/>
+
+    <!-- White Pocket Square & Boutonnière Carnation -->
+    <polygon points="248,378 278,370 282,386 246,390" fill="#ffffff" stroke="#d8d2c7" stroke-width="0.8"/>
+    <g transform="translate(242, 342)">
+      <path d="M -5 4 Q -8 -4 0 -6 Q 8 -4 5 4 Q 0 7 -5 4 Z" fill="#8b1e24"/>
+      <path d="M -3 1 Q -5 -3 0 -4 Q 5 -3 3 1 Z" fill="#b32830"/>
+      <path d="M -2 6 L 0 11 L 2 6 Z" fill="#2d4c2b"/>
+    </g>
+
+    <!-- Neck -->
+    <path d="M 178 256 L 178 308 Q 200 320 222 308 L 222 256 Z" fill="url(#skinGrad)"/>
+    <path d="M 178 265 Q 200 284 222 265 L 222 276 Q 200 292 178 276 Z" fill="#c98e67" opacity="0.5"/>
+
+    <!-- High Wing Collar -->
+    <polygon points="176,292 166,308 186,316 196,306" fill="#ffffff" stroke="#d5cfc6" stroke-width="1"/>
+    <polygon points="224,292 234,308 214,316 204,306" fill="#ffffff" stroke="#d5cfc6" stroke-width="1"/>
+
+    <!-- Evening Bow Tie -->
+    <g transform="translate(200, 311)">
+      <path d="M -6 -4 L -26 -10 C -29 -4, -29 4, -26 10 L -6 4 Z" fill="#141519" stroke="#363a44" stroke-width="0.8"/>
+      <path d="M 6 -4 L 26 -10 C 29 -4, 29 4, 26 10 L 6 4 Z" fill="#141519" stroke="#363a44" stroke-width="0.8"/>
+      <rect x="-6" y="-5" width="12" height="10" rx="2" fill="#1e2026" stroke="#363a44" stroke-width="0.8"/>
+    </g>
+
+    <!-- Ears -->
+    <path d="M 152 195 C 143 195, 142 222, 154 226" fill="url(#skinGrad)" stroke="#c78d66" stroke-width="1.2"/>
+    <path d="M 248 195 C 257 195, 258 222, 246 226" fill="url(#skinGrad)" stroke="#c78d66" stroke-width="1.2"/>
+
+    <!-- Face & Jawline -->
+    <path d="M 152 165 C 152 125, 248 125, 248 165 L 246 218 C 244 245, 222 268, 200 272 C 178 268, 156 245, 154 218 Z" fill="url(#skinGrad)" stroke="#c78d66" stroke-width="1"/>
+    <path d="M 162 215 Q 168 236 184 252" fill="none" stroke="#d49870" stroke-width="1.2" opacity="0.6"/>
+    <path d="M 238 215 Q 232 236 216 252" fill="none" stroke="#d49870" stroke-width="1.2" opacity="0.6"/>
+
+    <!-- Straw-Blonde Hair -->
+    <path d="M 150 185 C 144 148, 162 114, 202 114 C 242 114, 256 146, 250 185 C 248 165, 242 152, 232 146 C 210 148, 178 148, 166 156 C 156 164, 153 174, 150 185 Z" fill="url(#hairGrad)" stroke="#9e7424" stroke-width="1.2"/>
+    <path d="M 168 124 C 186 112, 234 114, 246 146 C 232 138, 198 136, 172 146 C 164 149, 158 158, 154 168 C 153 148, 158 132, 168 124 Z" fill="url(#hairGrad)" stroke="#9e7424" stroke-width="1"/>
+    <path d="M 171 124 Q 178 134 176 144" fill="none" stroke="#8c641b" stroke-width="1.3"/>
+    <path d="M 186 125 Q 212 122 234 133" fill="none" stroke="#fff3c4" stroke-width="2" stroke-linecap="round" opacity="0.65"/>
+
+    <!-- Eyebrows -->
+    <path d="M 166 177 Q 178 171 190 176" fill="none" stroke="#9e7424" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M 210 174 Q 223 166 236 173" fill="none" stroke="#9e7424" stroke-width="2.4" stroke-linecap="round"/>
+
+    <!-- Eyes -->
+    <g transform="translate(178, 188)">
+      <path d="M -10 0 Q 0 -6 10 0 Q 0 5 -10 0 Z" fill="#ffffff"/>
+      <circle cx="0" cy="0" r="4.2" fill="#5b758a"/>
+      <circle cx="0" cy="0" r="2" fill="#181a1f"/>
+      <circle cx="-1.3" cy="-1.3" r="1" fill="#ffffff"/>
+      <path d="M -11 -1 Q 0 -7 11 -1" fill="none" stroke="#6d4c37" stroke-width="1.5"/>
+    </g>
+    <g transform="translate(222, 188)">
+      <path d="M -10 0 Q 0 -6 10 0 Q 0 5 -10 0 Z" fill="#ffffff"/>
+      <circle cx="0" cy="0" r="4.2" fill="#5b758a"/>
+      <circle cx="0" cy="0" r="2" fill="#181a1f"/>
+      <circle cx="-1.3" cy="-1.3" r="1" fill="#ffffff"/>
+      <path d="M -11 -1 Q 0 -7 11 -1" fill="none" stroke="#6d4c37" stroke-width="1.5"/>
+    </g>
+
+    <!-- Nose -->
+    <path d="M 200 182 L 197 215 Q 200 220 206 217" fill="none" stroke="#b97d56" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 192 216 Q 195 219 198 218" fill="none" stroke="#b97d56" stroke-width="1.2" stroke-linecap="round"/>
+
+    <!-- Half-Smile -->
+    <path d="M 185 237 Q 201 243 217 234" fill="none" stroke="#8f4c42" stroke-width="2" stroke-linecap="round"/>
+    <path d="M 215 232 Q 218 234 218 237" fill="none" stroke="#8f4c42" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M 193 244 Q 201 247 209 244" fill="none" stroke="#c78865" stroke-width="1.5" stroke-linecap="round"/>
+
+    <!-- Monocle & Cord -->
+    <path d="M 239 191 C 258 215, 265 268, 245 318 C 236 340, 224 358, 212 372" fill="none" stroke="#181a1f" stroke-width="1.6"/>
+    <circle cx="222" cy="188" r="16.5" fill="url(#monocleGlass)" stroke="url(#goldGrad)" stroke-width="2.4"/>
+    <circle cx="239.5" cy="189.5" r="2.2" fill="none" stroke="url(#goldGrad)" stroke-width="1.5"/>
+    <line x1="213" y1="181" x2="221" y2="195" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" opacity="0.65"/>
+    <line x1="218" y1="179" x2="223" y2="188" stroke="#ffffff" stroke-width="1" stroke-linecap="round" opacity="0.5"/>
+
+    <!-- Gloved Hand with Magnifying Glass -->
+    <g transform="translate(115, 315) rotate(-14)">
+      <rect x="-4" y="42" width="8" height="48" rx="3" fill="#2c1d11" stroke="url(#goldGrad)" stroke-width="1"/>
+      <rect x="-4.5" y="40" width="9" height="5" fill="url(#goldGrad)"/>
+      <circle cx="0" cy="14" r="26" fill="url(#monocleGlass)" stroke="url(#goldGrad)" stroke-width="3.5"/>
+      <path d="M -14 2 A 18 18 0 0 1 6 -3" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" opacity="0.7"/>
+      <rect x="-9" y="48" width="18" height="7" rx="3.5" fill="#faf8f5" stroke="#cfc8bc" stroke-width="1"/>
+      <rect x="-10" y="56" width="19" height="7" rx="3.5" fill="#faf8f5" stroke="#cfc8bc" stroke-width="1"/>
+      <rect x="-9" y="64" width="18" height="7" rx="3.5" fill="#faf8f5" stroke="#cfc8bc" stroke-width="1"/>
+      <rect x="-8" y="72" width="16" height="6.5" rx="3" fill="#faf8f5" stroke="#cfc8bc" stroke-width="1"/>
+    </g>
+
+  </g>
+
 </svg>
