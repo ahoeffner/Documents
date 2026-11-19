@@ -46,6 +46,17 @@
             </div>
             <div class="modal-body help-body">
 
+              <h4>{{ i18n.t('app.helpModal.homeTitle') }}</h4>
+              <p v-html="i18n.t('app.helpModal.homeIntro')"></p>
+              <ul>
+                <li v-html="i18n.t('app.helpModal.homeItem1')"></li>
+                <li v-html="i18n.t('app.helpModal.homeItem2')"></li>
+                <li v-html="i18n.t('app.helpModal.homeItem3')"></li>
+                <li v-html="i18n.t('app.helpModal.homeItem4')"></li>
+                <li v-html="i18n.t('app.helpModal.homeItem5')"></li>
+                <li v-html="i18n.t('app.helpModal.homeItem6')"></li>
+              </ul>
+
               <h4>{{ i18n.t('app.helpModal.documentsTitle') }}</h4>
               <template v-if="auth.isAdmin">
                 <p v-html="i18n.t('app.helpModal.documentsIntro')"></p>

@@ -8,6 +8,14 @@ app:
     chat: "Spørg"
     home: "Hjem"
   helpModal:
+    homeTitle: "Hjem"
+    homeIntro: 'Styrer dit hjem via <strong>Home Assistant</strong> — lys, tv, støvsuger og mere. Skriv eller sig bare, hvad du vil.'
+    homeItem1: 'Et rent <strong>tænd / sluk</strong> betyder lyset i gangen og over sofaen; nævn et rum eller en enhed for alt andet.'
+    homeItem2: 'Sæt et niveau direkte — <em>stuen 10%</em> — eller justér det — <em>skru op for lyset</em>, <em>skru ned for lyden</em>.'
+    homeItem3: 'Spørg om <strong>status</strong> for en tabel over lys og tv; skriv <strong>?</strong> eller <strong>hjælp</strong> for at se alle enheder, du kan styre.'
+    homeItem4: 'Knappen <strong>Panel</strong> viser et lille kontrolpanel med kontakter, lysdæmpere og tv''ets lydstyrke og lydløs. Træk det i bjælken øverst; dobbeltklik på bjælken for at sætte det tilbage i hjørnet.'
+    homeItem5: 'Tv''ets lydstyrke har et loft (50 som standard). Tv''et melder aldrig sin rigtige lydstyrke, så skyderen følger det, der er sat her, ikke fjernbetjeningen.'
+    homeItem6: 'Tryk på <strong>mikrofonen</strong> eller hold <strong>Alt</strong> nede for at sige en kommando — den sendes automatisk.'
     documentsTitle: "Dokumenter"
     documentsIntro: 'Organiser dine dokumenter i mapper. Brug <strong>højreklik</strong> til at styre alt — ingen værktøjslinjeknapper.'
     documentsItem1: 'Højreklik på en <strong>mappe</strong> i sidepanelet → Ny undermappe, Omdøb, Slet'
@@ -40,8 +48,8 @@ app:
     installItem2: 'Når den er installeret, kører den i sit eget vindue — uden browserens adresselinje eller faner.'
     installItem3: 'Installér-knappen forsvinder efter installation. For at afinstallere, brug din browser eller OS-indstillinger.'
     keyboardTitle: "Tastatur"
-    keyboardItem1: '<strong>Ctrl+venstre/højre</strong> — skift mellem fanerne Dokumenter, Søgning og Chat.'
-    keyboardItem2: 'Hold <strong>Ctrl</strong> eller <strong>Alt</strong> nede for at tale — slip for at stoppe og sende/søge.'
+    keyboardItem1: '<strong>Ctrl+venstre/højre</strong> — skift mellem fanerne Hjem, Gennemse, Søg og Spørg.'
+    keyboardItem2: 'Hold <strong>Alt</strong> nede for at tale — slip for at stoppe og sende/søge.'
     keyboardItem3: '<strong>Piletaster</strong> navigerer i mappetræet og resultat-/dokumentlister; <strong>Tab</strong>/<strong>Shift+Tab</strong> skifter fokus mellem værktøjslinjen og indholdet.'
     keyboardItem4: 'I Søgning læser stemmediktering også antallet af fundne resultater højt.'
 

@@ -8,6 +8,14 @@ app:
     chat: "Ask"
     home: "Home"
   helpModal:
+    homeTitle: "Home"
+    homeIntro: 'Controls your home through <strong>Home Assistant</strong> — lights, the TV, the vacuum and more. Just type or say what you want.'
+    homeItem1: 'A plain <strong>tænd / sluk</strong> (on / off) means the corridor and the sofa lights; name a room or device for anything else.'
+    homeItem2: 'Set a level directly — <em>stuen 10%</em> — or adjust it — <em>skru op for lyset</em>, <em>skru ned for lyden</em>.'
+    homeItem3: 'Ask <strong>status</strong> for a table of the lights and the TV; type <strong>?</strong> or <strong>help</strong> to list every device you can control.'
+    homeItem4: 'The <strong>Panel</strong> button shows a small control panel with switches, brightness sliders and the TV volume and mute. Drag it by its top bar; double-click the bar to put it back in the corner.'
+    homeItem5: 'The TV volume is capped (50 by default). The TV never reports its real volume, so the slider follows what was set here, not the remote.'
+    homeItem6: 'Tap the <strong>microphone</strong> or hold <strong>Alt</strong> to speak a command — it is sent automatically.'
     documentsTitle: "Documents"
     documentsIntro: 'Organise your documents into folders. Use <strong>right-click</strong> to manage everything — no toolbar buttons.'
     documentsItem1: 'Right-click a <strong>folder</strong> in the sidebar → New Subfolder, Rename, Delete'
@@ -40,8 +48,8 @@ app:
     installItem2: 'Once installed it runs in its own window — no browser address bar or tabs.'
     installItem3: 'The install button disappears after installation. To uninstall, use your browser or OS settings.'
     keyboardTitle: "Keyboard"
-    keyboardItem1: '<strong>Ctrl+Left/Right</strong> — switch between Documents, Search and Chat tabs.'
-    keyboardItem2: 'Hold <strong>Ctrl</strong> or <strong>Alt</strong> to talk — release to stop and send/search.'
+    keyboardItem1: '<strong>Ctrl+Left/Right</strong> — switch between the Home, Browse, Search and Ask tabs.'
+    keyboardItem2: 'Hold <strong>Alt</strong> to talk — release to stop and send/search.'
     keyboardItem3: '<strong>Arrow keys</strong> navigate the folder tree and result/document lists; <strong>Tab</strong>/<strong>Shift+Tab</strong> cycle focus between the toolbar and content.'
     keyboardItem4: 'In Search, dictating by voice also reads the number of results found aloud.'
 
